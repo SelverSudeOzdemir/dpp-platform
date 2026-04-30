@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+.env
+
+# Node
+node_modules/
+.next/
+.env.local
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# OS
+.DS_Store
+
+# Docker
+*.log
+
+# Python build/runtime artifacts
+backend/*.egg-info/
+backend/server_log.txt
+
+# Artifacts & Tasks
+task.md
+walkthrough.md
+.gemini/
+.agents/
+.agent/
+_agents/
+_agent/
+implementation_plan.md
+*.docx
+*.pdf
+*.xlsx
+
