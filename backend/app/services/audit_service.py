@@ -1,14 +1,3 @@
-"""
-Audit Log Service
-
-Mevcut AuditLog modeli alanları:
-  user_id       → kim yaptı
-  action        → ne yaptı  (max 100 karakter)
-  resource_type → neye yaptı (max 50 karakter)
-  resource_id   → hangi kayıt (max 100 karakter)
-  details       → JSON detay (Text)
-  ip_address    → nereden (max 45 karakter)
-"""
 from __future__ import annotations
 
 import json
@@ -24,42 +13,30 @@ logger = logging.getLogger("audit")
 
 
 class AuditActions:
-    """action alanı için sabitler."""
-    # Auth
-    LOGIN         = "auth.login"
-    LOGOUT        = "auth.logout"
-    LOGIN_FAILED  = "auth.login_failed"
-    TOKEN_REFRESH = "auth.token_refresh"
-    PWD_CHANGED   = "auth.password_changed"
-    # Kullanıcı
-    USER_CREATED     = "user.created"
-    USER_UPDATED     = "user.updated"
-    USER_DEACTIVATED = "user.deactivated"
-    ROLE_CHANGED     = "user.role_changed"
-    # API Key
-    APIKEY_CREATED = "apikey.created"
-    APIKEY_REVOKED = "apikey.revoked"
-    # DPP
-    DPP_CREATED        = "dpp.created"
-    DPP_UPDATED        = "dpp.updated"
-    DPP_STATUS_CHANGED = "dpp.status_changed"
-    DPP_DELETED        = "dpp.deleted"
+    LOGIN = "Kullanıcı giriş yaptı"
+    LOGOUT = "Kullanıcı çıkış yaptı"
+    LOGIN_FAILED = "Başarısız giriş denemesi"
+    TOKEN_REFRESH = "Token yenilendi"
+    PWD_CHANGED = "Şifre değiştirildi"
+
+    USER_CREATED = "Kullanıcı oluşturuldu"
+    USER_UPDATED = "Kullanıcı güncellendi"
+    USER_DEACTIVATED = "Kullanıcı pasifleştirildi"
+    USER_ACTIVATED = "Kullanıcı aktifleştirildi"
+    ROLE_CHANGED = "Rol değiştirildi"
+
+    DPP_CREATED = "DPP oluşturuldu"
+    DPP_UPDATED = "DPP güncellendi"
+    DPP_SUBMITTED = "DPP onaya gönderildi"
+    DPP_APPROVED = "DPP onaylandı"
+    DPP_REJECTED = "DPP reddedildi"
+    DPP_DELETED = "DPP silindi"
+
+    PDF_DOWNLOADED = "Pasaport PDF indirildi"
+    SUPPLY_CHAIN_VIEWED = "Tedarik zinciri görüntülendi"
 
 
 class AuditService:
-    """
-    Kullanım örneği:
-        await AuditService.log(
-            action=AuditActions.USER_CREATED,
-            db=db,
-            user_id=current_user.id,
-            resource_type="user",
-            resource_id=str(new_user.id),
-            details={"email": new_user.email, "role": "manufacturer"},
-            ip_address=request.client.host,
-        )
-    """
-
     @staticmethod
     async def log(
         action: str,
@@ -71,15 +48,17 @@ class AuditService:
         details: Optional[dict[str, Any]] = None,
         ip_address: Optional[str] = None,
     ) -> None:
-        details_str = json.dumps(details, default=str) if details else None
+        details_str = json.dumps(details, default=str, ensure_ascii=False) if details else None
 
-        # Her zaman log'a yaz
         logger.info(
-            "[AUDIT] action=%s user=%s %s/%s ip=%s",
-            action, user_id, resource_type, resource_id, ip_address,
+            "[AUDIT] action=%s user=%s resource=%s/%s ip=%s",
+            action,
+            user_id,
+            resource_type,
+            resource_id,
+            ip_address,
         )
 
-        # db verilmemişse sadece log yaz (test ortamı)
         if db is None:
             return
 
@@ -91,15 +70,12 @@ class AuditService:
             details=details_str,
             ip_address=ip_address[:45] if ip_address else None,
         )
+
         db.add(entry)
         await db.commit()
 
     @staticmethod
     def diff(old: dict, new: dict) -> dict:
-        """
-        İki dict arasındaki farkı hesapla.
-        Audit log details alanına koymak için kullanılır.
-        """
         changed = {k for k in set(old) | set(new) if old.get(k) != new.get(k)}
         return {
             "old": {k: old.get(k) for k in changed},

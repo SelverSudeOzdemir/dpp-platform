@@ -5,6 +5,17 @@ from slowapi import _rate_limit_exceeded_handler
 from app.api.v1.router import router
 from app.middleware.rate_limiter import limiter
 
+# 🔥 TÜM MODELLERİ YÜKLE (CRITICAL FIX)
+import app.models.user
+import app.models.security
+import app.models.product
+import app.models.dpp
+import app.models.supply_chain
+import app.models.lifecycle
+import app.models.manufacturer
+import app.models.company
+import app.models.certification
+
 app = FastAPI(
     title="Kocaer DPP API",
     version="1.0.0",

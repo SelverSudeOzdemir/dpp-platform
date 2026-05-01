@@ -17,4 +17,4 @@ class Company(Base, UUIDMixin, TimestampMixin):
 
     # Relationships
     manufacturers = relationship("Manufacturer", back_populates="company", cascade="all, delete-orphan")
-    users = relationship("User", back_populates="company", cascade="all, delete-orphan")
+    # users = relationship("User", back_populates="company", cascade="all, delete-orphan")

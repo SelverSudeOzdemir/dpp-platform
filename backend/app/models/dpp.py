@@ -8,6 +8,7 @@ from sqlalchemy import DateTime
 from sqlalchemy.orm import relationship
 
 from app.models.base import Base, UUIDMixin, TimestampMixin
+from app.models.supply_chain import SupplyChainStage
 
 
 # ─── ENUM TYPES ───────────────────────────────────────────────────────────────
@@ -93,3 +94,6 @@ class DigitalProductPassport(Base, UUIDMixin, TimestampMixin):
     changelog_entries = relationship("DppChangelog", back_populates="dpp", cascade="all, delete-orphan")
     registry_sync_entries = relationship("RegistrySyncQueue", back_populates="dpp", cascade="all, delete-orphan")
     backup_snapshots = relationship("BackupSnapshot", back_populates="dpp")
+
+# Compatibility imports for SQLAlchemy relationship resolution
+from app.models.lifecycle import LifecycleEvent
