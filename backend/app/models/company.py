@@ -18,3 +18,6 @@ class Company(Base, UUIDMixin, TimestampMixin):
     # Relationships
     manufacturers = relationship("Manufacturer", back_populates="company", cascade="all, delete-orphan")
     # users = relationship("User", back_populates="company", cascade="all, delete-orphan")
+
+# Compatibility imports for SQLAlchemy relationship resolution
+from app.models.manufacturer import Manufacturer

@@ -200,3 +200,9 @@ class MechanicalProperties(Base, UUIDMixin, TimestampMixin):
 
     # Relationships
     product_type = relationship("ProductType", back_populates="mechanical_properties")
+
+# Compatibility imports for SQLAlchemy relationship resolution
+from app.models.manufacturer import Manufacturer
+from app.models.certification import Certification
+from app.models.dpp import DigitalProductPassport
+from app.models.security import DppAccessPolicy

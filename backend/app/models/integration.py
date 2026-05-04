@@ -70,3 +70,5 @@ class DppChangelog(Base, UUIDMixin, CreatedAtMixin):
     # Relationships
     dpp = relationship("DigitalProductPassport", back_populates="changelog_entries")
     user = relationship("User")
+
+from app.models.user import User

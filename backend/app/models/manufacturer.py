@@ -67,3 +67,8 @@ class ProductionFacility(Base, UUIDMixin, TimestampMixin):
     # Relationships
     manufacturer = relationship("Manufacturer", back_populates="facilities")
     dpps = relationship("DigitalProductPassport", back_populates="production_facility")
+
+# Compatibility imports for SQLAlchemy relationship resolution
+from app.models.company import Company
+from app.models.product import ProductType
+from app.models.dpp import DigitalProductPassport

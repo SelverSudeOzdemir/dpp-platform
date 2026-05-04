@@ -22,9 +22,10 @@ class DataCarrierFormatEnum(str, enum.Enum):
 
 class DppStatusEnum(str, enum.Enum):
     DRAFT = "draft"
-    ACTIVE = "active"
-    DEACTIVATED = "deactivated"
-    REGISTERED = "registered"
+    PENDING_APPROVAL = "pending_approval"
+    PUBLISHED = "published"
+    REJECTED = "rejected"
+    ARCHIVED = "archived"
 
 
 # ─── MODEL ────────────────────────────────────────────────────────────────────
@@ -97,3 +98,8 @@ class DigitalProductPassport(Base, UUIDMixin, TimestampMixin):
 
 # Compatibility imports for SQLAlchemy relationship resolution
 from app.models.lifecycle import LifecycleEvent
+from app.models.product import ProductType
+from app.models.integration import DppChangelog
+from app.models.manufacturer import ProductionFacility
+from app.models.certification import Certification
+from app.models.security import DppAccessPolicy
