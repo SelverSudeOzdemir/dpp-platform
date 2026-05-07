@@ -1,9 +1,13 @@
 """
 DigitalProductPassport modeli
+kocaer.sql ile senkronize edildi:
+  - DppStatusEnum genişletildi (active, deactivated, registered eklendi)
+  - rejection_reason, rejection_fields, rejected_by, rejected_at kolonları eklendi
+  - search_vector kolonu eklendi
 """
 import enum
 from sqlalchemy import Column, String, Boolean, Date, Text, Numeric, ForeignKey, Enum
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import UUID, JSONB, TSVECTOR
 from sqlalchemy import DateTime
 from sqlalchemy.orm import relationship
 
@@ -26,6 +30,10 @@ class DppStatusEnum(str, enum.Enum):
     PUBLISHED = "published"
     REJECTED = "rejected"
     ARCHIVED = "archived"
+    # Gerçek DB'den gelen ek değerler (kocaer.sql ile senkronize)
+    ACTIVE = "active"
+    DEACTIVATED = "deactivated"
+    REGISTERED = "registered"
 
 
 # ─── MODEL ────────────────────────────────────────────────────────────────────
@@ -81,10 +89,17 @@ class DigitalProductPassport(Base, UUIDMixin, TimestampMixin):
         default=DppStatusEnum.DRAFT,
     )
     status_changed_at = Column(DateTime(timezone=True))
+    # Rejection bilgileri (kocaer.sql — yeni kolonlar)
+    rejection_reason = Column(Text)
+    rejection_fields = Column(JSONB)
+    rejected_by = Column(String(255))
+    rejected_at = Column(DateTime(timezone=True))
     # JSON-LD
     json_ld = Column(JSONB)
     # HTML Content
     html_content = Column(Text)
+    # Full-text search (kocaer.sql — DB trigger tarafından doldurulur, ORM yazmaz)
+    search_vector = Column(TSVECTOR)
 
     # Relationships
     product_type = relationship("ProductType", back_populates="dpps")
