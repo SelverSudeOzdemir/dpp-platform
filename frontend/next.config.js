@@ -37,7 +37,7 @@ const securityHeaders = [
   // - style: Tailwind inline style'lar için 'unsafe-inline' gerekli
   // - img: data URI'lere (base64) izin ver
   // - connect: API sunucusuna + localhost'a izin ver
-  {
+ {
     key: 'Content-Security-Policy',
     value: [
       "default-src 'self'",
@@ -45,10 +45,10 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",
       "font-src 'self'",
-      "connect-src 'self' http://localhost:5000 https://api.kocaer.com",
+      "connect-src 'self' http://localhost:5000 http://localhost:8000 https://api.kocaer.com",
       "frame-ancestors 'none'",
     ].join('; '),
-  },
+},
 ];
 
 const nextConfig = {
