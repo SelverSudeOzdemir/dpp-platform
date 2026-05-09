@@ -94,7 +94,10 @@ const Navbar = () => {
 
             <div className="hidden sm:block h-6 w-px bg-gray-200 mx-1" />
 
-            <div className="hidden sm:flex flex-col items-end">
+            <button
+              onClick={() => router.push('/profile')}
+              className="hidden sm:flex flex-col items-end hover:opacity-75 transition-opacity"
+            >
               <span className="text-sm font-bold text-gray-900">{user?.full_name || 'Kullanıcı'}</span>
               <span className={`text-xs font-bold px-2 py-0.5 rounded-full mt-0.5 ${
                 isAdmin              ? 'bg-red-50 text-red-600'       :
@@ -106,11 +109,14 @@ const Navbar = () => {
               }`}>
                 {role}
               </span>
-            </div>
+            </button>
 
-            <div className="h-8 w-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-inner">
+            <button
+              onClick={() => router.push('/profile')}
+              className="h-8 w-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-inner hover:bg-blue-700 transition-colors"
+            >
               {user?.full_name?.charAt(0) || 'U'}
-            </div>
+            </button>
 
             <div className="h-6 w-px bg-gray-200 mx-2" />
 
