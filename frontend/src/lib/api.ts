@@ -194,10 +194,3 @@ export async function apiCreateDpp(data: {
 
 // ── Geriye dönük uyumluluk ───────────────────────────────────────────────────
 
-export async function fetchDPP(publicId: string) {
-  return apiGetDppById(publicId);
-}
-
-export async function fetchProducts() {
-  return apiGetDpps({ limit: 100 });
-}
