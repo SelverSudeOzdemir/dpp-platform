@@ -29,6 +29,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const isIdleLogout = router.query.reason === "idle";
+  const isExpiredLogout = router.query.reason === "expired";
 
   // Zaten giriş yapılmışsa login sayfasını gösterme — uygun sayfaya yönlendir
   useEffect(() => {
@@ -149,6 +150,13 @@ export default function Login() {
         {isIdleLogout && (
           <div className="p-3 rounded-md bg-amber-50 border border-amber-200 text-sm text-amber-700 text-center font-medium">
             15 dakika hareketsizlik nedeniyle oturumunuz sonlandırıldı.
+          </div>
+        )}
+
+        {/* Token süresi dolma uyarısı */}
+        {isExpiredLogout && (
+          <div className="p-3 rounded-md bg-red-50 border border-red-200 text-sm text-red-700 text-center font-medium">
+            Oturum süreniz doldu. Lütfen tekrar giriş yapın.
           </div>
         )}
 

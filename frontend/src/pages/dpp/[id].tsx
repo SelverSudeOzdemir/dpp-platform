@@ -165,10 +165,15 @@ export default function ProductPassportDetail() {
             {isPublic ? (
               <button
                 onClick={() => router.push(`/login?returnUrl=/dpp/${id}`)}
-                className="flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-xl text-sm font-bold transition-all border border-gray-200 shadow-sm"
+                className="flex items-center gap-3 bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-blue-200 group"
               >
-                <LockKeyhole size={16} className="text-gray-400" />
-                <span className="hidden sm:inline">Giriş Yap</span>
+                <div className="bg-white/20 p-1.5 rounded-lg group-hover:bg-white/30 transition-colors shrink-0">
+                  <LockKeyhole size={15} />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-black leading-none">Giriş Yap</p>
+                  <p className="text-[10px] font-medium opacity-80 mt-0.5">Tam erişim için</p>
+                </div>
               </button>
             ) : (
               <div className="text-right bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100">

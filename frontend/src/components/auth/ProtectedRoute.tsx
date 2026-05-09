@@ -36,6 +36,12 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
 
   // Rol kısıtlaması varsa ve kullanıcının rolü listede değilse
   if (allowedRoles && !allowedRoles.includes(role)) {
+    const homeByRole =
+      role === 'ADMIN' ? '/' :
+      role === 'ENGINEER' ? '/batches' :
+      ['SUPPLIER', 'CUSTOMER', 'AUTHORITY'].includes(role) ? '/my-dpps' :
+      '/login';
+
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 gap-4">
         <div className="text-6xl">🔒</div>
@@ -44,10 +50,10 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
           Bu sayfayı görüntülemek için <span className="font-bold text-blue-600">{allowedRoles.join(' veya ')}</span> yetkisi gereklidir.
         </p>
         <button
-          onClick={() => router.push('/')}
+          onClick={() => router.push(homeByRole)}
           className="mt-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-colors"
         >
-          Dashboard'a Dön
+          Ana Sayfaya Dön
         </button>
       </div>
     );
