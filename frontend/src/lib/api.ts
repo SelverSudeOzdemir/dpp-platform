@@ -122,7 +122,10 @@ export async function apiGetDppSummaryStats(): Promise<{
   const res = await fetch(`${BASE_URL}/dpps/summary-stats`, {
     headers: { ...getAuthHeader() },
   });
-  if (!res.ok) throw new Error("İstatistikler alınamadı");
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(`İstatistikler alınamadı [${res.status}]: ${body.detail ?? res.statusText}`);
+  }
   return res.json();
 }
 

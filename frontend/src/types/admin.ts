@@ -1,0 +1,35 @@
+export type PassportStatus = 'Taslak' | 'Yayında' | 'Arşivlendi' | 'Geri Çağrıldı';
+
+export interface AdminProduct {
+  id: string;
+  product_name: string;
+  product_category: string;
+  co2_cradle_to_gate_kg: number;
+  passport_status: PassportStatus;
+  version: string;
+  data_source: 'Manuel' | 'SAP/ERP' | 'API';
+  blockchain_timestamp: string;
+}
+
+export type CertType = 'firma' | 'urun-tipi' | 'batch';
+
+export interface PendingBatch {
+  id: string;
+  parti_no: string;
+  urun_tipi: string;
+  miktar_ton: number;
+  veri_kaynagi: string;
+  olusturan: string;
+  gonderilme_tarihi: string;
+  co2_a1a3: number;
+  co2_verification: string;
+}
+
+export interface IncompleteProduct {
+  id: string;
+  product: string;
+  status: 'Taslak' | 'Geri Çağrıldı';
+  version: string;
+  data_source: string;
+  missing: { section: string; field: string }[];
+}
