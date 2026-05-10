@@ -7,10 +7,10 @@ import type { AdminProduct, CertType, PendingBatch, IncompleteProduct, PassportS
 export const CBAM_LIMIT = 2.0;
 
 export const INITIAL_PRODUCTS: AdminProduct[] = [
-  { id: 'KCR-742', product_name: 'IPE 200 Yapısal Çelik Profil', product_category: 'Structural Steel', co2_cradle_to_gate_kg: 1.15, passport_status: 'Yayında',      version: '1.2', data_source: 'SAP/ERP', blockchain_timestamp: '2026-03-10T08:42:11Z' },
-  { id: 'KCR-891', product_name: 'HEB 300 Geniş Başlıklı Profil', product_category: 'Structural Steel', co2_cradle_to_gate_kg: 2.31, passport_status: 'Taslak',       version: '1.0', data_source: 'Manuel',  blockchain_timestamp: '' },
-  { id: 'KCR-315', product_name: 'UPN 160 U Profil',              product_category: 'Structural Steel', co2_cradle_to_gate_kg: 1.72, passport_status: 'Arşivlendi',   version: '2.1', data_source: 'API',     blockchain_timestamp: '2026-01-01T10:00:00Z' },
-  { id: 'KCR-558', product_name: 'CHS 88.9x3.2 Yuvarlak Boru',   product_category: 'Tubes and Pipes',  co2_cradle_to_gate_kg: 2.78, passport_status: 'Geri Çağrıldı', version: '1.1', data_source: 'Manuel',  blockchain_timestamp: '' },
+  { id: 'KCR-742', product_name: 'IPE 200 Yapısal Çelik Profil', product_category: 'Structural Steel', co2_cradle_to_gate_kg: 1.15, passport_status: 'Yayında',      version: '1.2', blockchain_timestamp: '2026-03-10T08:42:11Z' },
+  { id: 'KCR-891', product_name: 'HEB 300 Geniş Başlıklı Profil', product_category: 'Structural Steel', co2_cradle_to_gate_kg: 2.31, passport_status: 'Taslak',       version: '1.0', blockchain_timestamp: '' },
+  { id: 'KCR-315', product_name: 'UPN 160 U Profil',              product_category: 'Structural Steel', co2_cradle_to_gate_kg: 1.72, passport_status: 'Arşivlendi',   version: '2.1', blockchain_timestamp: '2026-01-01T10:00:00Z' },
+  { id: 'KCR-558', product_name: 'CHS 88.9x3.2 Yuvarlak Boru',   product_category: 'Tubes and Pipes',  co2_cradle_to_gate_kg: 2.78, passport_status: 'Geri Çağrıldı', version: '1.1', blockchain_timestamp: '' },
 ];
 
 export const CERT_ALERTS: { product: string; id: string; cert: string; issuer: string; expiry: string; days_left: number; type: CertType }[] = [
@@ -94,7 +94,7 @@ export const LOGISTICS = [
 
 export const INCOMPLETE: IncompleteProduct[] = [
   {
-    id: 'KCR-891', product: 'HEB 300 Geniş Başlıklı Profil', status: 'Taslak', version: '1.0', data_source: 'Manuel',
+    id: 'KCR-891', product: 'HEB 300 Geniş Başlıklı Profil', status: 'Taslak', version: '1.0',
     missing: [
       { section: 'Kimlik & Katalog',   field: 'GTIN Numarası'      },
       { section: 'Sürdürülebilirlik',  field: 'EPD Belgesi'        },
@@ -102,14 +102,14 @@ export const INCOMPLETE: IncompleteProduct[] = [
     ],
   },
   {
-    id: 'PB-001', product: 'HEB 300 Geniş Başlıklı Profil', status: 'Taslak', version: '1.0', data_source: 'Manuel',
+    id: 'PB-001', product: 'HEB 300 Geniş Başlıklı Profil', status: 'Taslak', version: '1.0',
     missing: [
       { section: 'Kimyasal & Mekanik', field: 'Darbe Enerjisi (J)' },
       { section: 'Tedarik Zinciri',    field: 'Tedarikçi Parti Kodu' },
     ],
   },
   {
-    id: 'KCR-558', product: 'CHS 88.9x3.2 Yuvarlak Boru', status: 'Geri Çağrıldı', version: '1.1', data_source: 'Manuel',
+    id: 'KCR-558', product: 'CHS 88.9x3.2 Yuvarlak Boru', status: 'Geri Çağrıldı', version: '1.1',
     missing: [
       { section: 'Üretici Bilgileri',  field: 'Üretici Web Sitesi' },
       { section: 'Ömür Sonu',          field: 'İmha Talimatı'      },
@@ -124,7 +124,6 @@ export const PENDING_BATCHES: PendingBatch[] = [
     parti_no: 'KCR-2026-0315-B',
     urun_tipi: 'HEB 300 Geniş Başlıklı Profil',
     miktar_ton: 68.0,
-    veri_kaynagi: 'Manuel',
     olusturan: 'Furkan Yıldız',
     gonderilme_tarihi: '2026-03-15 14:22',
     co2_a1a3: 1.92, co2_verification: 'Dahili Hesaplama',
@@ -134,7 +133,6 @@ export const PENDING_BATCHES: PendingBatch[] = [
     parti_no: 'KCR-2026-0314-A',
     urun_tipi: 'UPN 160 Oluk Profil',
     miktar_ton: 25.8,
-    veri_kaynagi: 'Excel',
     olusturan: 'Furkan Yıldız',
     gonderilme_tarihi: '2026-03-14 09:05',
     co2_a1a3: 2.45, co2_verification: 'Dahili Hesaplama',

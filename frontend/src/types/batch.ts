@@ -1,5 +1,3 @@
-export type IngestionMethod = 'ERP' | 'EXCEL' | 'MANUEL' | null;
-
 export interface BatchInfo {
   parti_no: string;
   tedarikci_parti_kodu: string;

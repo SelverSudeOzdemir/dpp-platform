@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ClipboardList, Zap, GitBranch, Shield, Database, Edit3 } from 'lucide-react';
+import { ClipboardList, Zap, GitBranch, Shield } from 'lucide-react';
 import { VERSION_HISTORY } from '../../../constants/adminConstants';
 import type { AdminProduct, PendingBatch, PassportStatus } from '../../../types/admin';
 
@@ -64,7 +64,7 @@ export default function PassportsTab({ products, pendingBatches, onStatusChange,
           <table className="min-w-full">
             <thead className="bg-gray-50">
               <tr>
-                {['ID & Ürün', 'Pasaport Durumu', 'Versiyon', 'Veri Kaynağı', 'Blokzincir Mühürü'].map(h => (
+                {['ID & Ürün', 'Pasaport Durumu', 'Versiyon', 'Blokzincir Mühürü'].map(h => (
                   <th key={h} className="px-5 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -116,16 +116,6 @@ export default function PassportsTab({ products, pendingBatches, onStatusChange,
                   </td>
                   <td className="px-5 py-4">
                     <span className="text-xs font-mono font-black text-gray-700 bg-gray-100 px-2 py-1 rounded">v{p.version}</span>
-                  </td>
-                  <td className="px-5 py-4">
-                    <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2 py-1 rounded-lg ${
-                      p.data_source === 'SAP/ERP' ? 'bg-green-50 text-green-700' :
-                      p.data_source === 'API'     ? 'bg-blue-50 text-blue-700'   :
-                                                    'bg-yellow-50 text-yellow-700'
-                    }`}>
-                      {p.data_source === 'SAP/ERP' ? <Zap size={11} /> : p.data_source === 'API' ? <Database size={11} /> : <Edit3 size={11} />}
-                      {p.data_source}
-                    </span>
                   </td>
                   <td className="px-5 py-4">
                     {p.blockchain_timestamp ? (

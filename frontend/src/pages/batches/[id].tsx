@@ -21,7 +21,6 @@ interface BatchDetail {
   miktar_ton: string;
   cift_kodu: string;
   dpp_durum: BatchStatus;
-  veri_kaynagi: string;
   olusturan: string;
   // Teknik
   celik_kalitesi: string;
@@ -84,7 +83,7 @@ const MOCK_DETAIL: Record<string, BatchDetail> = {
     id: 'B-001', parti_no: 'KCR-2026-0312-A', tedarikci_parti_kodu: 'ERD-2026-03041',
     urun_tipi: 'IPE 200 Yapısal Çelik Profil',
     ocak_no: 'EAF-03', uretim_tarihi: '2026-03-12', miktar_ton: '42.5', cift_kodu: 'H-20260312-003',
-    dpp_durum: 'Yayında', veri_kaynagi: 'ERP/API', olusturan: 'Furkan Yıldız',
+    dpp_durum: 'Yayında', olusturan: 'Furkan Yıldız',
     celik_kalitesi: 'S355JR', en_mm: '200', boy_mm: '6000', kalinlik_mm: '8.5', agirlik_m: '26.2',
     co2_a1a3: '1.15', co2_a3: '0.38', co2_a4: '0.07', co2_verification: 'Üçüncü Taraf Doğrulamalı',
     geri_donusum_orani: '82', svhc_free: true,
@@ -113,7 +112,7 @@ const MOCK_DETAIL: Record<string, BatchDetail> = {
     id: 'B-002', parti_no: 'KCR-2026-0315-B', tedarikci_parti_kodu: '',
     urun_tipi: 'HEB 300 Geniş Başlıklı Profil',
     ocak_no: 'EAF-01', uretim_tarihi: '2026-03-15', miktar_ton: '68.0', cift_kodu: 'H-20260315-001',
-    dpp_durum: 'Onay Bekliyor', veri_kaynagi: 'Manuel', olusturan: 'Furkan Yıldız',
+    dpp_durum: 'Onay Bekliyor', olusturan: 'Furkan Yıldız',
     celik_kalitesi: 'S275JR', en_mm: '300', boy_mm: '6000', kalinlik_mm: '11.0', agirlik_m: '117.0',
     co2_a1a3: '1.92', co2_a3: '0.45', co2_a4: '0.08', co2_verification: 'Dahili Hesaplama',
     geri_donusum_orani: '79', svhc_free: true,
@@ -123,7 +122,7 @@ const MOCK_DETAIL: Record<string, BatchDetail> = {
     id: 'B-003', parti_no: 'KCR-2026-0316-A', tedarikci_parti_kodu: '',
     urun_tipi: 'CHS 88.9x3.2 Yuvarlak Boru',
     ocak_no: 'EAF-02', uretim_tarihi: '2026-03-16', miktar_ton: '31.2', cift_kodu: '',
-    dpp_durum: 'Reddedildi', veri_kaynagi: 'Excel', olusturan: 'Furkan Yıldız',
+    dpp_durum: 'Reddedildi', olusturan: 'Furkan Yıldız',
     celik_kalitesi: 'S235JR', en_mm: '88.9', boy_mm: '6000', kalinlik_mm: '3.2', agirlik_m: '6.76',
     co2_a1a3: '', co2_a3: '', co2_a4: '', co2_verification: '',
     geri_donusum_orani: '71', svhc_free: false,
@@ -137,7 +136,7 @@ const MOCK_DETAIL: Record<string, BatchDetail> = {
     id: 'B-004', parti_no: 'KCR-2026-0317-A', tedarikci_parti_kodu: '',
     urun_tipi: 'UPN 160 Oluk Profil',
     ocak_no: 'EAF-03', uretim_tarihi: '2026-03-17', miktar_ton: '25.8', cift_kodu: '',
-    dpp_durum: 'Taslak', veri_kaynagi: 'Manuel', olusturan: 'Furkan Yıldız',
+    dpp_durum: 'Taslak', olusturan: 'Furkan Yıldız',
     celik_kalitesi: 'S355JR', en_mm: '160', boy_mm: '6000', kalinlik_mm: '7.5', agirlik_m: '18.8',
     co2_a1a3: '1.74', co2_a3: '0.42', co2_a4: '', co2_verification: 'Dahili Hesaplama',
     geri_donusum_orani: '', svhc_free: false,
@@ -147,7 +146,7 @@ const MOCK_DETAIL: Record<string, BatchDetail> = {
     id: 'PB-001', parti_no: 'KCR-2026-0315-B', tedarikci_parti_kodu: 'ERD-2026-03048',
     urun_tipi: 'HEB 300 Geniş Başlıklı Profil',
     ocak_no: 'EAF-01', uretim_tarihi: '2026-03-15', miktar_ton: '68.0', cift_kodu: 'H-20260315-002',
-    dpp_durum: 'Onay Bekliyor', veri_kaynagi: 'Manuel', olusturan: 'Furkan Yıldız',
+    dpp_durum: 'Onay Bekliyor', olusturan: 'Furkan Yıldız',
     celik_kalitesi: 'S275JR', en_mm: '300', boy_mm: '6000', kalinlik_mm: '11.0', agirlik_m: '117.0',
     co2_a1a3: '1.92', co2_a3: '0.45', co2_a4: '0.08', co2_verification: 'Dahili Hesaplama',
     geri_donusum_orani: '79', svhc_free: true,
@@ -172,7 +171,7 @@ const MOCK_DETAIL: Record<string, BatchDetail> = {
     id: 'PB-002', parti_no: 'KCR-2026-0314-A', tedarikci_parti_kodu: '',
     urun_tipi: 'UPN 160 Oluk Profil',
     ocak_no: 'EAF-02', uretim_tarihi: '2026-03-14', miktar_ton: '25.8', cift_kodu: 'H-20260314-001',
-    dpp_durum: 'Onay Bekliyor', veri_kaynagi: 'Excel', olusturan: 'Furkan Yıldız',
+    dpp_durum: 'Onay Bekliyor', olusturan: 'Furkan Yıldız',
     celik_kalitesi: 'S275JR', en_mm: '160', boy_mm: '6000', kalinlik_mm: '7.5', agirlik_m: '18.8',
     co2_a1a3: '2.45', co2_a3: '0.61', co2_a4: '0.09', co2_verification: 'Dahili Hesaplama',
     geri_donusum_orani: '74', svhc_free: false,
@@ -428,7 +427,7 @@ export default function BatchDetailPage() {
             </div>
             <h1 className="text-xl font-black text-gray-900">{data.urun_tipi}</h1>
             <p className="text-xs text-gray-400 mt-1 font-medium">
-              Oluşturan: {data.olusturan} • Kaynak: {data.veri_kaynagi}
+              Oluşturan: {data.olusturan}
             </p>
           </div>
           {!isReadOnly && !isRejected && (

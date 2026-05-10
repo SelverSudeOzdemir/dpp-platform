@@ -103,9 +103,6 @@ export default function OverviewTab({
                       <span className="text-[11px] font-mono font-bold text-gray-500 bg-white px-2 py-0.5 rounded border border-gray-200">
                         {batch.parti_no}
                       </span>
-                      <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-700">
-                        {batch.veri_kaynagi}
-                      </span>
                       {batch.co2_a1a3 > CBAM_LIMIT && (
                         <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-red-100 text-red-700 flex items-center gap-1">
                           <Flag size={10} /> CBAM Uyarısı

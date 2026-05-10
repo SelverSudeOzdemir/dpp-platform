@@ -154,8 +154,6 @@ export default function ReportsTab({ products }: Props) {
                 <div className="flex items-center gap-3 mt-2">
                   <span className="text-[10px] text-gray-400 font-medium">v{p.version}</span>
                   <span className="text-[10px] text-gray-400 font-medium">·</span>
-                  <span className="text-[10px] text-gray-400 font-medium">{p.data_source}</span>
-                  <span className="text-[10px] text-gray-400 font-medium">·</span>
                   <span className="text-[10px] text-gray-400 font-medium">
                     {[...new Set(p.missing.map(m => m.section))].join(', ')}
                   </span>
@@ -183,8 +181,6 @@ export default function ReportsTab({ products }: Props) {
                   <p className="text-sm font-black text-gray-900">{selectedIncomplete.product}</p>
                   <div className="flex items-center gap-3 mt-1">
                     <span className="text-[10px] text-gray-400 font-medium">v{selectedIncomplete.version}</span>
-                    <span className="text-[10px] text-gray-400">·</span>
-                    <span className="text-[10px] text-gray-400 font-medium">{selectedIncomplete.data_source}</span>
                     <span className="text-[10px] text-gray-400">·</span>
                     <span className="text-[10px] font-bold text-red-600">{selectedIncomplete.missing.length} eksik alan</span>
                   </div>
@@ -516,7 +512,6 @@ export default function ReportsTab({ products }: Props) {
       "product_category":        "Structural Steel",
       "passport_status":         "Yayında",
       "version":                 "1.2",
-      "data_source":             "SAP/ERP",
       "blockchain_timestamp":    "2026-03-10T08:42:11Z",
 
       "emissions": {

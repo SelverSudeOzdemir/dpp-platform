@@ -18,7 +18,6 @@ interface Batch {
   uretim_tarihi: string;
   miktar_ton: number;
   dpp_durum: BatchStatus;
-  veri_kaynagi: 'Manuel' | 'Excel' | 'ERP/API';
   olusturan: string;
   red_gerekce?: string;
 }
@@ -33,7 +32,6 @@ const MOCK_BATCHES: Batch[] = [
     uretim_tarihi: '2026-03-12',
     miktar_ton: 42.5,
     dpp_durum: 'Yayında',
-    veri_kaynagi: 'ERP/API',
     olusturan: 'Furkan Yıldız',
   },
   {
@@ -44,7 +42,6 @@ const MOCK_BATCHES: Batch[] = [
     uretim_tarihi: '2026-03-15',
     miktar_ton: 68.0,
     dpp_durum: 'Onay Bekliyor',
-    veri_kaynagi: 'Manuel',
     olusturan: 'Furkan Yıldız',
   },
   {
@@ -55,7 +52,6 @@ const MOCK_BATCHES: Batch[] = [
     uretim_tarihi: '2026-03-16',
     miktar_ton: 31.2,
     dpp_durum: 'Reddedildi',
-    veri_kaynagi: 'Excel',
     olusturan: 'Furkan Yıldız',
     red_gerekce: 'CO2 emisyon değeri eksik. Lütfen düzelterek tekrar gönderin.',
   },
@@ -67,7 +63,6 @@ const MOCK_BATCHES: Batch[] = [
     uretim_tarihi: '2026-03-17',
     miktar_ton: 25.8,
     dpp_durum: 'Taslak',
-    veri_kaynagi: 'Manuel',
     olusturan: 'Furkan Yıldız',
   },
 ];
@@ -79,12 +74,6 @@ const STATUS_CONFIG: Record<BatchStatus, { label: string; className: string; ico
   'Yayında':       { label: 'Yayında',         className: 'bg-green-100 text-green-700',  icon: <CheckCircle2 size={11} /> },
   'Reddedildi':    { label: 'Reddedildi',      className: 'bg-red-100 text-red-700',      icon: <XCircle size={11} /> },
   'Arşivlendi':    { label: 'Arşivlendi',      className: 'bg-slate-100 text-slate-500',  icon: <FileText size={11} /> },
-};
-
-const SOURCE_STYLE: Record<string, string> = {
-  'Manuel':  'bg-blue-50 text-blue-700',
-  'Excel':   'bg-emerald-50 text-emerald-700',
-  'ERP/API': 'bg-purple-50 text-purple-700',
 };
 
 const STATUS_ICON_STYLE: Record<BatchStatus, string> = {
@@ -268,9 +257,6 @@ export default function BatchList() {
                       </span>
                       <span className={`inline-flex items-center gap-1 text-[11px] font-black px-2 py-0.5 rounded-full ${status.className}`}>
                         {status.icon} {status.label}
-                      </span>
-                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded ${SOURCE_STYLE[batch.veri_kaynagi]}`}>
-                        {batch.veri_kaynagi}
                       </span>
                     </div>
                     {/* Ürün tipi */}
