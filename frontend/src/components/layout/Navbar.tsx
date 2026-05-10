@@ -50,6 +50,14 @@ const Navbar = () => {
                   >
                     Admin Paneli
                   </button>
+                  <button
+                    onClick={() => router.push('/admin/users')}
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      router.pathname === '/admin/users' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:text-blue-600'
+                    }`}
+                  >
+                    Kullanıcılar
+                  </button>
                 </>
               )}
 
