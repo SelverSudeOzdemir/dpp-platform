@@ -4,12 +4,13 @@ import { Field, SectionTitle } from './BatchFormFields';
 import { URUN_KATALOGU } from '../../constants/batchConstants';
 import type { BatchInfo } from '../../types/batch';
 
-export function Step1BatchInfo({ data, onChange, erpImported, existingLoaded = false, onErpClick }: {
+export function Step1BatchInfo({ data, onChange, erpImported, existingLoaded = false, onErpClick, erpLockedFields = new Set() }: {
   data: BatchInfo;
   onChange: (d: BatchInfo) => void;
   erpImported: boolean;
   existingLoaded?: boolean;
   onErpClick: () => void;
+  erpLockedFields?: Set<string>;
 }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const selectedUrun = URUN_KATALOGU.find((u) => u.urun_no === data.urun_no);
@@ -19,12 +20,13 @@ export function Step1BatchInfo({ data, onChange, erpImported, existingLoaded = f
     onChange({ ...data, urun_no, urun_tipi: urun?.urun_tipi ?? '' });
   };
 
-  const ROField = ({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) => (
+  const ROField = ({ label, value, mono = false, sapLocked = false }: { label: string; value: string; mono?: boolean; sapLocked?: boolean }) => (
     <div>
       <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5">{label}</p>
       <div className={`flex items-center gap-2 px-3.5 py-2.5 border border-gray-100 rounded-xl bg-gray-50 ${mono ? 'font-mono' : ''}`}>
         <Lock size={11} className="text-gray-300 shrink-0" />
-        <span className="text-sm font-bold text-gray-700 truncate">{value || '—'}</span>
+        <span className="text-sm font-bold text-gray-700 truncate flex-1">{value || '—'}</span>
+        {sapLocked && <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-green-100 text-green-700 shrink-0">SAP</span>}
       </div>
     </div>
   );
@@ -128,10 +130,10 @@ export function Step1BatchInfo({ data, onChange, erpImported, existingLoaded = f
       </div>
 
       {erpImported && (
-        <div className="flex items-center gap-2 mb-5 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
-          <CheckCircle2 size={14} className="text-green-600 shrink-0" />
+        <div className="flex items-start gap-2 mb-5 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+          <CheckCircle2 size={14} className="text-green-600 shrink-0 mt-0.5" />
           <p className="text-sm font-bold text-green-800">
-            SAP&apos;tan aktarıldı — alanlar otomatik dolduruldu. İstediğiniz alanı düzenleyebilirsiniz.
+            SAP&apos;tan aktarıldı — <span className="inline-flex items-center gap-1">SAP <span className="text-[10px] bg-green-200 text-green-800 px-1.5 py-0.5 rounded-full font-black">etiketli</span></span> alanlar kilitlidir. Tedarikçi parti kodunu ve eksik alanları tamamlayın.
           </p>
         </div>
       )}
@@ -139,14 +141,18 @@ export function Step1BatchInfo({ data, onChange, erpImported, existingLoaded = f
       <div className="mb-6">
         <SectionTitle label="Batch Kimliği" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <Field
-            label="Parti Numarası (Kocaer)"
-            value={data.parti_no}
-            onChange={(v) => onChange({ ...data, parti_no: v })}
-            placeholder="KCR-2026-XXXX-A"
-            hint="Kocaer'in kendi üretim parti numarası"
-            required
-          />
+          {erpLockedFields.has('parti_no') ? (
+            <ROField label="Parti Numarası (Kocaer)" value={data.parti_no} mono sapLocked />
+          ) : (
+            <Field
+              label="Parti Numarası (Kocaer)"
+              value={data.parti_no}
+              onChange={(v) => onChange({ ...data, parti_no: v })}
+              placeholder="KCR-2026-XXXX-A"
+              hint="Kocaer'in kendi üretim parti numarası"
+              required
+            />
+          )}
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1.5">Tedarikçi Parti Kodu</label>
             <div className="flex gap-2">
@@ -175,22 +181,26 @@ export function Step1BatchInfo({ data, onChange, erpImported, existingLoaded = f
       <div className="mb-6">
         <SectionTitle label="Ürün Bilgisi" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-1.5">
-              Ürün Kodu <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={data.urun_no}
-              onChange={(e) => handleUrunSec(e.target.value)}
-              className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-            >
-              <option value="">Seçiniz...</option>
-              {URUN_KATALOGU.map((u) => (
-                <option key={u.urun_no} value={u.urun_no}>{u.urun_no} — {u.urun_tipi}</option>
-              ))}
-            </select>
-            <p className="text-[11px] text-gray-400 mt-1">Katalog kodu — tüm batch&apos;lerde sabit kalır</p>
-          </div>
+          {erpLockedFields.has('urun_no') ? (
+            <ROField label="Ürün Kodu" value={`${data.urun_no} — ${data.urun_tipi}`} sapLocked />
+          ) : (
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                Ürün Kodu <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={data.urun_no}
+                onChange={(e) => handleUrunSec(e.target.value)}
+                className="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              >
+                <option value="">Seçiniz...</option>
+                {URUN_KATALOGU.map((u) => (
+                  <option key={u.urun_no} value={u.urun_no}>{u.urun_no} — {u.urun_tipi}</option>
+                ))}
+              </select>
+              <p className="text-[11px] text-gray-400 mt-1">Katalog kodu — tüm batch&apos;lerde sabit kalır</p>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1.5">GTIN</label>
@@ -213,28 +223,21 @@ export function Step1BatchInfo({ data, onChange, erpImported, existingLoaded = f
       <div>
         <SectionTitle label="Üretim Bilgisi" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <Field
-            label="Ocak / Fırın No"
-            value={data.ocak_no}
-            onChange={(v) => onChange({ ...data, ocak_no: v })}
-            placeholder="EAF-03"
-            required
-          />
-          <Field
-            label="Üretim Tarihi"
-            value={data.uretim_tarihi}
-            onChange={(v) => onChange({ ...data, uretim_tarihi: v })}
-            type="date"
-            required
-          />
-          <Field
-            label="Miktar (ton)"
-            value={data.miktar_ton}
-            onChange={(v) => onChange({ ...data, miktar_ton: v })}
-            type="number"
-            placeholder="42.5"
-            required
-          />
+          {erpLockedFields.has('ocak_no') ? (
+            <ROField label="Ocak / Fırın No" value={data.ocak_no} mono sapLocked />
+          ) : (
+            <Field label="Ocak / Fırın No" value={data.ocak_no} onChange={(v) => onChange({ ...data, ocak_no: v })} placeholder="EAF-03" required />
+          )}
+          {erpLockedFields.has('uretim_tarihi') ? (
+            <ROField label="Üretim Tarihi" value={data.uretim_tarihi} sapLocked />
+          ) : (
+            <Field label="Üretim Tarihi" value={data.uretim_tarihi} onChange={(v) => onChange({ ...data, uretim_tarihi: v })} type="date" required />
+          )}
+          {erpLockedFields.has('miktar_ton') ? (
+            <ROField label="Miktar" value={`${data.miktar_ton} ton`} sapLocked />
+          ) : (
+            <Field label="Miktar (ton)" value={data.miktar_ton} onChange={(v) => onChange({ ...data, miktar_ton: v })} type="number" placeholder="42.5" required />
+          )}
         </div>
       </div>
     </div>

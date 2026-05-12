@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { CheckCircle2, AlertCircle, Award, Trash2, Plus, Upload } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Award, Trash2, Plus, Upload, Lock } from 'lucide-react';
 import { Field, SelectField, SectionTitle } from './BatchFormFields';
 import { DppSubStepper } from './DppSubStepper';
 import { URUN_KATALOGU, CO2_VERIFICATION_OPTIONS, DISMANTLING_OPTIONS } from '../../constants/batchConstants';
 import type { DppData, BatchInfo, Certification, SupplyStage } from '../../types/batch';
 
-export default function Step3DppData({ data, onChange, batchInfo, erpImported }: {
+export default function Step3DppData({ data, onChange, batchInfo, erpImported, erpLockedFields = new Set() }: {
   data: DppData;
   onChange: (d: DppData) => void;
   batchInfo: BatchInfo;
   erpImported: boolean;
+  erpLockedFields?: Set<string>;
 }) {
   const [sub, setSub] = useState(0);
   const katalog = URUN_KATALOGU.find(u => u.urun_no === batchInfo.urun_no);
@@ -17,6 +18,16 @@ export default function Step3DppData({ data, onChange, batchInfo, erpImported }:
     <div className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{label}</p>
       <p className="text-sm font-black text-gray-700 font-mono">{value || '—'}</p>
+    </div>
+  );
+  const LockedField = ({ label, value, suffix }: { label: string; value: string; suffix?: string }) => (
+    <div>
+      <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5">{label}</p>
+      <div className="flex items-center gap-2 px-3.5 py-2.5 border border-gray-100 rounded-xl bg-gray-50">
+        <Lock size={11} className="text-gray-300 shrink-0" />
+        <span className="text-sm font-bold text-gray-700 font-mono flex-1">{value || '—'}{suffix ? ` ${suffix}` : ''}</span>
+        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-green-100 text-green-700 shrink-0">SAP</span>
+      </div>
     </div>
   );
 
@@ -46,10 +57,10 @@ export default function Step3DppData({ data, onChange, batchInfo, erpImported }:
   return (
     <div>
       {erpImported && (
-        <div className="flex items-center gap-2 mb-5 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
-          <CheckCircle2 size={15} className="text-green-600 shrink-0" />
+        <div className="flex items-start gap-2 mb-5 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+          <CheckCircle2 size={15} className="text-green-600 shrink-0 mt-0.5" />
           <p className="text-sm font-bold text-green-800">
-            SAP&apos;tan aktarıldı — alanlar otomatik dolduruldu. Eksik veya yanlış bilgileri düzenleyebilirsiniz.
+            SAP&apos;tan aktarıldı — <span className="inline-flex items-center gap-1">SAP <span className="text-[10px] bg-green-200 text-green-800 px-1.5 py-0.5 rounded-full font-black">etiketli</span></span> alanlar kilitlidir. Eksik alanları tamamlayın.
           </p>
         </div>
       )}
@@ -108,11 +119,12 @@ export default function Step3DppData({ data, onChange, batchInfo, erpImported }:
               { label: 'P (Fosfor)',    name: 'p_pct',  placeholder: '0.022', hint: 'Maks. %0.030' },
               { label: 'S (Kükürt)',    name: 's_pct',  placeholder: '0.018', hint: 'Maks. %0.030' },
               { label: 'N (Azot)',      name: 'n_pct',  placeholder: '0.009', hint: 'Maks. %0.012' },
-            ].map(f => (
-              <Field key={f.name} label={f.label} name={f.name}
-                value={(data as any)[f.name]} onChange={set(f.name as keyof DppData)}
-                type="number" placeholder={f.placeholder} hint={f.hint} suffix="%" />
-            ))}
+            ].map(f => erpLockedFields.has(f.name)
+              ? <LockedField key={f.name} label={f.label} value={(data as any)[f.name]} suffix="%" />
+              : <Field key={f.name} label={f.label} name={f.name}
+                  value={(data as any)[f.name]} onChange={set(f.name as keyof DppData)}
+                  type="number" placeholder={f.placeholder} hint={f.hint} suffix="%" />
+            )}
           </div>
           {/* Fe hesaplanmış göster */}
           {(data.c_pct || data.mn_pct || data.si_pct) && (
@@ -127,15 +139,15 @@ export default function Step3DppData({ data, onChange, batchInfo, erpImported }:
           )}
           <SectionTitle label="Mekanik Özellikler (Dayanım Testleri)" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Field label="Akma Dayanımı" value={data.yield_mpa}
-              onChange={set('yield_mpa')} type="number" placeholder="370"
-              suffix="MPa" hint="Min. standart: 355 MPa (S355JR)" />
-            <Field label="Çekme Dayanımı" value={data.tensile_mpa}
-              onChange={set('tensile_mpa')} type="number" placeholder="530"
-              suffix="MPa" hint="470–630 MPa (S355JR)" />
-            <Field label="Uzama Oranı" value={data.elongation_pct}
-              onChange={set('elongation_pct')} type="number" placeholder="24"
-              suffix="%" hint="Min. standart: %22" />
+            {erpLockedFields.has('yield_mpa')
+              ? <LockedField label="Akma Dayanımı" value={data.yield_mpa} suffix="MPa" />
+              : <Field label="Akma Dayanımı" value={data.yield_mpa} onChange={set('yield_mpa')} type="number" placeholder="370" suffix="MPa" hint="Min. standart: 355 MPa (S355JR)" />}
+            {erpLockedFields.has('tensile_mpa')
+              ? <LockedField label="Çekme Dayanımı" value={data.tensile_mpa} suffix="MPa" />
+              : <Field label="Çekme Dayanımı" value={data.tensile_mpa} onChange={set('tensile_mpa')} type="number" placeholder="530" suffix="MPa" hint="470–630 MPa (S355JR)" />}
+            {erpLockedFields.has('elongation_pct')
+              ? <LockedField label="Uzama Oranı" value={data.elongation_pct} suffix="%" />
+              : <Field label="Uzama Oranı" value={data.elongation_pct} onChange={set('elongation_pct')} type="number" placeholder="24" suffix="%" hint="Min. standart: %22" />}
             <Field label="Darbe Enerjisi" value={data.impact_energy_j}
               onChange={set('impact_energy_j')} type="number" placeholder="27"
               suffix="J" hint="Charpy — Min. 27J (S355JR)" />

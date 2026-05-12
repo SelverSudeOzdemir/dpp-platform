@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import ProtectedRoute from '../../components/auth/ProtectedRoute';
 import ErpSyncFlow from '../../components/batches/ErpSyncFlow';
-import { ExcelFileHistory, ExcelUploadFlow } from '../../components/batches/ExcelUploadFlow';
 import { MainStepper } from '../../components/batches/MainStepper';
 import { Step1BatchInfo } from '../../components/batches/Step1BatchInfo';
 import Step3DppData from '../../components/batches/Step3DppData';
@@ -28,6 +27,7 @@ export default function NewBatch() {
     ocak_no: '', uretim_tarihi: '', miktar_ton: '',
   });
   const [dppData, setDppData] = useState<DppData>(EMPTY_DPP);
+  const [erpLockedFields, setErpLockedFields] = useState<Set<string>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
@@ -64,7 +64,12 @@ export default function NewBatch() {
     }
     setDppData(prev => ({ ...prev, ...d.dppData }));
     setErpImported(true);
-    setErpOverlay(false); // ERP overlay kapanır, form pre-dolu açılır
+    setErpOverlay(false);
+    const locked = new Set<string>([
+      ...Object.keys(d.batchInfo).filter(k => !!(d.batchInfo as Record<string, unknown>)[k]),
+      ...Object.keys(d.dppData).filter(k => !!(d.dppData as Record<string, unknown>)[k]),
+    ]);
+    setErpLockedFields(locked);
   };
 
   const canProceedStep0 = existingLoaded || !!(batchInfo.parti_no && batchInfo.urun_tipi && batchInfo.ocak_no && batchInfo.uretim_tarihi);
@@ -138,9 +143,10 @@ export default function NewBatch() {
               erpImported={erpImported}
               existingLoaded={existingLoaded}
               onErpClick={() => setErpOverlay(true)}
+              erpLockedFields={erpLockedFields}
             />
           )}
-          {!batchLoading && step === 1 && <Step3DppData data={dppData} onChange={setDppData} batchInfo={batchInfo} erpImported={erpImported} />}
+          {!batchLoading && step === 1 && <Step3DppData data={dppData} onChange={setDppData} batchInfo={batchInfo} erpImported={erpImported} erpLockedFields={erpLockedFields} />}
           {!batchLoading && step === 2 && <Step4Preview batchInfo={batchInfo} dppData={dppData} erpImported={erpImported} />}
         </div>
 
