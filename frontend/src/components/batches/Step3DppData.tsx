@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { CheckCircle2, AlertCircle, Award, Trash2, Plus, Upload, Lock } from 'lucide-react';
 import { Field, SelectField, SectionTitle } from './BatchFormFields';
-import { DppSubStepper } from './DppSubStepper';
-import { URUN_KATALOGU, CO2_VERIFICATION_OPTIONS, DISMANTLING_OPTIONS } from '../../constants/batchConstants';
+import { URUN_KATALOGU, CO2_VERIFICATION_OPTIONS, DISMANTLING_OPTIONS, DPP_SUBSTEPS } from '../../constants/batchConstants';
 import type { DppData, BatchInfo, Certification, SupplyStage } from '../../types/batch';
 
 export default function Step3DppData({ data, onChange, batchInfo, erpImported, erpLockedFields = new Set() }: {
@@ -64,7 +63,23 @@ export default function Step3DppData({ data, onChange, batchInfo, erpImported, e
           </p>
         </div>
       )}
-      <DppSubStepper current={sub} onGoTo={setSub} />
+      <div className="flex gap-5">
+        <div className="flex flex-col gap-2 w-[130px] shrink-0">
+          {DPP_SUBSTEPS.map((s, i) => {
+            const Icon = s.icon;
+            return (
+              <button key={i} type="button" onClick={() => setSub(i)}
+                className={`flex flex-col items-center gap-2 px-3 py-4 rounded-xl border transition-all text-center
+                  ${i === sub
+                    ? 'bg-[#e30613] text-white border-[#e30613] shadow-sm shadow-red-100'
+                    : 'bg-gray-50 text-gray-500 border-gray-100 hover:bg-gray-100 hover:text-gray-800'}`}>
+                <Icon size={18} />
+                <span className="text-[11px] font-bold leading-tight">{s.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex-1 min-w-0">
 
       {/* SUB 0: TEKNİK BİLGİLER */}
       {sub === 0 && (
@@ -604,6 +619,8 @@ export default function Step3DppData({ data, onChange, batchInfo, erpImported, e
 
           </div>
       )}
+        </div>
+      </div>
     </div>
   );
 }
