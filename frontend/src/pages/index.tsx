@@ -56,17 +56,6 @@ export default function Dashboard() {
 
   useEffect(() => { loadData(); }, []);
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm('Bu pasaportu silmek istediğinize emin misiniz? Bu işlem geri alınamaz.'))
-      return;
-    try {
-      await productService.deleteProduct(id);
-      await loadData();
-    } catch {
-      alert('Silme işlemi sırasında bir hata oluştu.');
-    }
-  };
-
   if (loading) {
     return (
       <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
@@ -152,7 +141,7 @@ export default function Dashboard() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">ID</th>
+                <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Parti No</th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Ürün Bilgisi</th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Kategori</th>
                 <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Durum</th>
@@ -165,7 +154,7 @@ export default function Dashboard() {
                 <tr key={product.id} className="hover:bg-blue-50/30 transition-colors group">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="text-xs font-mono font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                      {product.id.length > 12 ? `${product.id.slice(0, 8)}…` : product.id}
+                      {product.batch_number || '—'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -191,16 +180,10 @@ export default function Dashboard() {
                     {product.createdAt}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                    <div className="flex items-center justify-end gap-3">
-                      <button onClick={() => handleDelete(product.id)}
-                        className="text-red-500 hover:text-red-700 font-bold transition-colors">
-                        Sil
-                      </button>
-                      <button onClick={() => router.push(`/dpp/${product.id}`)}
-                        className="text-blue-600 hover:text-blue-800 font-bold transition-colors">
-                        Görüntüle
-                      </button>
-                    </div>
+                    <button onClick={() => router.push(`/dpp/${product.id}`)}
+                      className="text-blue-600 hover:text-blue-800 font-bold transition-colors">
+                      Görüntüle
+                    </button>
                   </td>
                 </tr>
               ))}

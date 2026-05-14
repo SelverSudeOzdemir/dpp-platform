@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ClipboardList, Zap, GitBranch, Shield } from 'lucide-react';
+import { ClipboardList, Zap, GitBranch, Shield, Eye, X } from 'lucide-react';
 import { VERSION_HISTORY } from '../../../constants/adminConstants';
 import type { AdminProduct, PendingBatch, PassportStatus } from '../../../types/admin';
 
@@ -13,6 +13,7 @@ interface Props {
 export default function PassportsTab({ products, pendingBatches, onStatusChange, setActiveTab }: Props) {
   const [search, setSearch] = useState('');
   const [pendingStatusChange, setPendingStatusChange] = useState<{ id: string; status: PassportStatus } | null>(null);
+  const [inspectPopup, setInspectPopup] = useState(false);
 
   const filteredProducts = search.trim()
     ? products.filter(p =>
@@ -64,7 +65,7 @@ export default function PassportsTab({ products, pendingBatches, onStatusChange,
           <table className="min-w-full">
             <thead className="bg-gray-50">
               <tr>
-                {['ID & Ürün', 'Pasaport Durumu', 'Versiyon', 'Blokzincir Mühürü'].map(h => (
+                {['ID & Ürün', 'Pasaport Durumu', 'Versiyon', 'Blokzincir Mühürü', ''].map(h => (
                   <th key={h} className="px-5 py-3 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -127,6 +128,14 @@ export default function PassportsTab({ products, pendingBatches, onStatusChange,
                       <span className="text-[10px] text-gray-400 font-bold italic">Mühürsüz</span>
                     )}
                   </td>
+                  <td className="px-5 py-4">
+                    <button
+                      onClick={() => setInspectPopup(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-bold rounded-lg transition-colors"
+                    >
+                      <Eye size={12} /> İncele
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -161,6 +170,33 @@ export default function PassportsTab({ products, pendingBatches, onStatusChange,
           ))}
         </div>
       </div>
+      {inspectPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setInspectPopup(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-blue-50 rounded-xl"><Eye size={16} className="text-blue-600" /></div>
+                <h3 className="text-base font-black text-gray-900">DPP İnceleme</h3>
+              </div>
+              <button onClick={() => setInspectPopup(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors">
+                <X size={16} />
+              </button>
+            </div>
+            <div className="flex flex-col items-center gap-3 py-4">
+              <div className="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center">
+                <span className="text-2xl">🚧</span>
+              </div>
+              <p className="text-sm font-black text-gray-800 text-center">Geliştirme Sürecinde</p>
+              <p className="text-xs text-gray-400 font-medium text-center">Bu özellik yakında kullanıma açılacak.</p>
+            </div>
+            <button onClick={() => setInspectPopup(false)}
+              className="mt-2 w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold rounded-xl transition-colors">
+              Kapat
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
