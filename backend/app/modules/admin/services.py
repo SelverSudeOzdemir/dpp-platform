@@ -134,5 +134,47 @@ class AdminService:
                 "severity": "WARNING"
             })
             
-        return alerts
+    @staticmethod
+    async def get_incomplete_report(db: AsyncSession) -> List[dict]:
+        # Sadece DRAFT ve DEACTIVATED (Recall) statüsündeki DPP'leri kontrol et
+        stmt = (
+            select(DigitalProductPassport)
+            .options(
+                joinedload(DigitalProductPassport.product_type),
+                joinedload(DigitalProductPassport.certifications),
+                joinedload(DigitalProductPassport.supply_chain_stages)
+            )
+            .where(DigitalProductPassport.dpp_status.in_([DppStatusEnum.DRAFT, DppStatusEnum.RECALLED]))
+        )
+        
+        result = await db.execute(stmt)
+        dpps = result.scalars().unique().all()
+        
+        report = []
+        for dpp in dpps:
+            missing = []
+            pt = dpp.product_type
+            
+            # 1. ProductType alanları
+            if not dpp.gtin: missing.append({"section": "General", "field": "gtin"})
+            if pt:
+                if not pt.epd_number: missing.append({"section": "Product", "field": "epd_number"})
+                if not pt.co2_cradle_to_gate_kg: missing.append({"section": "Environmental", "field": "co2_value"})
+            
+            # 2. Sertifikalar
+            if not dpp.certifications:
+                missing.append({"section": "Compliance", "field": "at_least_one_certification"})
+                
+            # 3. Tedarik Zinciri
+            if not dpp.supply_chain_stages:
+                missing.append({"section": "Supply Chain", "field": "stages_list"})
+                
+            if missing:
+                report.append({
+                    "dpp_id": str(dpp.id),
+                    "product_name": pt.product_name if pt else "Bilinmeyen Ürün",
+                    "missing": missing
+                })
+                
+        return report
 

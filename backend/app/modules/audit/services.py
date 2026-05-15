@@ -34,8 +34,10 @@ class AuditActions:
     DPP_REJECTED = "DPP reddedildi"
     DPP_DELETED = "DPP silindi"
 
-    PDF_DOWNLOADED = "Pasaport PDF indirildi"
-    SUPPLY_CHAIN_VIEWED = "Tedarik zinciri görüntülendi"
+    DPP_PDF_DOWNLOADED = "Pasaport PDF indirildi"
+    DPP_QR_SCANNED = "QR Kod tarandı"
+    DPP_CHEMICAL_VIEWED = "Kimyasal kompozisyon görüntülendi"
+    DPP_SUPPLY_CHAIN_VIEWED = "Tedarik zinciri görüntülendi"
 
 
 class AuditService:

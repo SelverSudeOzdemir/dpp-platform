@@ -34,6 +34,7 @@ class DppStatusEnum(str, enum.Enum):
     ACTIVE = "active"
     DEACTIVATED = "deactivated"
     REGISTERED = "registered"
+    RECALLED = "recalled"
 
 
 # ─── MODEL ────────────────────────────────────────────────────────────────────

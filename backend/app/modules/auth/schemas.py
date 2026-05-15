@@ -75,3 +75,12 @@ class UserListResponse(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserPasswordChange(BaseModel):
+    current_password: str
+    new_password: str = Field(..., min_length=6, max_length=128)
+
+
+class UserPasswordReset(BaseModel):
+    new_password: str = Field(..., min_length=6, max_length=128)

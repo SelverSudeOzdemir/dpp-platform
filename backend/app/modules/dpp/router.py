@@ -8,9 +8,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import get_db, require_permission
-from app.middleware.rbac import Permission
-from app.modules.auth.services import TokenPayload
+from app.core.deps import get_db, require_permission, Permission, TokenPayload
 from app.modules.dpp.schemas import (
     DppCreateRequest, DppUpdateRequest,
     DppDetailResponse, DppListItem, SummaryStatsResponse,
