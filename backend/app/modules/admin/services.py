@@ -1,45 +1,71 @@
-
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, update
+from sqlalchemy import select, func
 from sqlalchemy.orm import joinedload
 from uuid import UUID
-from datetime import datetime, date
-from fastapi import HTTPException, status
+from datetime import datetime, date, timedelta
+from fastapi import HTTPException
 from typing import List
 
 from app.models.dpp import DigitalProductPassport, DppStatusEnum
 from app.models.product import ProductType
 from app.models.integration import DppChangelog
-from app.models.certification import Certification
-from app.modules.admin.schemas import AdminDashboardStats, DppApprovalRequest
+from app.models.certification import Certification, CertificationStatusEnum
+from app.modules.admin.schemas import AdminKpiSummary, DppApprovalRequest
+
 
 class AdminService:
+
     @staticmethod
-    async def get_dashboard_stats(db: AsyncSession) -> AdminDashboardStats:
-        # Statulere gore sayim yap
+    async def get_dashboard_stats(db: AsyncSession) -> AdminKpiSummary:
+        # DPP statü sayıları
         stmt = select(
             DigitalProductPassport.dpp_status,
             func.count(DigitalProductPassport.id)
         ).group_by(DigitalProductPassport.dpp_status)
-        
+
         result = await db.execute(stmt)
-        # Result'tan gelen key'leri string'e zorlayarak sozluk yapalim
-        counts = {str(row[0].value if hasattr(row[0], 'value') else row[0]): row[1] for row in result.all()}
-        
+        counts = {
+            str(row[0].value if hasattr(row[0], 'value') else row[0]): row[1]
+            for row in result.all()
+        }
         total = sum(counts.values())
-        
-        return AdminDashboardStats(
+
+        # Sertifika uyarısı: önümüzdeki 30 gün içinde dolacaklar
+        today = date.today()
+        threshold_date = today + timedelta(days=30)
+        cert_stmt = select(func.count(Certification.id)).where(
+            Certification.expiry_date != None,
+            Certification.expiry_date <= threshold_date,
+            Certification.status == CertificationStatusEnum.VALID,
+        )
+        cert_alerts = (await db.execute(cert_stmt)).scalar_one()
+
+        # CBAM uyarısı: eşiği aşan PUBLISHED DPP sayısı
+        from app.modules.compliance.cbam import _cbam_thresholds
+        cbam_threshold = _cbam_thresholds["threshold"]
+        cbam_stmt = (
+            select(func.count(DigitalProductPassport.id))
+            .join(DigitalProductPassport.product_type)
+            .where(
+                DigitalProductPassport.dpp_status == DppStatusEnum.PUBLISHED,
+                ProductType.co2_cradle_to_gate_kg >= cbam_threshold,
+            )
+        )
+        cbam_alerts = (await db.execute(cbam_stmt)).scalar_one()
+
+        return AdminKpiSummary(
             total_dpps=total,
             pending_approval=counts.get("pending_approval", 0),
             published=counts.get("published", 0),
             rejected=counts.get("rejected", 0),
             draft=counts.get("draft", 0),
-            last_updated=datetime.now()
+            last_updated=datetime.now(),
+            cert_alerts=cert_alerts,
+            cbam_alerts=cbam_alerts,
         )
 
     @staticmethod
     async def get_pending_dpps(db: AsyncSession, skip: int = 0, limit: int = 100):
-        # Onay bekleyen DPP'leri ve urun bilgilerini getir
         stmt = (
             select(DigitalProductPassport)
             .options(joinedload(DigitalProductPassport.product_type))
@@ -48,18 +74,16 @@ class AdminService:
             .offset(skip)
             .limit(limit)
         )
-        
         result = await db.execute(stmt)
         return result.scalars().all()
 
     @staticmethod
     async def update_dpp_status(
-        db: AsyncSession, 
-        dpp_id: UUID, 
+        db: AsyncSession,
+        dpp_id: UUID,
         body: DppApprovalRequest,
         current_user_id: UUID
     ):
-        # DPP'yi bul (Urun bilgisini de yukle ki router'da Lazy Load hatasi almayalim)
         stmt = (
             select(DigitalProductPassport)
             .options(joinedload(DigitalProductPassport.product_type))
@@ -67,17 +91,14 @@ class AdminService:
         )
         result = await db.execute(stmt)
         dpp = result.scalars().first()
-        
+
         if not dpp:
             raise HTTPException(status_code=404, detail="DPP bulunamadi")
 
         old_status = dpp.dpp_status
-        
-        # Statuyu guncelle
         dpp.dpp_status = body.status
         dpp.status_changed_at = datetime.now()
-        
-        # Changelog kaydi olustur (JSONB icin .value kullaniyoruz)
+
         changelog = DppChangelog(
             dpp_id=dpp_id,
             changed_by_user_id=current_user_id,
@@ -90,15 +111,14 @@ class AdminService:
             }
         )
         db.add(changelog)
-        
         await db.commit()
         return dpp
 
     @staticmethod
     async def get_urgent_alerts(db: AsyncSession) -> List[dict]:
         alerts = []
-        
-        # 1. CO2 Limit Kontrolü
+
+        # CO2 Limit Kontrolü
         stmt = (
             select(DigitalProductPassport)
             .options(joinedload(DigitalProductPassport.product_type))
@@ -114,8 +134,8 @@ class AdminService:
                 "dpp_id": str(dpp.id),
                 "severity": "CRITICAL"
             })
-            
-        # 2. Sertifika Tarihi Kontrolü
+
+        # Sertifika Tarihi Kontrolü
         now_date = datetime.now().date()
         stmt = (
             select(DigitalProductPassport)
@@ -126,13 +146,12 @@ class AdminService:
         )
         res = await db.execute(stmt)
         for dpp in res.scalars().all():
-             alerts.append({
+            alerts.append({
                 "id": f"CERT-{dpp.id}",
                 "type": "CERTIFICATE",
                 "message": "Suresi dolmus sertifika tespit edildi.",
                 "dpp_id": str(dpp.id),
                 "severity": "WARNING"
             })
-            
-        return alerts
 
+        return alerts

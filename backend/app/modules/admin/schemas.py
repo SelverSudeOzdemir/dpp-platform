@@ -37,4 +37,5 @@ class UrgentAlert(BaseModel):
     severity: str # "CRITICAL", "WARNING"
 
 class AdminKpiSummary(AdminDashboardStats):
-    pass
+    cert_alerts: int = 0
+    cbam_alerts: int = 0

@@ -37,6 +37,14 @@ class AuditActions:
     PDF_DOWNLOADED = "Pasaport PDF indirildi"
     SUPPLY_CHAIN_VIEWED = "Tedarik zinciri görüntülendi"
 
+    # G-10: Yeni granüler DPP aksiyonları
+    DPP_PDF_DOWNLOADED = "DPP PDF indirildi"
+    DPP_QR_SCANNED = "DPP QR tarandı"
+    DPP_CHEMICAL_VIEWED = "DPP kimyasal kompozisyon görüntülendi"
+    DPP_SUPPLY_CHAIN_VIEWED = "DPP tedarik zinciri görüntülendi"
+    PASSWORD_CHANGED = "Şifre değiştirildi"
+    PASSWORD_RESET = "Şifre sıfırlandı"
+
 
 class AuditService:
     @staticmethod

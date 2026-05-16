@@ -1,0 +1,14 @@
+[
+  { "substance": "Lead", "cas": "7439-92-1", "threshold_pct": 0.1 },
+  { "substance": "Cadmium", "cas": "7440-43-9", "threshold_pct": 0.01 },
+  { "substance": "Mercury", "cas": "7439-97-6", "threshold_pct": 0.1 },
+  { "substance": "Chromium VI", "cas": "18540-29-9", "threshold_pct": 0.1 },
+  { "substance": "Arsenic", "cas": "7440-38-2", "threshold_pct": 0.1 },
+  { "substance": "Nickel", "cas": "7440-02-0", "threshold_pct": 0.1 },
+  { "substance": "Benzene", "cas": "71-43-2", "threshold_pct": 0.1 },
+  {
+    "substance": "Asbestos (Chrysotile)",
+    "cas": "12001-29-5",
+    "threshold_pct": 0.1
+  }
+]
