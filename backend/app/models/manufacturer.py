@@ -1,5 +1,7 @@
 """
 Manufacturer, ManufacturerCertification, ProductionFacility modelleri
+kocaer.sql ile senkronize edildi:
+  - ProductionFacility'e gln ve vat_number kolonları eklendi
 """
 from sqlalchemy import Column, String, Text, ForeignKey, Enum, Boolean
 from sqlalchemy.dialects.postgresql import UUID
@@ -42,9 +44,9 @@ class ManufacturerCertification(Base, UUIDMixin, TimestampMixin):
         ForeignKey("manufacturers.id", ondelete="CASCADE"),
         nullable=False,
     )
-    cert_name = Column(String(200), nullable=False)  # ISO 9001, 14001, etc.
+    cert_name = Column(String(200), nullable=False)
     cert_number = Column(String(100))
-    expiry_date = Column(String(50))  # Simple string for now or Date
+    expiry_date = Column(String(50))
     document_url = Column(String(500))
 
     # Relationships
@@ -63,6 +65,9 @@ class ProductionFacility(Base, UUIDMixin, TimestampMixin):
     location_text = Column(String(500))
     country_code = Column(String(2))
     is_active = Column(Boolean, default=True)
+    # kocaer.sql ile senkronize — yeni kolonlar
+    gln = Column(String(20))
+    vat_number = Column(String(50))
 
     # Relationships
     manufacturer = relationship("Manufacturer", back_populates="facilities")

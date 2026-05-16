@@ -10,8 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from app.core.deps import get_db
-from app.middleware.rbac import TokenPayload, require_admin
+from app.core.deps import get_db, TokenPayload, require_admin, require_any_auth
 from app.modules.auth.models import User
 from app.modules.auth.schemas import (
     UserCreate,
@@ -20,6 +19,8 @@ from app.modules.auth.schemas import (
     UserRoleUpdate,
     UserStatusUpdate,
     UserUpdate,
+    UserPasswordChange,
+    UserPasswordReset,
 )
 from app.modules.audit.services import AuditActions, AuditService
 from app.modules.auth.services import PasswordService
@@ -223,3 +224,56 @@ async def change_user_status(
     )
 
     return user
+
+
+@router.patch("/me/password", status_code=status.HTTP_204_NO_CONTENT)
+async def change_my_password(
+    request: Request,
+    body: UserPasswordChange,
+    token: TokenPayload = Depends(require_any_auth),
+    db: AsyncSession = Depends(get_db),
+):
+    
+    user = await _get_user_or_404(UUID(token.sub), db)
+    
+    if not PasswordService.verify(body.current_password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Mevcut şifre hatalı",
+        )
+    
+    user.hashed_password = PasswordService.hash(body.new_password)
+    await db.commit()
+    
+    await AuditService.log(
+        action=AuditActions.PWD_CHANGED,
+        db=db,
+        user_id=user.id,
+        resource_type="user",
+        resource_id=str(user.id),
+        ip_address=request.client.host if request.client else None,
+    )
+
+
+@router.post("/{user_id}/reset-password", status_code=status.HTTP_204_NO_CONTENT)
+async def reset_user_password(
+    request: Request,
+    user_id: UUID,
+    body: UserPasswordReset,
+    token: TokenPayload = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    user = await _get_user_or_404(user_id, db)
+    
+    user.hashed_password = PasswordService.hash(body.new_password)
+    await db.commit()
+    
+    await AuditService.log(
+        action="PASSWORD_RESET",
+        db=db,
+        user_id=UUID(token.sub),
+        resource_type="user",
+        resource_id=str(user.id),
+        details={"admin_email": token.sub},
+        ip_address=request.client.host if request.client else None,
+    )

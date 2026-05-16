@@ -51,12 +51,12 @@ const Navbar = () => {
                     Admin Paneli
                   </button>
                   <button
-                    onClick={() => router.push('/dpp/new')}
+                    onClick={() => router.push('/admin/users')}
                     className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      router.pathname === '/dpp/new' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:text-blue-600'
+                      router.pathname === '/admin/users' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:text-blue-600'
                     }`}
                   >
-                    Yeni Pasaport
+                    Kullanıcılar
                   </button>
                 </>
               )}
@@ -102,8 +102,11 @@ const Navbar = () => {
 
             <div className="hidden sm:block h-6 w-px bg-gray-200 mx-1" />
 
-            <div className="hidden sm:flex flex-col items-end">
-              <span className="text-sm font-bold text-gray-900">{user?.name || 'Kullanıcı'}</span>
+            <button
+              onClick={() => router.push('/profile')}
+              className="hidden sm:flex flex-col items-end hover:opacity-75 transition-opacity"
+            >
+              <span className="text-sm font-bold text-gray-900">{user?.full_name || 'Kullanıcı'}</span>
               <span className={`text-xs font-bold px-2 py-0.5 rounded-full mt-0.5 ${
                 isAdmin              ? 'bg-red-50 text-red-600'       :
                 isEngineer           ? 'bg-green-50 text-green-700'   :
@@ -114,11 +117,14 @@ const Navbar = () => {
               }`}>
                 {role}
               </span>
-            </div>
+            </button>
 
-            <div className="h-8 w-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-inner">
-              {user?.name?.charAt(0) || 'U'}
-            </div>
+            <button
+              onClick={() => router.push('/profile')}
+              className="h-8 w-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-inner hover:bg-blue-700 transition-colors"
+            >
+              {user?.full_name?.charAt(0) || 'U'}
+            </button>
 
             <div className="h-6 w-px bg-gray-200 mx-2" />
 

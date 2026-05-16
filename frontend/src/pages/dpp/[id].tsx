@@ -10,12 +10,134 @@ import { CheckCircle2, ShieldCheck, LockKeyhole, ChevronDown, Scale, FlaskConica
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
 
+const SOURCE_CFG: Record<string, { bg: string; text: string; border: string }> = {
+  'SAP/ERP': { bg: 'bg-green-50',   text: 'text-green-700',   border: 'border-green-100'  },
+  'Excel':   { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-100' },
+  'Manuel':  { bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-100'    },
+};
+
+const MOCK_VERSION_HISTORY = [
+  {
+    type: 'creation' as const,
+    timestamp: '2024-01-15T09:42:11Z',
+    operator: 'mehmet.yilmaz@kocaer.com',
+    blockchain_hash: '0x3f7a9c2b8e1d4f56a0c3b7e291d5f8a4',
+    groups: [
+      {
+        section: 'Batch Bilgileri',
+        fields: [
+          { field: 'Parti Numarası',       source: 'SAP/ERP' },
+          { field: 'Tedarikçi Parti Kodu', source: 'SAP/ERP' },
+          { field: 'Ocak / Fırın No',      source: 'SAP/ERP' },
+          { field: 'Üretim Tarihi',        source: 'SAP/ERP' },
+          { field: 'Miktar (ton)',          source: 'SAP/ERP' },
+        ],
+      },
+      {
+        section: 'Kimyasal & Mekanik',
+        fields: [
+          { field: 'C (Karbon) %',      source: 'SAP/ERP' },
+          { field: 'Mn (Manganez) %',   source: 'SAP/ERP' },
+          { field: 'Si (Silisyum) %',   source: 'SAP/ERP' },
+          { field: 'P (Fosfor) %',      source: 'SAP/ERP' },
+          { field: 'S (Kükürt) %',      source: 'SAP/ERP' },
+          { field: 'N (Azot) %',        source: 'SAP/ERP' },
+          { field: 'Akma Dayanımı',     source: 'SAP/ERP' },
+          { field: 'Çekme Dayanımı',    source: 'SAP/ERP' },
+          { field: 'Uzama Oranı',       source: 'SAP/ERP' },
+          { field: 'Darbe Enerjisi',    source: 'Excel'   },
+          { field: 'Test Sıcaklığı',    source: 'Excel'   },
+        ],
+      },
+      {
+        section: 'Tedarik Zinciri',
+        fields: [
+          { field: 'Tedarikçi Adı',      source: 'Excel'  },
+          { field: 'Tedarikçi Lokasyon', source: 'Excel'  },
+          { field: 'Menşei Ülke',        source: 'Excel'  },
+          { field: 'Malzeme',            source: 'Excel'  },
+          { field: 'Tedarik Tarihi',     source: 'Manuel' },
+          { field: 'Miktar & Birim',     source: 'Manuel' },
+        ],
+      },
+      {
+        section: 'Sürdürülebilirlik',
+        fields: [
+          { field: 'CO₂ A1-A3',                  source: 'SAP/ERP' },
+          { field: 'CO₂ A3 (Sadece Üretim)',      source: 'SAP/ERP' },
+          { field: 'Geri Dönüştürülmüş İçerik',  source: 'SAP/ERP' },
+          { field: 'Geri Dönüştürülebilirlik',   source: 'SAP/ERP' },
+          { field: 'Doğrulama Durumu',            source: 'Manuel'  },
+          { field: 'SVHC Beyanı',                 source: 'Manuel'  },
+          { field: 'İmha / Geri Dönüşüm Talimatı', source: 'Manuel' },
+        ],
+      },
+      {
+        section: 'Sertifikalar',
+        fields: [
+          { field: 'EPD Belge No',          source: 'Manuel' },
+          { field: 'EPD Geçerlilik Tarihi', source: 'Manuel' },
+          { field: 'EN 10204 Sertifika No', source: 'Manuel' },
+          { field: 'Sertifika Tipi',        source: 'Manuel' },
+          { field: 'Veren Kuruluş',         source: 'Manuel' },
+        ],
+      },
+    ],
+  },
+  {
+    type: 'update' as const,
+    timestamp: '2024-02-20T14:22:33Z',
+    operator: 'admin@kocaer.com',
+    blockchain_hash: '0x8b2ce1a47f93d0b5c6e428a1f157c392',
+    groups: [
+      {
+        section: 'Sürdürülebilirlik',
+        fields: [
+          { field: 'CO₂ A1-A3',        source: 'SAP/ERP' },
+          { field: 'Doğrulama Durumu', source: 'Manuel'  },
+        ],
+      },
+      {
+        section: 'Sertifikalar',
+        fields: [
+          { field: 'CE Marking Sertifika No', source: 'Manuel' },
+          { field: 'Geçerlilik Tarihi',        source: 'Manuel' },
+        ],
+      },
+    ],
+  },
+  {
+    type: 'update' as const,
+    timestamp: '2024-04-03T11:05:47Z',
+    operator: 'mehmet.yilmaz@kocaer.com',
+    blockchain_hash: '0xc94a3e017b28f6d5e1902c7a84b3d610',
+    groups: [
+      {
+        section: 'Sürdürülebilirlik',
+        fields: [
+          { field: 'EPD Belge No',          source: 'Manuel' },
+          { field: 'EPD Geçerlilik Tarihi', source: 'Manuel' },
+        ],
+      },
+      {
+        section: 'Tedarik Zinciri',
+        fields: [
+          { field: 'Tedarikçi Adı',  source: 'Excel' },
+          { field: 'Menşei Ülke',    source: 'Excel' },
+          { field: 'Tedarik Tarihi', source: 'Manuel' },
+        ],
+      },
+    ],
+  },
+];
+
 export default function ProductPassportDetail() {
   const router = useRouter();
   const { id } = router.query;
   const [product, setProduct] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [isTechnicalOpen, setIsTechnicalOpen] = useState(false);
+  const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
 
   // 1. ÖNCE ROLÜ (KİMLİĞİ) SİSTEMDEN ÇEKİYORUZ
   const { role } = useAuth();
@@ -165,10 +287,15 @@ export default function ProductPassportDetail() {
             {isPublic ? (
               <button
                 onClick={() => router.push(`/login?returnUrl=/dpp/${id}`)}
-                className="flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-xl text-sm font-bold transition-all border border-gray-200 shadow-sm"
+                className="flex items-center gap-3 bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-blue-200 group"
               >
-                <LockKeyhole size={16} className="text-gray-400" />
-                <span className="hidden sm:inline">Giriş Yap</span>
+                <div className="bg-white/20 p-1.5 rounded-lg group-hover:bg-white/30 transition-colors shrink-0">
+                  <LockKeyhole size={15} />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-black leading-none">Giriş Yap</p>
+                  <p className="text-[10px] font-medium opacity-80 mt-0.5">Tam erişim için</p>
+                </div>
               </button>
             ) : (
               <div className="text-right bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100">
@@ -184,7 +311,7 @@ export default function ProductPassportDetail() {
             {/* EKSİK 1 TAMAMLANDI: Kategori (Yasal Zorunluluk) */}
             <p className="text-lg font-medium text-gray-500 mb-5">{product.product_category}</p>
 
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-col gap-2 items-start">
               <div className="flex items-center gap-2 text-sm bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
                 <span className="font-bold text-gray-400 uppercase text-xs">GTIN:</span>
                 <span className="font-mono font-bold text-gray-900">{product.gtin || '8691234567890'}</span>
@@ -836,6 +963,132 @@ export default function ProductPassportDetail() {
 
           </div>
         </div>
+
+        {/* VERSİYON GEÇMİŞİ & BLOKZİNCİR DENETİMİ — AUTHORITY & ADMIN */}
+        {canViewVersion && (
+          <div className="mt-8 bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
+
+            {/* Başlık — her zaman görünür */}
+            <button
+              onClick={() => setIsVersionHistoryOpen(v => !v)}
+              className="w-full flex items-center justify-between px-6 py-5 hover:bg-gray-50/50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-50 rounded-xl">
+                  <GitBranch size={16} className="text-purple-600" />
+                </div>
+                <div className="text-left">
+                  <h3 className="text-sm font-black text-gray-900">Versiyon Geçmişi & Blockchain Denetimi</h3>
+                  <p className="text-[11px] text-gray-400 font-medium mt-0.5">
+                    {MOCK_VERSION_HISTORY.length} kayıt · Son: {MOCK_VERSION_HISTORY[MOCK_VERSION_HISTORY.length - 1].timestamp.split('T')[0]}
+                  </p>
+                </div>
+              </div>
+              <ChevronDown size={18} className={`text-gray-400 transition-transform duration-200 ${isVersionHistoryOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* İçerik — kapalıyken peek, açıkken tam */}
+            <div className="border-t border-gray-100">
+              <div className={`relative ${!isVersionHistoryOpen ? 'max-h-52 overflow-hidden' : ''}`}>
+                <div className="px-6 py-5 space-y-6">
+                  {MOCK_VERSION_HISTORY.map((entry, i) => (
+                    <div key={i} className="relative flex gap-4">
+                      {/* Zaman çizelgesi çizgisi */}
+                      {i < MOCK_VERSION_HISTORY.length - 1 && (
+                        <div className="absolute left-[15px] top-8 bottom-0 w-0.5 bg-gray-100" />
+                      )}
+                      {/* Nokta */}
+                      <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center z-10 border-2 ${
+                        entry.type === 'creation'
+                          ? 'bg-purple-50 border-purple-300'
+                          : 'bg-blue-50 border-blue-200'
+                      }`}>
+                        <span className={`w-2 h-2 rounded-full ${entry.type === 'creation' ? 'bg-purple-500' : 'bg-blue-400'}`} />
+                      </div>
+                      {/* İçerik */}
+                      <div className="flex-1 min-w-0 pb-2">
+                        {/* Başlık satırı */}
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <span className={`text-[11px] font-black px-2.5 py-0.5 rounded-full ${
+                            entry.type === 'creation'
+                              ? 'bg-purple-100 text-purple-700'
+                              : 'bg-blue-50 text-blue-700'
+                          }`}>
+                            {entry.type === 'creation' ? 'DPP Oluşturuldu' : 'DPP Güncellendi'}
+                          </span>
+                          <span className="text-[10px] text-gray-400 font-mono">
+                            {entry.timestamp.replace('T', ' ').replace('Z', '')}
+                          </span>
+                          <span className="text-[10px] text-gray-400">·</span>
+                          <span className="text-[10px] text-gray-500 font-medium">{entry.operator}</span>
+                        </div>
+                        {/* Blockchain damgası */}
+                        <div className="flex items-center gap-1.5 mb-3 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100 w-fit">
+                          <ShieldCheck size={11} className="text-green-600 shrink-0" />
+                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Blockchain:</span>
+                          <span className="text-[10px] font-mono text-gray-600 truncate max-w-[220px]">{entry.blockchain_hash}</span>
+                        </div>
+                        {/* Per-field kaynak etiketleri — bölüm gruplarıyla */}
+                        <div className="space-y-3">
+                          {entry.groups.map((group, gi) => (
+                            <div key={gi}>
+                              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5">
+                                {group.section}
+                              </p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {group.fields.map((f, fi) => {
+                                  const cfg = SOURCE_CFG[f.source] ?? SOURCE_CFG['Manuel'];
+                                  return (
+                                    <span
+                                      key={fi}
+                                      className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-lg border ${cfg.bg} ${cfg.text} ${cfg.border}`}
+                                    >
+                                      <span className="font-black">{f.source}</span>
+                                      <span className="opacity-30 mx-0.5">·</span>
+                                      <span className="font-medium">{f.field}</span>
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Gradient + Genişlet butonu — sadece kapalıyken */}
+                {!isVersionHistoryOpen && (
+                  <>
+                    <div className="absolute bottom-0 inset-x-0 h-28 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+                    <div className="absolute bottom-3 inset-x-0 flex justify-center">
+                      <button
+                        onClick={() => setIsVersionHistoryOpen(true)}
+                        className="text-xs font-black text-purple-600 hover:text-purple-800 transition-colors bg-white px-5 py-1.5 rounded-full border border-purple-200 shadow-sm"
+                      >
+                        Genişlet
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Daralt butonu — sadece açıkken */}
+              {isVersionHistoryOpen && (
+                <div className="flex justify-center py-4 border-t border-gray-100">
+                  <button
+                    onClick={() => setIsVersionHistoryOpen(false)}
+                    className="text-xs font-black text-gray-400 hover:text-gray-600 transition-colors px-5 py-1.5 rounded-full border border-gray-200"
+                  >
+                    Daralt
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );

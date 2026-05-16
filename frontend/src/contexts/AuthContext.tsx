@@ -9,7 +9,7 @@ import React, {
   ReactNode,
 } from "react";
 import { User } from "../types/auth";
-import { apiLogout } from "../lib/api";
+import { apiLogout, setUnauthorizedHandler } from "../lib/api";
 
 export type Role =
   | "PUBLIC"
@@ -48,7 +48,6 @@ interface AuthContextType {
   logout: () => void;
   isLoading: boolean;
   role: Role;
-  setRole: (role: Role) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -60,6 +59,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [role, setRole] = useState<Role>("PUBLIC");
 
   useEffect(() => {
+    setUnauthorizedHandler(() => {
+      localStorage.removeItem("token");
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem("user");
+      setUser(null);
+      setRole("PUBLIC");
+      window.location.href = "/login?reason=expired";
+    });
+
     const token = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
     if (token && storedUser) {
@@ -133,7 +141,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         logout,
         isLoading,
         role,
-        setRole,
       }}
     >
       {children}

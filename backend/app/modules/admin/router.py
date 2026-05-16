@@ -4,8 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from uuid import UUID
 
-from app.core.deps import get_db
-from app.middleware.rbac import Permission, TokenPayload, require_permission
+from app.core.deps import get_db, Permission, TokenPayload, require_permission
 from app.modules.admin.schemas import AdminDashboardStats, DppApprovalRequest, AdminDppListItem, AdminKpiSummary, UrgentAlert
 from app.modules.admin.services import AdminService
 from app.models.dpp import DppStatusEnum
@@ -77,7 +76,6 @@ async def approve_dpp(
         status=d.dpp_status,
         created_at=d.created_at
     )
-
 @router.post(
     "/reject/{dpp_id}",
     response_model=AdminDppListItem,
@@ -100,4 +98,37 @@ async def reject_dpp(
         status=d.dpp_status,
         created_at=d.created_at
     )
+
+@router.get(
+    "/permissions-matrix",
+    summary="Rol-Yetki matrisini getir",
+    dependencies=[Depends(require_permission(Permission.ADMIN_PANEL))]
+)
+async def get_permissions_matrix():
+    from app.middleware.rbac import _ROLE_PERMISSIONS, Permission
+    
+    # Permission sınıfındaki tüm sabitleri listele
+    all_permissions = [
+        getattr(Permission, attr) 
+        for attr in dir(Permission) 
+        if not attr.startswith("__")
+    ]
+    
+    # Set'leri listeye çevirerek JSON uyumlu hale getir
+    matrix = {role: list(perms) for role, perms in _ROLE_PERMISSIONS.items()}
+    
+    return {
+        "permissions": all_permissions,
+        "matrix": matrix
+    }
+
+@router.get(
+    "/incomplete-report",
+    summary="Eksik veri içeren DPP raporu",
+    dependencies=[Depends(require_permission(Permission.ADMIN_PANEL))]
+)
+async def get_incomplete_report(
+    db: AsyncSession = Depends(get_db)
+):
+    return await AdminService.get_incomplete_report(db)
 

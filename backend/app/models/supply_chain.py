@@ -1,8 +1,11 @@
 """
 Supply Chain modelleri
-SupplyChainOrganization, SupplyChainStage, SupplyChainMaterial, SupplyChainProcess
+kocaer.sql ile senkronize edildi:
+  - SupplyChainOrganization'a tax_id, city, address, website, is_verified eklendi
+  - SupplyChainStage'e from_location, to_location, transport_method,
+    distance_km, co2_kg_per_km eklendi
 """
-from sqlalchemy import Column, String, Numeric, Date, Text, SmallInteger, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, String, Numeric, Date, Text, SmallInteger, ForeignKey, UniqueConstraint, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -18,6 +21,12 @@ class SupplyChainOrganization(Base, UUIDMixin, CreatedAtMixin):
     role = Column(String(100))
     location_text = Column(String(500))
     country_code = Column(String(2))
+    # kocaer.sql ile senkronize — yeni kolonlar
+    tax_id = Column(String(50))
+    city = Column(String(100))
+    address = Column(String(500))
+    website = Column(String(255))
+    is_verified = Column(SmallInteger, default=0)
 
     # Relationships
     stages = relationship("SupplyChainStage", back_populates="organization")
@@ -44,6 +53,12 @@ class SupplyChainStage(Base, UUIDMixin, CreatedAtMixin):
     stage_date = Column(Date)
     traceability_id = Column(UUID(as_uuid=True), default=uuid.uuid4)
     notes = Column(Text)
+    # kocaer.sql ile senkronize — taşıma/rota bilgileri
+    from_location = Column(String(255))
+    to_location = Column(String(255))
+    transport_method = Column(String(100))
+    distance_km = Column(Numeric(10, 2))
+    co2_kg_per_km = Column(Numeric(10, 4))
 
     # Relationships
     dpp = relationship("DigitalProductPassport", back_populates="supply_chain_stages")

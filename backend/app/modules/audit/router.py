@@ -1,7 +1,6 @@
 """
 Audit logs router — G-10 güncellemesi ile granüler DPP aksiyonları eklendi
 """
-
 from typing import Optional
 from uuid import UUID
 
@@ -9,8 +8,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import get_db
-from app.middleware.rbac import Permission, TokenPayload, require_permission
+from app.core.deps import get_db, Permission, TokenPayload, require_permission
 from app.modules.auth.models import AuditLog, User
 from app.modules.audit.schemas import (
     AuditLogAccessCreate,
@@ -22,45 +20,102 @@ from app.services.audit_service import AuditService
 router = APIRouter(prefix="/audit-logs", tags=["Audit Logs"])
 
 
+def _mask_ip(ip: str) -> str:
+    """195.142.10.5 → 195.142.x.x"""
+    if not ip or "." not in ip:
+        return ip
+    parts = ip.split(".")
+    if len(parts) >= 4:
+        return f"{parts[0]}.{parts[1]}.x.x"
+    return ip
+
+
 @router.get(
     "/recent",
     response_model=AuditLogRecentResponse,
     summary="Son sistem aktiviteleri (rol ve aksiyon filtreli)",
 )
 async def get_recent_audit_logs(
+    skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=200),
-    role: Optional[str] = Query(None, description="Kullanıcı rolüne göre filtrele"),
-    action: Optional[str] = Query(None, description="Aksiyon adına göre filtrele"),
+    role: Optional[str] = Query(None),
+    action: Optional[str] = Query(None),
     token: TokenPayload = Depends(require_permission(Permission.AUDIT_READ)),
     db: AsyncSession = Depends(get_db),
 ):
     stmt = (
         select(AuditLog, User)
         .outerjoin(User, AuditLog.user_id == User.id)
-        .order_by(desc(AuditLog.created_at))
     )
     if role:
         stmt = stmt.where(User.role == role)
     if action:
         stmt = stmt.where(AuditLog.action.ilike(f"%{action}%"))
 
-    stmt = stmt.limit(limit)
+    stmt = stmt.order_by(desc(AuditLog.created_at)).offset(skip).limit(limit)
     result = await db.execute(stmt)
     rows = result.all()
 
     data = []
     for log, user in rows:
-        data.append(
-            {
-                "id": log.id,
-                "action": log.action,
-                "target_id": log.resource_id,
-                "user_email": user.email if user else "anonim",
-                "date": log.created_at,
-                "role": user.role.value if user and hasattr(user.role, "value") else (user.role if user else "PUBLIC"),
-                "ip_address": log.ip_address,
-            }
-        )
+        data.append({
+            "id": log.id,
+            "action": log.action,
+            "target_id": log.resource_id,
+            "user_email": user.email if user else "anonim",
+            "date": log.created_at,
+            "role": user.role.value if user and hasattr(user.role, "value") else (user.role if user else "PUBLIC"),
+            "ip_address": _mask_ip(log.ip_address),
+        })
+
+    return {"data": data}
+
+
+@router.get(
+    "/access-logs",
+    response_model=AuditLogRecentResponse,
+    summary="Erişim logları — IP maskelenmiş, sayfalı",
+)
+async def get_access_logs(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=200),
+    role: Optional[str] = Query(None),
+    dpp_id: Optional[str] = Query(None),
+    token: TokenPayload = Depends(require_permission(Permission.AUDIT_READ)),
+    db: AsyncSession = Depends(get_db),
+):
+    access_actions = [
+        "DPP PDF indirildi",
+        "DPP QR tarandı",
+        "DPP kimyasal kompozisyon görüntülendi",
+        "DPP tedarik zinciri görüntülendi",
+    ]
+
+    stmt = (
+        select(AuditLog, User)
+        .outerjoin(User, AuditLog.user_id == User.id)
+        .where(AuditLog.action.in_(access_actions))
+    )
+    if role:
+        stmt = stmt.where(User.role == role)
+    if dpp_id:
+        stmt = stmt.where(AuditLog.resource_id == dpp_id)
+
+    stmt = stmt.order_by(desc(AuditLog.created_at)).offset(skip).limit(limit)
+    result = await db.execute(stmt)
+    rows = result.all()
+
+    data = []
+    for log, user in rows:
+        data.append({
+            "id": log.id,
+            "action": log.action,
+            "target_id": log.resource_id,
+            "user_email": user.email if user else "anonim",
+            "date": log.created_at,
+            "role": user.role.value if user and hasattr(user.role, "value") else (user.role if user else "PUBLIC"),
+            "ip_address": _mask_ip(log.ip_address),
+        })
 
     return {"data": data}
 
@@ -86,16 +141,14 @@ async def get_dpp_audit_logs(
 
     data = []
     for log, user in rows:
-        data.append(
-            {
-                "id": log.id,
-                "action": log.action,
-                "user_email": user.email if user else "anonim",
-                "role": user.role.value if user and hasattr(user.role, "value") else (user.role if user else "PUBLIC"),
-                "ip_address": log.ip_address,
-                "date": log.created_at,
-            }
-        )
+        data.append({
+            "id": log.id,
+            "action": log.action,
+            "user_email": user.email if user else "anonim",
+            "role": user.role.value if user and hasattr(user.role, "value") else (user.role if user else "PUBLIC"),
+            "ip_address": log.ip_address,
+            "date": log.created_at,
+        })
     return {"data": data}
 
 

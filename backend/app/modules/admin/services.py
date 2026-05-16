@@ -17,7 +17,6 @@ class AdminService:
 
     @staticmethod
     async def get_dashboard_stats(db: AsyncSession) -> AdminKpiSummary:
-        # DPP statü sayıları
         stmt = select(
             DigitalProductPassport.dpp_status,
             func.count(DigitalProductPassport.id)
@@ -30,7 +29,6 @@ class AdminService:
         }
         total = sum(counts.values())
 
-        # Sertifika uyarısı: önümüzdeki 30 gün içinde dolacaklar
         today = date.today()
         threshold_date = today + timedelta(days=30)
         cert_stmt = select(func.count(Certification.id)).where(
@@ -40,7 +38,6 @@ class AdminService:
         )
         cert_alerts = (await db.execute(cert_stmt)).scalar_one()
 
-        # CBAM uyarısı: eşiği aşan PUBLISHED DPP sayısı
         from app.modules.compliance.cbam import _cbam_thresholds
         cbam_threshold = _cbam_thresholds["threshold"]
         cbam_stmt = (
@@ -118,7 +115,6 @@ class AdminService:
     async def get_urgent_alerts(db: AsyncSession) -> List[dict]:
         alerts = []
 
-        # CO2 Limit Kontrolü
         stmt = (
             select(DigitalProductPassport)
             .options(joinedload(DigitalProductPassport.product_type))
@@ -135,7 +131,6 @@ class AdminService:
                 "severity": "CRITICAL"
             })
 
-        # Sertifika Tarihi Kontrolü
         now_date = datetime.now().date()
         stmt = (
             select(DigitalProductPassport)
@@ -155,3 +150,46 @@ class AdminService:
             })
 
         return alerts
+
+    @staticmethod
+    async def get_incomplete_report(db: AsyncSession) -> List[dict]:
+        stmt = (
+            select(DigitalProductPassport)
+            .options(
+                joinedload(DigitalProductPassport.product_type),
+                joinedload(DigitalProductPassport.certifications),
+                joinedload(DigitalProductPassport.supply_chain_stages)
+            )
+            .where(DigitalProductPassport.dpp_status.in_([DppStatusEnum.DRAFT, DppStatusEnum.RECALLED]))
+        )
+
+        result = await db.execute(stmt)
+        dpps = result.scalars().unique().all()
+
+        report = []
+        for dpp in dpps:
+            missing = []
+            pt = dpp.product_type
+
+            if not dpp.gtin:
+                missing.append({"section": "General", "field": "gtin"})
+            if pt:
+                if not pt.epd_number:
+                    missing.append({"section": "Product", "field": "epd_number"})
+                if not pt.co2_cradle_to_gate_kg:
+                    missing.append({"section": "Environmental", "field": "co2_value"})
+
+            if not dpp.certifications:
+                missing.append({"section": "Compliance", "field": "at_least_one_certification"})
+
+            if not dpp.supply_chain_stages:
+                missing.append({"section": "Supply Chain", "field": "stages_list"})
+
+            if missing:
+                report.append({
+                    "dpp_id": str(dpp.id),
+                    "product_name": pt.product_name if pt else "Bilinmeyen Ürün",
+                    "missing": missing
+                })
+
+        return report

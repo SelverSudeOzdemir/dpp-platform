@@ -1,7 +1,6 @@
 """
-Audit service — Orijinal app/services/audit_service.py içeriğinin aynısıdır.
+Audit service
 """
-
 import json
 import logging
 import uuid
@@ -19,7 +18,6 @@ class AuditActions:
     LOGOUT = "Kullanıcı çıkış yaptı"
     LOGIN_FAILED = "Başarısız giriş denemesi"
     TOKEN_REFRESH = "Token yenilendi"
-    PWD_CHANGED = "Şifre değiştirildi"
 
     USER_CREATED = "Kullanıcı oluşturuldu"
     USER_UPDATED = "Kullanıcı güncellendi"
@@ -34,14 +32,11 @@ class AuditActions:
     DPP_REJECTED = "DPP reddedildi"
     DPP_DELETED = "DPP silindi"
 
-    PDF_DOWNLOADED = "Pasaport PDF indirildi"
-    SUPPLY_CHAIN_VIEWED = "Tedarik zinciri görüntülendi"
-
-    # G-10: Yeni granüler DPP aksiyonları
     DPP_PDF_DOWNLOADED = "DPP PDF indirildi"
     DPP_QR_SCANNED = "DPP QR tarandı"
     DPP_CHEMICAL_VIEWED = "DPP kimyasal kompozisyon görüntülendi"
     DPP_SUPPLY_CHAIN_VIEWED = "DPP tedarik zinciri görüntülendi"
+
     PASSWORD_CHANGED = "Şifre değiştirildi"
     PASSWORD_RESET = "Şifre sıfırlandı"
 
@@ -80,7 +75,6 @@ class AuditService:
             details=details_str,
             ip_address=ip_address[:45] if ip_address else None,
         )
-
         db.add(entry)
         await db.commit()
 

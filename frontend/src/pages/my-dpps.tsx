@@ -65,7 +65,7 @@ export default function MyDpps() {
       {/* Başlık */}
       <div className="mb-8">
         <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">
-          Hoş geldiniz, {user?.name}
+          Hoş geldiniz, {user?.full_name}
         </p>
         <h1 className="text-2xl font-black text-gray-900">{data.title}</h1>
         <p className="text-sm text-gray-500 font-medium mt-1">{data.description}</p>
