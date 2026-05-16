@@ -34,3 +34,5 @@ router.include_router(export_router)
 router.include_router(certifications_router)
 router.include_router(cbam_router)
 router.include_router(reach_router)
+from app.modules.products.router import router as products_router
+router.include_router(products_router)

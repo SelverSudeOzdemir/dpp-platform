@@ -57,7 +57,7 @@ class ProductTypeBase(BaseModel):
     product_type: Optional[str] = None
     product_category: str
     brand: Optional[str] = None
-    manufacturer_part_number: str
+    manufacturer_part_number: Optional[str] = None
     gtin: Optional[str] = None
     dimensional_standard: Optional[str] = None
     material_standard: Optional[str] = None
