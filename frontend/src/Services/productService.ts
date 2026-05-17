@@ -7,6 +7,7 @@ import { apiGetDpps, apiGetDppById, apiDeleteDpp, apiCreateDpp } from "../lib/ap
 // (backend/app/modules/dpp/schemas.py → DppListItem ile uyumlu)
 export interface BackendProduct {
   id: string;
+  product_type_id?: string;
   name: string;
   category: string;
   gtin?: string;
@@ -68,6 +69,7 @@ function mapStatus(raw?: string): Product["status"] {
 export function mapBackendProduct(raw: BackendProduct): Product {
   return {
     id: raw.id,
+    product_type_id: raw.product_type_id,
     status: mapStatus(raw.status),
     createdAt: raw.issued_at ? new Date(raw.issued_at).toLocaleDateString("tr-TR") : "",
     product_name: raw.name,
@@ -143,6 +145,7 @@ export interface MechanicalProperties {
 
 export interface Product {
   id: string;
+  product_type_id?: string;
   status: "Aktif" | "Taslak" | "Arşiv";
   createdAt: string;
   product_name: string;

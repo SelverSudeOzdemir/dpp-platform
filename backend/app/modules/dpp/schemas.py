@@ -116,6 +116,7 @@ class DppListItem(BaseModel):
 
 class DppDetailResponse(DppListItem):
     """GET /dpps/{id} detay — liste ile aynı + ekstra alanlar."""
+    product_type_id: Optional[str] = None
     public_identifier: Optional[str] = None
     gs1_serial_number: Optional[str] = None
     dpp_version: Optional[str] = None

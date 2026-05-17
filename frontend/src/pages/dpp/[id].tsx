@@ -5,6 +5,7 @@ import { productService, Product } from '../../Services/productService';
 import Spinner from '../../components/ui/spinner';
 import Button from '../../components/ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
+import { apiGetDppChangelog } from '../../lib/api';
 // YENİ İKONLAR EKLENDİ (Globe, Mail, Info) Yasal zorunluluk alanları için
 import { CheckCircle2, ShieldCheck, LockKeyhole, ChevronDown, Scale, FlaskConical, QrCode, Leaf, Calendar, Award, AlertTriangle, Recycle, Globe, Mail, Info, Download, FileText, MapPin, Factory, Flame, Box, Hash, Globe2, Milestone, Activity, GitBranch } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
@@ -138,6 +139,7 @@ export default function ProductPassportDetail() {
   const [loading, setLoading] = useState(true);
   const [isTechnicalOpen, setIsTechnicalOpen] = useState(false);
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
+  const [versionHistory, setVersionHistory] = useState<any[]>(MOCK_VERSION_HISTORY);
 
   // 1. ÖNCE ROLÜ (KİMLİĞİ) SİSTEMDEN ÇEKİYORUZ
   const { role } = useAuth();
@@ -172,45 +174,11 @@ export default function ProductPassportDetail() {
 
       // EKSİK YASAL VERİLERİ (Mock Data) İÇİNE EKLEDİM
       setProduct({
-        ...data,
         product_category: 'Structural Steel', // YASAL ZORUNLULUK 1
-        // YENİ EKLENEN: BÖLÜM 10 TEDARİK ZİNCİRİ VERİLERİ (Birebir veritabanı şeması)
-        supply_chain: [
-          {
-            sequence_number: 1,
-            stage_name: 'Raw Material Sourcing',
-            stage_date: '2023-12-20',
-            traceability_id: 'uuid-98a7f-erd-2023',
-            organization: { name: 'Erdemir', role: 'Iron Ore Supplier', location_text: 'Ereğli, Zonguldak', country_code: 'TR' },
-            material: { name: 'Steel Billet', quantity: '25.000', unit: 'tonnes', origin_country: 'Turkey' },
-            process: { name: 'Melting' }
-          },
-          {
-            sequence_number: 2,
-            stage_name: 'Manufacturing & Profiling',
-            stage_date: '2024-01-10',
-            traceability_id: 'uuid-kcr-ipe-2024',
-            organization: { name: 'Kocaer Çelik', role: 'Manufacturer', location_text: 'Aliağa, İzmir', country_code: 'TR' },
-            material: { name: 'Structural Steel (IPE 100)', quantity: '1', unit: 'batch', origin_country: 'Turkey' },
-            process: { name: 'Hot Rolling' }
-          }
-        ],
         production_date: '2024-01-15',
-        manufacturer: {
-          name: 'Kocaer Çelik San. ve Tic. A.Ş.',
-          city: 'Aliağa',
-          country: 'Turkey',
-          website: 'https://www.kocaersteel.com',     // YASAL ZORUNLULUK 2
-          dpp_support_email: 'dpp@kocaersteel.com'    // YASAL ZORUNLULUK 2
-        },
-        facility: { name: 'Aliağa Steel Works' },
         dismantling_difficulty: 'Easy',
         hazardous_materials: false,
         disposal_instructions: 'Genel çöpe ATMAYIN. Ürün ömrünü tamamladığında yetkili çelik geri dönüşüm tesislerine teslim ediniz.', // YASAL ZORUNLULUK 3
-        certifications: [
-          { cert_type: 'CE Marking', issuer: 'TSE', expiry_date: '2027-01-10' },
-          { cert_type: 'ISO 9001', issuer: 'TÜV NORD', expiry_date: '2026-05-20' }
-        ],
         // ESPR / CBAM zorunlu alanlar
         svhc_free: true,                                    // ESPR Madde 7(5) — SVHC beyanı
         co2_a1a3: '1.85',                                   // CBAM Yönetmeliği 2023/956 — A1-A3 gömülü emisyon
@@ -232,7 +200,69 @@ export default function ProductPassportDetail() {
         impact_energy_j: '47',
         impact_temp_c: '20',
         impact_standard: 'EN 10025-2',
+        ...data,
+        manufacturer: {
+          name: 'Kocaer Çelik San. ve Tic. A.Ş.',
+          city: 'Aliağa',
+          country: 'Turkey',
+          website: 'https://www.kocaersteel.com',     // YASAL ZORUNLULUK 2
+          dpp_support_email: 'dpp@kocaersteel.com',   // YASAL ZORUNLULUK 2
+          ...data?.manufacturer
+        },
+        facility: {
+          name: 'Aliağa Steel Works',
+          ...data?.facility
+        },
+        supply_chain: data?.supply_chain && data.supply_chain.length > 0 ? data.supply_chain : [
+          {
+            sequence_number: 1,
+            stage_name: 'Raw Material Sourcing',
+            stage_date: '2023-12-20',
+            traceability_id: 'uuid-98a7f-erd-2023',
+            organization: { name: 'Erdemir', role: 'Iron Ore Supplier', location_text: 'Ereğli, Zonguldak', country_code: 'TR' },
+            material: { name: 'Steel Billet', quantity: '25.000', unit: 'tonnes', origin_country: 'Turkey' },
+            process: { name: 'Melting' }
+          },
+          {
+            sequence_number: 2,
+            stage_name: 'Manufacturing & Profiling',
+            stage_date: '2024-01-10',
+            traceability_id: 'uuid-kcr-ipe-2024',
+            organization: { name: 'Kocaer Çelik', role: 'Manufacturer', location_text: 'Aliağa, İzmir', country_code: 'TR' },
+            material: { name: 'Structural Steel (IPE 100)', quantity: '1', unit: 'batch', origin_country: 'Turkey' },
+            process: { name: 'Hot Rolling' }
+          }
+        ],
+        certifications: data?.certifications && data.certifications.length > 0 ? data.certifications : [
+          { cert_type: 'CE Marking', issuer: 'TSE', expiry_date: '2027-01-10' },
+          { cert_type: 'ISO 9001', issuer: 'TÜV NORD', expiry_date: '2026-05-20' }
+        ],
       });
+      
+      try {
+        const changelog = await apiGetDppChangelog(id as string);
+        if (changelog && changelog.length > 0) {
+          const mappedHistory = changelog.map((c: any) => ({
+            type: c.change_type === 'create' ? 'creation' : 'update',
+            timestamp: c.changed_at || new Date().toISOString(),
+            operator: c.changed_by || 'mehmet.yilmaz@kocaer.com',
+            blockchain_hash: c.tx_hash || '0x3f7a9c2b8e1d4f56a0c3b7e291d5f8a4',
+            groups: [
+              {
+                section: 'Güncellenen Değerler',
+                fields: Object.keys(c.changed_fields || {}).map((k: string) => ({
+                  field: k,
+                  source: 'SAP/ERP',
+                })),
+              }
+            ]
+          }));
+          setVersionHistory(mappedHistory);
+        }
+      } catch (err) {
+        console.error("Versiyon geçmişi alınamadı, mock kullanılacak:", err);
+      }
+
       setLoading(false);
     };
     fetchDetail();
@@ -980,7 +1010,7 @@ export default function ProductPassportDetail() {
                 <div className="text-left">
                   <h3 className="text-sm font-black text-gray-900">Versiyon Geçmişi & Blockchain Denetimi</h3>
                   <p className="text-[11px] text-gray-400 font-medium mt-0.5">
-                    {MOCK_VERSION_HISTORY.length} kayıt · Son: {MOCK_VERSION_HISTORY[MOCK_VERSION_HISTORY.length - 1].timestamp.split('T')[0]}
+                    {versionHistory.length} kayıt · Son: {versionHistory[versionHistory.length - 1]?.timestamp.split('T')[0]}
                   </p>
                 </div>
               </div>
@@ -991,10 +1021,10 @@ export default function ProductPassportDetail() {
             <div className="border-t border-gray-100">
               <div className={`relative ${!isVersionHistoryOpen ? 'max-h-52 overflow-hidden' : ''}`}>
                 <div className="px-6 py-5 space-y-6">
-                  {MOCK_VERSION_HISTORY.map((entry, i) => (
+                  {versionHistory.map((entry, i) => (
                     <div key={i} className="relative flex gap-4">
                       {/* Zaman çizelgesi çizgisi */}
-                      {i < MOCK_VERSION_HISTORY.length - 1 && (
+                      {i < versionHistory.length - 1 && (
                         <div className="absolute left-[15px] top-8 bottom-0 w-0.5 bg-gray-100" />
                       )}
                       {/* Nokta */}

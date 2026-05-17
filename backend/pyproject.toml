@@ -14,7 +14,7 @@ dependencies = [
     "python-multipart>=0.0.6",
     "slowapi>=0.1.9",
     "httpx>=0.27.0",
-
+    "email-validator>=2.0.0",
 ]
 
 [tool.setuptools.packages.find]
@@ -26,3 +26,7 @@ dev = [
     "pytest-asyncio>=0.23.0",
     "httpx>=0.27.0",
 ]
+
+[tool.pyright]
+venvPath = "d:/Kocaer/dpp-platform/backend"
+venv = "venv"

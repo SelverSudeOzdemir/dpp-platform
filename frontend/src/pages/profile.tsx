@@ -4,6 +4,7 @@ import ProtectedRoute from '../components/auth/ProtectedRoute';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { User, Mail, Shield, KeyRound, CheckCircle } from 'lucide-react';
+import { apiChangePassword } from '../lib/api';
 
 const ROLE_LABEL: Record<string, { label: string; color: string }> = {
   ADMIN:     { label: 'Yönetici',    color: 'bg-red-50 text-red-600 border-red-200'       },
@@ -23,7 +24,7 @@ function ProfilePage() {
   const [pwError, setPwError]                 = useState('');
   const [pwSuccess, setPwSuccess]             = useState(false);
 
-  const handlePasswordChange = (e: React.FormEvent) => {
+  const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     setPwError('');
     setPwSuccess(false);
@@ -41,11 +42,15 @@ function ProfilePage() {
       return;
     }
 
-    // TODO: API entegrasyonu — PATCH /api/v1/users/me/password
-    setPwSuccess(true);
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    try {
+      await apiChangePassword(currentPassword, newPassword);
+      setPwSuccess(true);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err: any) {
+      setPwError(err.message || 'Şifre güncellenirken hata oluştu.');
+    }
   };
 
   const roleInfo = ROLE_LABEL[role] ?? ROLE_LABEL.PUBLIC;

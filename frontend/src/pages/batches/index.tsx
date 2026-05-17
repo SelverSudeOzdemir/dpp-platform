@@ -5,6 +5,7 @@ import {
   Package, Calendar, ArrowRight, Clock, CheckCircle2,
   XCircle, FileText, Plus, Search, ChevronDown, Loader2,
 } from 'lucide-react';
+import { apiGetDpps } from '../../lib/api';
 
 // ─── TİPLER ──────────────────────────────────────────────────────────────────
 type BatchStatus = 'Taslak' | 'Onay Bekliyor' | 'Yayında' | 'Reddedildi' | 'Arşivlendi';
@@ -96,12 +97,39 @@ function matchesTab(batch: Batch, tab: TabKey): boolean {
 // ─── SAYFA ───────────────────────────────────────────────────────────────────
 export default function BatchList() {
   const router = useRouter();
+  const [batches, setBatches] = useState<Batch[]>(MOCK_BATCHES);
   const [search, setSearch]       = useState('');
   const [activeTab, setActiveTab] = useState<TabKey>('Taslak');
   const [menuOpen, setMenuOpen]           = useState(false);
   const [showBatchPicker, setShowBatchPicker] = useState(false);
   const [loadingBatch, setLoadingBatch]   = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    loadBatches();
+  }, []);
+
+  const loadBatches = async () => {
+    try {
+      const dpps = await apiGetDpps({ limit: 100 });
+      if (dpps && dpps.length > 0) {
+        const mapped = dpps.map((d: any) => ({
+          id: d.id,
+          parti_no: d.gs1_serial_number || d.public_identifier || 'B-000',
+          urun_tipi: d.product_type?.product_name || 'IPE 200 Yapısal Çelik Profil',
+          ocak_no: d.production_line || 'EAF-01',
+          uretim_tarihi: d.production_date || '2026-03-12',
+          miktar_ton: 45.0,
+          dpp_durum: d.dpp_status === 'published' ? 'Yayında' : d.dpp_status === 'draft' ? 'Taslak' : d.dpp_status === 'pending_approval' ? 'Onay Bekliyor' : d.dpp_status === 'rejected' ? 'Reddedildi' : 'Taslak',
+          olusturan: 'Furkan Yıldız',
+          red_gerekce: d.rejection_reason || undefined,
+        }));
+        setBatches(mapped);
+      }
+    } catch (err) {
+      console.error("Batch listesi alınamadı, mock kullanılacak:", err);
+    }
+  };
 
   // Dışarı tıklanınca dropdown kapansın
   useEffect(() => {
@@ -123,14 +151,14 @@ export default function BatchList() {
   };
 
   const counts: Record<TabKey, number> = {
-    'Tümü':          MOCK_BATCHES.length,
-    'Taslak':        MOCK_BATCHES.filter((b) => matchesTab(b, 'Taslak')).length,
-    'Onay Bekliyor': MOCK_BATCHES.filter((b) => matchesTab(b, 'Onay Bekliyor')).length,
-    'Reddedildi':    MOCK_BATCHES.filter((b) => matchesTab(b, 'Reddedildi')).length,
-    'Yayında':       MOCK_BATCHES.filter((b) => matchesTab(b, 'Yayında')).length,
+    'Tümü':          batches.length,
+    'Taslak':        batches.filter((b) => matchesTab(b, 'Taslak')).length,
+    'Onay Bekliyor': batches.filter((b) => matchesTab(b, 'Onay Bekliyor')).length,
+    'Reddedildi':    batches.filter((b) => matchesTab(b, 'Reddedildi')).length,
+    'Yayında':       batches.filter((b) => matchesTab(b, 'Yayında')).length,
   };
 
-  const filtered = MOCK_BATCHES.filter((b) => {
+  const filtered = batches.filter((b) => {
     const matchSearch =
       b.parti_no.toLowerCase().includes(search.toLowerCase()) ||
       b.urun_tipi.toLowerCase().includes(search.toLowerCase());
@@ -321,7 +349,7 @@ export default function BatchList() {
 
             {/* Liste */}
             <div className="px-4 py-3 max-h-80 overflow-y-auto space-y-1.5">
-              {MOCK_BATCHES.map((batch) => {
+              {batches.map((batch) => {
                 const isLoading = loadingBatch === batch.id;
                 const cfg = STATUS_CONFIG[batch.dpp_durum];
                 return (

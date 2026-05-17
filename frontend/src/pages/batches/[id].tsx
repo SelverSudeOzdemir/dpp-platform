@@ -1,7 +1,8 @@
 import { useRouter } from 'next/router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ProtectedRoute from '../../components/auth/ProtectedRoute';
 import { useAuth } from '../../contexts/AuthContext';
+import { apiGetDppById, apiUpdateDpp, apiApproveDpp, apiRejectDpp, apiGetChemicalComposition, apiGetMechanicalProperties } from '../../lib/api';
 import {
   ChevronLeft, CheckCircle2, Clock, XCircle, FileText,
   AlertCircle, Send, Lock, Package, Leaf, FlaskConical,
@@ -295,12 +296,86 @@ export default function BatchDetailPage() {
 
   const initial = MOCK_DETAIL[id as string];
 
-  const [data, setData] = useState<BatchDetail | null>(initial ?? null);
+  const [data, setData] = useState<BatchDetail | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [adminAction, setAdminAction] = useState<'approved' | 'rejected' | null>(null);
   const [adminRejectReason, setAdminRejectReason] = useState('');
   const [adminRejectFields, setAdminRejectFields] = useState<string[]>([]);
   const [showRejectForm, setShowRejectForm] = useState(false);
+
+  useEffect(() => {
+    if (!id) return;
+    loadBatchDetail();
+  }, [id]);
+
+  const loadBatchDetail = async () => {
+    try {
+      const d = await apiGetDppById(id as string);
+      
+      let chemical: any = null;
+      let mechanical: any = null;
+      if (d.product_type_id) {
+        try {
+          chemical = await apiGetChemicalComposition(d.product_type_id);
+        } catch (e) {
+          console.error("Chemical composition loading failed:", e);
+        }
+        try {
+          mechanical = await apiGetMechanicalProperties(d.product_type_id);
+        } catch (e) {
+          console.error("Mechanical properties loading failed:", e);
+        }
+      }
+
+      const mapped: BatchDetail = {
+        id: String(d.id),
+        parti_no: d.gs1_serial_number || d.public_identifier || 'Parti No Yok',
+        tedarikci_parti_kodu: d._batch_number || 'Tedarikçi Kodu Yok',
+        urun_tipi: d.product_type?.product_name || 'IPE 200 Yapısal Çelik Profil',
+        ocak_no: d.production_line || 'EAF-01',
+        uretim_tarihi: d.production_date || '2026-03-12',
+        miktar_ton: '45.0',
+        cift_kodu: d._serial_number || 'Cift Kodu Yok',
+        dpp_durum: d.dpp_status === 'published' ? 'Yayında' : d.dpp_status === 'draft' ? 'Taslak' : d.dpp_status === 'pending_approval' ? 'Onay Bekliyor' : d.dpp_status === 'rejected' ? 'Reddedildi' : 'Taslak',
+        olusturan: 'Furkan Yıldız',
+        celik_kalitesi: d.product_type?.steel_grade || 'S355JR',
+        en_mm: '200', boy_mm: '6000', kalinlik_mm: '8.5', agirlik_m: '26.2',
+        co2_a1a3: String(d.carbon_footprint_total || '1.15'),
+        co2_a3: '0.38', co2_a4: '0.07',
+        co2_verification: 'Üçüncü Taraf Doğrulamalı',
+        geri_donusum_orani: '82',
+        svhc_free: true,
+        uretici_adi: 'Kocaer Çelik A.Ş.',
+        tesis_adi: 'Aliağa Üretim Tesisi',
+        tesis_ulkesi: 'Türkiye',
+        red_gerekce: d.rejection_reason || undefined,
+        red_fields: d.rejection_fields || [],
+        red_yapan: d.rejected_by || undefined,
+        red_tarihi: d.rejected_at ? new Date(d.rejected_at).toLocaleString() : undefined,
+        c_pct: chemical ? String(chemical.carbon_pct) : d.product_type?.chemical_c || '0.19',
+        si_pct: chemical ? String(chemical.silicon_pct) : d.product_type?.chemical_si || '0.30',
+        mn_pct: chemical ? String(chemical.manganese_pct) : d.product_type?.chemical_mn || '1.45',
+        p_pct: chemical ? String(chemical.phosphorus_pct) : d.product_type?.chemical_p || '0.022',
+        s_pct: chemical ? String(chemical.sulfur_pct) : d.product_type?.chemical_s || '0.018',
+        n_pct: chemical ? String(chemical.nitrogen_pct) : d.product_type?.chemical_n || '0.009',
+        yield_mpa: mechanical ? String(mechanical.yield_strength_mpa) : d.product_type?.mechanical_yield || '370',
+        tensile_mpa: mechanical ? String(mechanical.tensile_strength_mpa) : d.product_type?.mechanical_tensile || '530',
+        elongation_pct: mechanical ? String(mechanical.elongation_pct) : d.product_type?.mechanical_elongation || '24',
+        impact_energy_j: mechanical ? String(mechanical.impact_energy_j) : d.product_type?.mechanical_impact || '27',
+        impact_temp_c: '20',
+        material_standard: 'EN 10025-2:2019',
+        gtin: d.gtin || '08690000112345',
+        hs_code: '7216.32',
+      };
+      setData(mapped);
+    } catch (err) {
+      console.error("Batch detayları backend'den alınamadı, mock kullanılacak:", err);
+      const initial = MOCK_DETAIL[id as string];
+      if (initial) {
+        setData(initial);
+      }
+    }
+  };
 
   const REJECTABLE_FIELDS = [
     { key: 'co2_a1a3',           label: 'CO₂ A1–A3 Emisyon Değeri' },
@@ -323,13 +398,8 @@ export default function BatchDetailPage() {
     return (
       <ProtectedRoute allowedRoles={['ENGINEER', 'ADMIN']}>
         <div className="max-w-3xl mx-auto py-16 px-4 text-center">
-          <Package size={40} className="mx-auto text-gray-300 mb-4" />
-          <h2 className="text-lg font-black text-gray-700">Batch bulunamadı</h2>
-          <p className="text-sm text-gray-400 mt-1">ID: {id}</p>
-          <button onClick={() => router.push('/batches')}
-            className="mt-6 px-5 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-colors">
-            Listeye Dön
-          </button>
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-4" />
+          <h2 className="text-lg font-black text-gray-700">DPP Pasaport Detayları Yükleniyor...</h2>
         </div>
       </ProtectedRoute>
     );
@@ -343,7 +413,14 @@ export default function BatchDetailPage() {
   const set = (field: keyof BatchDetail) => (v: string) =>
     setData((prev) => prev ? { ...prev, [field]: v } : prev);
 
-  const handleSubmit = () => setSubmitted(true);
+  const handleSubmit = async () => {
+    try {
+      await apiUpdateDpp(id as string, { dpp_status: 'pending_approval' });
+      setSubmitted(true);
+    } catch (err: any) {
+      alert("Hata oluştu: " + (err.message || err));
+    }
+  };
 
   const statusCfg = STATUS_CFG[data.dpp_durum];
 
@@ -1000,7 +1077,16 @@ export default function BatchDetailPage() {
                 />
                 <div className="flex gap-3">
                   <button
-                    onClick={() => { if (adminRejectReason.trim()) setAdminAction('rejected'); }}
+                    onClick={async () => {
+                      if (adminRejectReason.trim()) {
+                        try {
+                          await apiRejectDpp(id as string, adminRejectReason);
+                          setAdminAction('rejected');
+                        } catch (err: any) {
+                          alert("Reddedilirken hata oluştu: " + (err.message || err));
+                        }
+                      }
+                    }}
                     disabled={!adminRejectReason.trim()}
                     className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 text-white text-sm font-bold rounded-xl hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
@@ -1017,7 +1103,14 @@ export default function BatchDetailPage() {
             ) : (
               <div className="flex gap-3">
                 <button
-                  onClick={() => setAdminAction('approved')}
+                  onClick={async () => {
+                    try {
+                      await apiApproveDpp(id as string);
+                      setAdminAction('approved');
+                    } catch (err: any) {
+                      alert("Onaylanırken hata oluştu: " + (err.message || err));
+                    }
+                  }}
                   className="inline-flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white text-sm font-bold rounded-xl hover:bg-green-700 transition-colors shadow-lg shadow-green-100"
                 >
                   <CheckCircle2 size={15} /> Onayla & Yayınla

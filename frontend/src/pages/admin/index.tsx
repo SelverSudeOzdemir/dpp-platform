@@ -14,6 +14,14 @@ import AccessTab from '../../components/admin/tabs/AccessTab';
 import SupplyChainTab from '../../components/admin/tabs/SupplyChainTab';
 import ReportsTab from '../../components/admin/tabs/ReportsTab';
 import type { AdminProduct, PendingBatch, PassportStatus } from '../../types/admin';
+import {
+  apiGetKpiSummary,
+  apiGetPendingDpps,
+  apiGetUrgentAlerts,
+  apiApproveDpp,
+  apiRejectDpp,
+  apiGetDpps,
+} from '../../lib/api';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -24,6 +32,45 @@ export default function AdminPage() {
   const [showBatchPicker, setShowBatchPicker] = useState(false);
   const [loadingBatch, setLoadingBatch]       = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      const dpps = await apiGetDpps({ limit: 100 });
+      if (dpps && dpps.length > 0) {
+        const mappedProducts = dpps.map((d: any) => ({
+          id: d.id,
+          product_name: d.product_type?.product_name || 'Bilinmeyen Ürün',
+          product_category: d.product_type?.product_category || 'Structural Steel',
+          co2_cradle_to_gate_kg: d.carbon_footprint_total || 1.15,
+          passport_status: d.dpp_status === 'published' ? 'Yayında' : d.dpp_status === 'draft' ? 'Taslak' : d.dpp_status === 'archived' ? 'Arşivlendi' : d.dpp_status === 'recalled' ? 'Geri Çağrıldı' : 'Taslak',
+          version: d.current_version || '1.0',
+          blockchain_timestamp: d.created_at || '',
+        }));
+        setProducts(mappedProducts);
+      }
+
+      const pending = await apiGetPendingDpps();
+      if (pending && pending.length > 0) {
+        const mappedPending = pending.map((d: any) => ({
+          id: d.id,
+          parti_no: d.gs1_serial_number || d.public_identifier || 'Parti No Yok',
+          urun_tipi: d.product_name || 'Bilinmeyen Ürün',
+          miktar_ton: 45.0,
+          olusturan: 'Furkan Yıldız',
+          gonderilme_tarihi: d.created_at ? new Date(d.created_at).toLocaleDateString() : '2026-03-15',
+          co2_a1a3: 1.92,
+          co2_verification: 'Dahili Hesaplama',
+        }));
+        setPendingBatches(mappedPending);
+      }
+    } catch (err) {
+      console.error("Dashboard verileri backend'den alınamadı, mock kullanılacak:", err);
+    }
+  };
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -43,11 +90,25 @@ export default function AdminPage() {
     }, 1200);
   };
 
-  const handleApproveBatch = (id: string) =>
-    setPendingBatches(prev => prev.filter(b => b.id !== id));
+  const handleApproveBatch = async (id: string) => {
+    try {
+      await apiApproveDpp(id);
+      setPendingBatches(prev => prev.filter(b => b.id !== id));
+      await loadDashboardData();
+    } catch (err: any) {
+      alert("Onaylanırken hata oluştu: " + (err.message || err));
+    }
+  };
 
-  const handleRejectBatch = (id: string) =>
-    setPendingBatches(prev => prev.filter(b => b.id !== id));
+  const handleRejectBatch = async (id: string, reason?: string) => {
+    try {
+      await apiRejectDpp(id, reason || 'Kriterleri karşılamıyor.');
+      setPendingBatches(prev => prev.filter(b => b.id !== id));
+      await loadDashboardData();
+    } catch (err: any) {
+      alert("Reddedilirken hata oluştu: " + (err.message || err));
+    }
+  };
 
   const handleStatusChange = (id: string, status: PassportStatus) =>
     setProducts(prev => prev.map(p => p.id === id ? { ...p, passport_status: status } : p));

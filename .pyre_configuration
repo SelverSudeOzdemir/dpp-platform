@@ -6,7 +6,7 @@
     "backend"
   ],
   "site_package_path": [
-    "C:/ProgramData/Anaconda3/Lib/site-packages"
+    "d:/Kocaer/dpp-platform/backend/venv/Lib/site-packages"
   ],
   "site_package_search_strategy": "all",
   "python_version": "3.12"

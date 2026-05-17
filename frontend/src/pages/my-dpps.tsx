@@ -1,7 +1,9 @@
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
 import ProtectedRoute from '../components/auth/ProtectedRoute';
 import { Package, Calendar, ArrowRight, ShieldCheck, Truck, ClipboardList } from 'lucide-react';
+import { apiGetDpps } from '../lib/api';
 
 // Her role ait mock DPP listesi
 const ROLE_DATA = {
@@ -49,11 +51,55 @@ const COLOR: Record<string, { header: string; icon: string; badge: string }> = {
   purple: { header: 'from-purple-50 to-white border-purple-200', icon: 'text-purple-600 bg-purple-100', badge: 'bg-purple-100 text-purple-700' },
 };
 
+function mapStatus(raw?: string): string {
+  switch (raw?.toUpperCase()) {
+    case "PUBLISHED":
+    case "ACTIVE":
+      return "Yayında";
+    case "DRAFT":
+      return "Taslak";
+    case "RECALLED":
+      return "Geri Çağrıldı";
+    case "ARCHIVED":
+      return "Arşivlendi";
+    default:
+      return "Taslak";
+  }
+}
+
 export default function MyDpps() {
   const router = useRouter();
   const { role, user } = useAuth();
+  const [items, setItems] = useState<any[]>([]);
 
   const data = ROLE_DATA[role as keyof typeof ROLE_DATA];
+
+  useEffect(() => {
+    if (!data) return;
+    loadDpps();
+  }, [role]);
+
+  const loadDpps = async () => {
+    try {
+      const dpps = await apiGetDpps();
+      if (dpps && dpps.length > 0) {
+        const mapped = dpps.map((d: any) => ({
+          id: d.id,
+          name: d.name || 'Bilinmeyen Ürün',
+          role_detail: role === 'SUPPLIER' ? 'Ham Madde Tedarikçisi' : role === 'CUSTOMER' ? 'Alıcı' : 'Denetleyici',
+          date: d.production_date || '2026-03-10',
+          status: mapStatus(d.status),
+          category: d.category || 'Structural Steel',
+        }));
+        setItems(mapped);
+      } else {
+        setItems(data.items);
+      }
+    } catch (err) {
+      console.error("DPP listesi alınamadı, mock kullanılacak:", err);
+      setItems(data?.items || []);
+    }
+  };
 
   // Rol değişimi sırasında (ör. logout) data henüz undefined olabilir — render'ı beklet
   if (!data) return null;
@@ -73,7 +119,7 @@ export default function MyDpps() {
 
       {/* Liste */}
       <div className="space-y-4">
-        {data.items.map((item) => {
+        {items.map((item) => {
           const colorKey = COLOR[ROLE_DATA[role as keyof typeof ROLE_DATA]?.color || 'blue'];
           const Icon = data.icon;
           return (
@@ -111,7 +157,7 @@ export default function MyDpps() {
         })}
       </div>
 
-      {data.items.length === 0 && (
+      {items.length === 0 && (
         <div className="text-center py-16 text-gray-400">
           <ClipboardList size={40} className="mx-auto mb-3 opacity-40" />
           <p className="font-bold">Size ilişkilendirilmiş DPP bulunamadı.</p>

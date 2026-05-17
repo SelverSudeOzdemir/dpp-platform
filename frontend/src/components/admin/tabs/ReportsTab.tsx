@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import { Download, Globe, FileText, Database, AlertTriangle, XCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Download, Globe, FileText, Database, AlertTriangle, XCircle, Loader2 } from 'lucide-react';
 import { INCOMPLETE } from '../../../constants/adminConstants';
 import type { AdminProduct, IncompleteProduct } from '../../../types/admin';
+import { apiGetIncompleteReport } from '../../../lib/api';
 
 interface Props {
   products: AdminProduct[];
@@ -16,6 +17,32 @@ export default function ReportsTab({ products }: Props) {
   const [showJsonInfo, setShowJsonInfo] = useState(false);
   const [incompleteFilter, setIncompleteFilter] = useState<'taslak' | 'geri-cagrildi'>('taslak');
   const [selectedIncomplete, setSelectedIncomplete] = useState<IncompleteProduct | null>(null);
+  const [incompleteList, setIncompleteList] = useState<IncompleteProduct[]>(INCOMPLETE);
+  const [loadingIncomplete, setLoadingIncomplete] = useState(false);
+
+  useEffect(() => {
+    const fetchIncomplete = async () => {
+      setLoadingIncomplete(true);
+      try {
+        const data = await apiGetIncompleteReport();
+        if (data && data.length > 0) {
+          const mapped = data.map((item: any) => ({
+            id: item.dpp_id ? (item.dpp_id.length > 8 ? item.dpp_id.slice(0, 8) + '…' : item.dpp_id) : '—',
+            product: item.product_name || 'Bilinmeyen Ürün',
+            version: '1.0',
+            status: 'Taslak',
+            missing: item.missing || []
+          }));
+          setIncompleteList(mapped);
+        }
+      } catch (err) {
+        console.error('Eksik veri raporu backendden alınamadı, mock kullanılacak:', err);
+      } finally {
+        setLoadingIncomplete(false);
+      }
+    };
+    fetchIncomplete();
+  }, []);
 
   return (
     <>
@@ -107,12 +134,12 @@ export default function ReportsTab({ products }: Props) {
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-sm font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
               <AlertTriangle size={16} className="text-yellow-500" />
-              Eksik Veri Raporu
+              Eksik Veri Raporu {loadingIncomplete && <Loader2 size={14} className="text-blue-600 animate-spin" />}
             </h2>
             <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
               {([
-                { key: 'taslak',        label: 'Taslak',        count: INCOMPLETE.filter(p => p.status === 'Taslak').length },
-                { key: 'geri-cagrildi', label: 'Geri Çağrıldı', count: INCOMPLETE.filter(p => p.status === 'Geri Çağrıldı').length },
+                { key: 'taslak',        label: 'Taslak',        count: incompleteList.filter(p => p.status === 'Taslak').length },
+                { key: 'geri-cagrildi', label: 'Geri Çağrıldı', count: incompleteList.filter(p => p.status === 'Geri Çağrıldı').length },
               ] as { key: 'taslak' | 'geri-cagrildi'; label: string; count: number }[]).map(f => (
                 <button
                   key={f.key}
@@ -131,7 +158,7 @@ export default function ReportsTab({ products }: Props) {
           </div>
 
           <div className="space-y-3">
-            {INCOMPLETE.filter(p =>
+            {incompleteList.filter(p =>
               incompleteFilter === 'taslak' ? p.status === 'Taslak' : p.status === 'Geri Çağrıldı'
             ).map((p, i) => (
               <button
@@ -228,11 +255,19 @@ export default function ReportsTab({ products }: Props) {
             <div className="p-6 space-y-5">
 
               {/* Açıklama */}
-              <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
+              <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <p className="text-xs text-blue-800 font-medium leading-relaxed">
                   CBAM kapsamında her çeyrek dönem sonunda AB Komisyonu&apos;nun CBAM Geçiş Portalı&apos;na XML formatında rapor iletilmesi zorunludur.
                   Aşağıdaki alanlar <span className="font-black">zorunlu (Z)</span> veya <span className="font-black">koşullu (K)</span> olarak işaretlenmiştir.
                 </p>
+                <a
+                  href={`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api/v1'}/export/cbam-xml`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-xl shadow-md shadow-blue-100 shrink-0 transition-all active:scale-95"
+                >
+                  <Download size={14} /> XML İndir
+                </a>
               </div>
 
               {[
@@ -337,10 +372,18 @@ export default function ReportsTab({ products }: Props) {
             </div>
 
             <div className="p-6 space-y-4">
-              <div className="bg-green-50 border border-green-100 rounded-2xl p-4">
+              <div className="bg-green-50 border border-green-100 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <p className="text-xs text-green-800 font-medium leading-relaxed">
                   Her sheet ayrı bir veri grubunu temsil eder. Tarih aralığı ve ürün/batch filtresi tüm sheet&apos;lere uygulanır.
                 </p>
+                <a
+                  href={`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api/v1'}/export/excel`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-xs font-black rounded-xl shadow-md shadow-green-100 shrink-0 transition-all active:scale-95"
+                >
+                  <Download size={14} /> Excel İndir
+                </a>
               </div>
 
               {[
@@ -487,10 +530,18 @@ export default function ReportsTab({ products }: Props) {
 
             <div className="p-6 space-y-5">
 
-              <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4">
+              <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <p className="text-xs text-purple-800 font-medium leading-relaxed">
                   JSON export, Excel&apos;den farklı olarak <span className="font-black">hiyerarşik</span> bir yapı kullanır. Her pasaport kendi sertifika, tedarik zinciri ve emisyon verilerini içinde taşır. Tarih aralığı ve ürün/batch filtresi uygulanır.
                 </p>
+                <a
+                  href={`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api/v1'}/export/json?date_from=${exportDateFrom}&date_to=${exportDateTo}${exportProduct !== 'all' ? `&product_id=${exportProduct}` : ''}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-black rounded-xl shadow-md shadow-purple-100 shrink-0 transition-all active:scale-95"
+                >
+                  <Download size={14} /> JSON İndir
+                </a>
               </div>
 
               {/* Şema */}

@@ -110,6 +110,7 @@ def _map_detail(dpp: DigitalProductPassport) -> DppDetailResponse:
     base = _map_list_item(dpp)
     return DppDetailResponse(
         **base.model_dump(),
+        product_type_id=str(dpp.product_type_id) if dpp.product_type_id else None,
         public_identifier=str(dpp.public_identifier),
         gs1_serial_number=dpp.gs1_serial_number,
         dpp_version=dpp.dpp_version,

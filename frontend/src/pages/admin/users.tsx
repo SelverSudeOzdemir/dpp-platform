@@ -4,6 +4,7 @@ import ProtectedRoute from '../../components/auth/ProtectedRoute';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import { Plus, X, UserCheck, Search, MoreVertical, RefreshCw, ShieldAlert, ShieldCheck, UserX, ChevronDown } from 'lucide-react';
+import { apiGetUsers, apiCreateUser, apiUpdateUserRole, apiUpdateUserStatus } from '../../lib/api';
 
 type UserStatus = 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'INACTIVE';
 
@@ -178,12 +179,33 @@ function UsersPage() {
   const [formError, setFormError]   = useState('');
   const [formSuccess, setFormSuccess] = useState('');
 
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    try {
+      const data = await apiGetUsers();
+      const rows = data.map((u: any) => ({
+        id: String(u.id),
+        full_name: u.full_name || '',
+        email: u.email,
+        role: u.role,
+        status: u.is_active ? 'ACTIVE' : 'INACTIVE',
+        invited_at: new Date().toISOString().split('T')[0],
+      }));
+      setUsers(rows);
+    } catch (err: any) {
+      console.error("Kullanıcılar backend'den yüklenemedi, mock kullanılacak:", err);
+    }
+  };
+
   const resetForm = () => {
     setFullName(''); setEmail(''); setRole('SUPPLIER');
     setFormError(''); setFormSuccess('');
   };
 
-  const handleInvite = (e: { preventDefault: () => void }) => {
+  const handleInvite = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
     setFormError(''); setFormSuccess('');
 
@@ -191,29 +213,52 @@ function UsersPage() {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setFormError('Geçerli bir e-posta girin.'); return; }
     if (users.some(u => u.email === email)) { setFormError('Bu e-posta zaten kayıtlı.'); return; }
 
-    // TODO: POST /api/v1/users/invite
-    setUsers(prev => [{
-      id: Date.now().toString(),
-      full_name: fullName,
-      email,
-      role,
-      status: 'PENDING',
-      invited_at: new Date().toISOString().split('T')[0],
-    }, ...prev]);
-    setFormSuccess(`${fullName} adresine davet gönderildi.`);
-    setFullName(''); setEmail(''); setRole('SUPPLIER');
+    try {
+      const newUser = await apiCreateUser({
+        email,
+        password: 'TemporaryPassword123!',
+        full_name: fullName,
+        role: role
+      });
+      
+      const newRow: UserRow = {
+        id: String(newUser.id),
+        full_name: newUser.full_name || '',
+        email: newUser.email,
+        role: newUser.role,
+        status: newUser.is_active ? 'ACTIVE' : 'PENDING',
+        invited_at: new Date().toISOString().split('T')[0],
+      };
+      
+      setUsers(prev => [newRow, ...prev]);
+      setFormSuccess(`${fullName} adresine davet gönderildi.`);
+      setFullName(''); setEmail(''); setRole('SUPPLIER');
+    } catch (err: any) {
+      setFormError(err.message || 'Kullanıcı oluşturulurken hata oluştu.');
+    }
   };
 
-  const handleAction = (id: string, action: 'resend' | 'suspend' | 'activate' | 'deactivate' | 'change_role', payload?: Role) => {
-    // TODO: ilgili API endpoint'leri
-    setUsers(prev => prev.map(u => {
-      if (u.id !== id) return u;
-      if (action === 'suspend')     return { ...u, status: 'SUSPENDED' };
-      if (action === 'activate')    return { ...u, status: 'ACTIVE' };
-      if (action === 'deactivate')  return { ...u, status: 'INACTIVE' };
-      if (action === 'change_role' && payload) return { ...u, role: payload };
-      return u;
-    }));
+  const handleAction = async (id: string, action: 'resend' | 'suspend' | 'activate' | 'deactivate' | 'change_role', payload?: Role) => {
+    try {
+      if (action === 'suspend' || action === 'deactivate') {
+        await apiUpdateUserStatus(id, false);
+      } else if (action === 'activate') {
+        await apiUpdateUserStatus(id, true);
+      } else if (action === 'change_role' && payload) {
+        await apiUpdateUserRole(id, payload);
+      }
+
+      setUsers(prev => prev.map(u => {
+        if (u.id !== id) return u;
+        if (action === 'suspend')     return { ...u, status: 'SUSPENDED' };
+        if (action === 'activate')    return { ...u, status: 'ACTIVE' };
+        if (action === 'deactivate')  return { ...u, status: 'INACTIVE' };
+        if (action === 'change_role' && payload) return { ...u, role: payload };
+        return u;
+      }));
+    } catch (err: any) {
+      alert('İşlem gerçekleştirilemedi: ' + (err.message || err));
+    }
   };
 
   const filtered = users.filter(u => {

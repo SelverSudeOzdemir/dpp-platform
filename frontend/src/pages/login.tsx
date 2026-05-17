@@ -50,43 +50,6 @@ export default function Login() {
     mode: "onTouched",
   });
 
-  // Mock kullanıcı listesi — gerçek backend bağlandığında apiClient.post('/auth/login') ile değişecek
-  const MOCK_USERS: Record<
-    string,
-    { id: string; name: string; email: string; role: string }
-  > = {
-    "admin@kocaer.com": {
-      id: "1",
-      name: "Furkan Çiçek",
-      email: "admin@kocaer.com",
-      role: "ADMIN",
-    },
-    "engineer@kocaer.com": {
-      id: "5",
-      name: "Ali Kaya",
-      email: "engineer@kocaer.com",
-      role: "ENGINEER",
-    },
-    "supplier@erdemir.com": {
-      id: "2",
-      name: "Ahmet Demir",
-      email: "supplier@erdemir.com",
-      role: "SUPPLIER",
-    },
-    "customer@turkcell.com": {
-      id: "3",
-      name: "Mehmet Yılmaz",
-      email: "customer@turkcell.com",
-      role: "CUSTOMER",
-    },
-    "authority@gtb.gov.tr": {
-      id: "4",
-      name: "Kemal Arslan",
-      email: "authority@gtb.gov.tr",
-      role: "AUTHORITY",
-    },
-  };
-
   const onSubmit: SubmitHandler<LoginFormValues> = async (data) => {
     setIsLoading(true);
     setErrorMessage("");

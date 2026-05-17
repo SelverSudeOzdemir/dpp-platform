@@ -247,6 +247,14 @@ export async function apiGetKpiSummary() {
   return res.json();
 }
 
+export async function apiGetPendingDpps() {
+  const res = await authFetch(`${BASE_URL}/admin/pending`, {
+    headers: { ...getAuthHeader() },
+  });
+  if (!res.ok) throw new Error("Onay bekleyen DPP'ler alınamadı");
+  return res.json();
+}
+
 export async function apiGetUrgentAlerts() {
   const res = await authFetch(`${BASE_URL}/admin/urgent-alerts`, {
     headers: { ...getAuthHeader() },
@@ -256,7 +264,7 @@ export async function apiGetUrgentAlerts() {
 }
 
 export async function apiApproveDpp(dppId: string) {
-  const res = await authFetch(`${BASE_URL}/admin/dpps/${dppId}/approve`, {
+  const res = await authFetch(`${BASE_URL}/admin/approve/${dppId}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...getAuthHeader() },
   });
@@ -265,12 +273,28 @@ export async function apiApproveDpp(dppId: string) {
 }
 
 export async function apiRejectDpp(dppId: string, reason: string) {
-  const res = await authFetch(`${BASE_URL}/admin/dpps/${dppId}/reject`, {
+  const res = await authFetch(`${BASE_URL}/admin/reject/${dppId}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...getAuthHeader() },
-    body: JSON.stringify({ rejection_reason: reason }),
+    body: JSON.stringify({ status: "REJECTED", rejection_reason: reason }),
   });
   if (!res.ok) throw new Error("Red işlemi başarısız");
+  return res.json();
+}
+
+export async function apiGetIncompleteReport() {
+  const res = await authFetch(`${BASE_URL}/admin/incomplete-report`, {
+    headers: { ...getAuthHeader() },
+  });
+  if (!res.ok) throw new Error("Eksik veri raporu alınamadı");
+  return res.json();
+}
+
+export async function apiGetPermissionsMatrix() {
+  const res = await authFetch(`${BASE_URL}/admin/permissions-matrix`, {
+    headers: { ...getAuthHeader() },
+  });
+  if (!res.ok) throw new Error("Rol yetki matrisi alınamadı");
   return res.json();
 }
 
@@ -387,4 +411,19 @@ export async function apiGetDppAuditLogs(dppId: string) {
   });
   if (!res.ok) throw new Error("DPP audit logları alınamadı");
   return res.json();
+}
+
+export async function apiChangePassword(currentPassword: string, newPassword: string) {
+  const res = await authFetch(`${BASE_URL}/users/me/password`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...getAuthHeader() },
+    body: JSON.stringify({
+      current_password: currentPassword,
+      new_password: newPassword,
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail ?? "Şifre değiştirme işlemi başarısız.");
+  }
 }

@@ -1,10 +1,38 @@
-import { useState } from 'react';
-import { Activity, User, Lock, CheckCircle2, XCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Activity, User, Lock, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { ACCESS_LOGS, LOGS_PER_PAGE, ACCESS_MATRIX } from '../../../constants/adminConstants';
 import { RoleBadge } from '../AdminBadges';
+import { apiGetAccessLogs } from '../../../lib/api';
 
 export default function AccessTab() {
   const [logPage, setLogPage] = useState(0);
+  const [logs, setLogs] = useState<any[]>(ACCESS_LOGS);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchLogs = async () => {
+      setLoading(true);
+      try {
+        const response = await apiGetAccessLogs();
+        if (response && response.data && response.data.length > 0) {
+          const mapped = response.data.map((l: any) => ({
+            user: l.user_email || 'anonim',
+            role: l.role || 'PUBLIC',
+            action: l.action || 'Pasaport görüntülendi',
+            product: l.target_id ? (l.target_id.length > 8 ? l.target_id.slice(0, 8) + '…' : l.target_id) : '—',
+            timestamp: l.date ? new Date(l.date).toLocaleString('tr-TR') : '—',
+            ip: l.ip_address || '—'
+          }));
+          setLogs(mapped);
+        }
+      } catch (err) {
+        console.error('Erişim logları backendden yüklenemedi, mock kullanılacak:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLogs();
+  }, []);
 
   return (
     <div className="space-y-8">
@@ -17,8 +45,9 @@ export default function AccessTab() {
             Erişim Logları (Son 30 Gün)
           </h2>
           <div className="flex items-center gap-3">
+            {loading && <Loader2 size={14} className="text-blue-600 animate-spin" />}
             <span className="text-xs text-gray-400 font-bold">
-              {logPage * LOGS_PER_PAGE + 1}–{Math.min((logPage + 1) * LOGS_PER_PAGE, ACCESS_LOGS.length)} / {ACCESS_LOGS.length} kayıt
+              {logPage * LOGS_PER_PAGE + 1}–{Math.min((logPage + 1) * LOGS_PER_PAGE, logs.length)} / {logs.length} kayıt
             </span>
             <div className="flex items-center gap-1">
               <button
@@ -29,12 +58,12 @@ export default function AccessTab() {
                 ← Önceki
               </button>
               <span className="text-[10px] font-bold text-gray-400 px-1">
-                {logPage + 1} / {Math.ceil(ACCESS_LOGS.length / LOGS_PER_PAGE)}
+                {logPage + 1} / {Math.ceil(logs.length / LOGS_PER_PAGE)}
               </span>
               <button
                 onClick={() => setLogPage(p => p + 1)}
-                disabled={(logPage + 1) * LOGS_PER_PAGE >= ACCESS_LOGS.length}
-                className={`px-2.5 py-1 text-xs font-black border rounded-lg transition-colors ${(logPage + 1) * LOGS_PER_PAGE >= ACCESS_LOGS.length ? 'border-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                disabled={(logPage + 1) * LOGS_PER_PAGE >= logs.length}
+                className={`px-2.5 py-1 text-xs font-black border rounded-lg transition-colors ${(logPage + 1) * LOGS_PER_PAGE >= logs.length ? 'border-gray-100 text-gray-300 cursor-not-allowed' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
               >
                 Sonraki →
               </button>
@@ -51,7 +80,7 @@ export default function AccessTab() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {ACCESS_LOGS.slice(logPage * LOGS_PER_PAGE, (logPage + 1) * LOGS_PER_PAGE).map((log, i) => (
+              {logs.slice(logPage * LOGS_PER_PAGE, (logPage + 1) * LOGS_PER_PAGE).map((log, i) => (
                 <tr key={i} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-2">
@@ -68,6 +97,11 @@ export default function AccessTab() {
                   <td className="px-5 py-3"><span className="text-[10px] font-mono text-gray-400">{log.ip}</span></td>
                 </tr>
               ))}
+              {logs.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-5 py-8 text-center text-xs text-gray-400 font-medium">Erişim kaydı bulunamadı.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
