@@ -60,6 +60,12 @@ function mapStatus(raw?: string): Product["status"] {
       return "Aktif";
     case "DRAFT":
       return "Taslak";
+    case "REJECTED":
+      return "Reddedilmiş";
+    case "PENDING":
+    case "PENDING_APPROVAL":
+    case "SUBMITTED":
+      return "Onay Bekliyor";
     default:
       return "Arşiv";
   }
@@ -146,7 +152,7 @@ export interface MechanicalProperties {
 export interface Product {
   id: string;
   product_type_id?: string;
-  status: "Aktif" | "Taslak" | "Arşiv";
+  status: "Aktif" | "Taslak" | "Arşiv" | "Reddedilmiş" | "Onay Bekliyor";
   createdAt: string;
   product_name: string;
   product_category: ProductCategory;

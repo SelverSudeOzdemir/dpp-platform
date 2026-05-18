@@ -2,10 +2,9 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { productService, Product } from '../Services/productService';
 import { apiGetDppSummaryStats } from '../lib/api';
-import Card from '../components/ui/Card';
 import Spinner from '../components/ui/spinner';
 import ProtectedRoute from '../components/auth/ProtectedRoute';
-import { Plus, ChevronDown, FileText, XCircle, ArrowRight, Loader2 } from 'lucide-react';
+import { Plus, ChevronDown, FileText, XCircle, ArrowRight, Loader2, Search, CheckCircle2, Clock, AlertCircle, Zap } from 'lucide-react';
 
 interface SummaryStats {
   total: number; published: number; draft: number;
@@ -19,6 +18,8 @@ export default function Dashboard() {
   const [menuOpen, setMenuOpen]               = useState(false);
   const [showBatchPicker, setShowBatchPicker] = useState(false);
   const [loadingBatch, setLoadingBatch]       = useState<string | null>(null);
+  const [statusFilter, setStatusFilter]       = useState<Product['status'] | null>(null);
+  const [search, setSearch]                   = useState('');
   const menuRef = useRef<HTMLDivElement>(null);
   const router  = useRouter();
 
@@ -113,91 +114,189 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* İstatistik kartları — GET /api/v1/dpps/summary-stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card className="p-5 border-l-4 border-blue-500 bg-white shadow-sm">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Toplam Kayıt</p>
-          <p className="text-3xl font-black text-gray-900 mt-1">
-            {stats ? stats.total : products.length}
-          </p>
-        </Card>
-        <Card className="p-5 border-l-4 border-green-500 bg-white shadow-sm">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Aktif Yayınlar</p>
-          <p className="text-3xl font-black text-gray-900 mt-1">
-            {stats ? stats.published : products.filter(p => p.status === 'Aktif').length}
-          </p>
-        </Card>
-        <Card className="p-5 border-l-4 border-yellow-500 bg-white shadow-sm">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Taslak Durumunda</p>
-          <p className="text-3xl font-black text-gray-900 mt-1">
-            {stats ? stats.draft : products.filter(p => p.status === 'Taslak').length}
-          </p>
-        </Card>
+      {/* Durum Filtre Kartları */}
+      {(() => {
+        const STATUS_CARDS = [
+          {
+            key: 'Aktif',
+            label: 'Yayında',
+            count: stats?.published ?? products.filter(p => p.status === 'Aktif').length,
+            border: 'border-green-500',
+            text: 'text-green-700',
+            activeBg: 'bg-green-50 ring-2 ring-green-400',
+            icon: <CheckCircle2 size={16} className="text-green-600" />,
+          },
+          {
+            key: 'Taslak',
+            label: 'Taslak',
+            count: stats?.draft ?? products.filter(p => p.status === 'Taslak').length,
+            border: 'border-yellow-500',
+            text: 'text-yellow-700',
+            activeBg: 'bg-yellow-50 ring-2 ring-yellow-400',
+            icon: <Clock size={16} className="text-yellow-600" />,
+          },
+          {
+            key: 'Reddedilmiş',
+            label: 'Reddedilmiş',
+            count: stats?.rejected ?? products.filter(p => p.status === 'Reddedilmiş').length,
+            border: 'border-red-500',
+            text: 'text-red-700',
+            activeBg: 'bg-red-50 ring-2 ring-red-400',
+            icon: <AlertCircle size={16} className="text-red-600" />,
+          },
+          {
+            key: 'Onay Bekliyor',
+            label: 'Onay Bekleyen',
+            count: stats?.pending_approval ?? products.filter(p => p.status === 'Onay Bekliyor').length,
+            border: 'border-amber-500',
+            text: 'text-amber-700',
+            activeBg: 'bg-amber-50 ring-2 ring-amber-400',
+            icon: <Zap size={16} className="text-amber-600" />,
+          },
+        ];
+        return (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            {STATUS_CARDS.map(card => {
+              const isActive = statusFilter === card.key;
+              return (
+                <button
+                  key={card.key}
+                  onClick={() => setStatusFilter(isActive ? null : card.key as Product['status'])}
+                  className={`p-5 border-l-4 rounded-2xl shadow-sm text-left transition-all hover:shadow-md ${card.border} ${isActive ? card.activeBg : 'bg-white'}`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">{card.label}</p>
+                    {card.icon}
+                  </div>
+                  <p className={`text-3xl font-black ${card.text}`}>{card.count}</p>
+                </button>
+              );
+            })}
+          </div>
+        );
+      })()}
+
+      {/* Filtre Barı */}
+      <div className="flex items-center gap-3 mb-5">
+        <div className="relative flex-1 max-w-sm">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Ürün adı veya parti no ara..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full pl-8 pr-8 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+          />
+          {search && (
+            <button
+              onClick={() => setSearch('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <XCircle size={14} />
+            </button>
+          )}
+        </div>
+        {(statusFilter || search) && (
+          <button
+            onClick={() => { setStatusFilter(null); setSearch(''); }}
+            className="text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors whitespace-nowrap"
+          >
+            Filtreleri Temizle ×
+          </button>
+        )}
+        <span className="text-xs text-gray-400 font-medium ml-auto whitespace-nowrap">
+          {(() => {
+            const q = search.trim().toLowerCase();
+            const count = products.filter(p => {
+              const matchStatus = !statusFilter || p.status === statusFilter;
+              const matchSearch = !q || p.product_name.toLowerCase().includes(q) || (p.batch_number || '').toLowerCase().includes(q);
+              return matchStatus && matchSearch;
+            }).length;
+            return `${count} / ${products.length} kayıt`;
+          })()}
+        </span>
       </div>
 
       {/* DPP Tablosu */}
-      <div className="bg-white shadow-xl shadow-gray-100 border border-gray-200 rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Parti No</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Ürün Bilgisi</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Kategori</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Durum</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Oluşturma</th>
-                <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">İşlemler</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 bg-white">
-              {products.map((product) => (
-                <tr key={product.id} className="hover:bg-blue-50/30 transition-colors group">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-xs font-mono font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                      {product.batch_number || '—'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-bold text-gray-900">{product.product_name}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-600">{product.product_category}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                      product.status === 'Aktif'  ? 'bg-green-100 text-green-700'  :
-                      product.status === 'Taslak' ? 'bg-yellow-100 text-yellow-700' :
-                                                    'bg-gray-100 text-gray-500'
-                    }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
-                        product.status === 'Aktif'  ? 'bg-green-500'  :
-                        product.status === 'Taslak' ? 'bg-yellow-500' : 'bg-gray-400'
-                      }`} />
-                      {product.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">
-                    {product.createdAt}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                    <button onClick={() => router.push(`/dpp/${product.id}`)}
-                      className="text-blue-600 hover:text-blue-800 font-bold transition-colors">
-                      Görüntüle
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {products.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                    Sistemde henüz bir ürün pasaportu bulunmuyor. Yeni bir tane ekleyerek başlayabilirsiniz.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {(() => {
+        const q = search.trim().toLowerCase();
+        const filtered = products.filter(p => {
+          const matchStatus = !statusFilter || p.status === statusFilter;
+          const matchSearch = !q || p.product_name.toLowerCase().includes(q) || (p.batch_number || '').toLowerCase().includes(q);
+          return matchStatus && matchSearch;
+        });
+        return (
+          <div className="bg-white shadow-xl shadow-gray-100 border border-gray-200 rounded-2xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Parti No</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Ürün Bilgisi</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Kategori</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Durum</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Oluşturma</th>
+                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">İşlemler</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 bg-white">
+                  {filtered.map((product) => (
+                    <tr key={product.id} className="hover:bg-blue-50/30 transition-colors group">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="text-xs font-mono font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                          {product.batch_number || '—'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-bold text-gray-900">{product.product_name}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-600">{product.product_category}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                          product.status === 'Aktif'         ? 'bg-green-100 text-green-700'  :
+                          product.status === 'Taslak'        ? 'bg-yellow-100 text-yellow-700' :
+                          product.status === 'Reddedilmiş'   ? 'bg-red-100 text-red-700'       :
+                          product.status === 'Onay Bekliyor' ? 'bg-amber-100 text-amber-700'   :
+                                                               'bg-gray-100 text-gray-500'
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
+                            product.status === 'Aktif'         ? 'bg-green-500'  :
+                            product.status === 'Taslak'        ? 'bg-yellow-500' :
+                            product.status === 'Reddedilmiş'   ? 'bg-red-500'    :
+                            product.status === 'Onay Bekliyor' ? 'bg-amber-500'  :
+                                                                 'bg-gray-400'
+                          }`} />
+                          {product.status === 'Aktif' ? 'Yayında' : product.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">
+                        {product.createdAt}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                        <button onClick={() => router.push(`/dpp/${product.id}`)}
+                          className="text-blue-600 hover:text-blue-800 font-bold transition-colors">
+                          Görüntüle
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {filtered.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                        {products.length === 0
+                          ? 'Sistemde henüz bir ürün pasaportu bulunmuyor. Yeni bir tane ekleyerek başlayabilirsiniz.'
+                          : 'Seçilen filtreye uyan kayıt bulunamadı.'}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })()}
     </div>
 
     {/* Batch Seçim Modalı */}

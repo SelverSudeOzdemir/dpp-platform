@@ -174,7 +174,7 @@ export default function BatchList() {
   ];
 
   return (
-    <ProtectedRoute allowedRoles={['ENGINEER', 'ADMIN']}>
+    <ProtectedRoute allowedRoles={['ENGINEER']}>
       <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
 
         {/* Başlık */}

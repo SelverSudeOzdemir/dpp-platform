@@ -8,11 +8,11 @@ import {
   INITIAL_PRODUCTS, PENDING_BATCHES, CERT_ALERTS, CBAM_LIMIT, TABS, STATUS_CFG,
 } from '../../constants/adminConstants';
 import OverviewTab from '../../components/admin/tabs/OverviewTab';
-import PassportsTab from '../../components/admin/tabs/PassportsTab';
 import ComplianceTab from '../../components/admin/tabs/ComplianceTab';
 import AccessTab from '../../components/admin/tabs/AccessTab';
 import SupplyChainTab from '../../components/admin/tabs/SupplyChainTab';
 import ReportsTab from '../../components/admin/tabs/ReportsTab';
+import PassportsTab from '../../components/admin/tabs/PassportsTab';
 import type { AdminProduct, PendingBatch, PassportStatus } from '../../types/admin';
 import {
   apiGetKpiSummary,
