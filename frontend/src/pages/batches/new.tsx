@@ -3,7 +3,6 @@ import { useRouter } from 'next/router';
 import ProtectedRoute from '../../components/auth/ProtectedRoute';
 import { apiCreateDpp, apiGetProducts, apiUpdateDpp } from '../../lib/api';
 import ErpSyncFlow from '../../components/batches/ErpSyncFlow';
-import { MainStepper } from '../../components/batches/MainStepper';
 import { Step1BatchInfo } from '../../components/batches/Step1BatchInfo';
 import Step3DppData from '../../components/batches/Step3DppData';
 import Step4Preview, { getMissingFields } from '../../components/batches/Step4Preview';
@@ -12,7 +11,7 @@ import { EMPTY_DPP, MOCK_BATCH_DPP } from '../../constants/batchConstants';
 import {
   ChevronRight, ChevronLeft,
   Send, Loader2,
-  Save, Clock,
+  Save, Clock, CheckCircle2,
 } from 'lucide-react';
 
 export default function NewBatch() {
@@ -148,86 +147,149 @@ export default function NewBatch() {
     );
   }
 
+  const STEP_META = [
+    {
+      label: 'Batch Bilgileri',
+      desc: 'Üretim partisine ait temel kimlik ve üretim bilgilerini girin.',
+      hint: 'SAP bağlantısı olan mühendisler "SAP\'tan Veri Çek" butonunu kullanabilir.',
+    },
+    {
+      label: 'DPP Verileri',
+      desc: 'Kimyasal, mekanik, karbon ve yaşam döngüsü bilgilerini doldurun.',
+      hint: 'SAP\'tan gelen alanlar kilitlidir; yalnızca eksik veriler elle girilir.',
+    },
+    {
+      label: 'Önizleme & Gönder',
+      desc: 'Girilen tüm bilgileri gözden geçirin ve onaya gönderin.',
+      hint: 'Eksik zorunlu alan varsa sistem sizi uyarır.',
+    },
+  ];
+
   return (
     <ProtectedRoute allowedRoles={['ENGINEER', 'ADMIN']}>
-      <div className="max-w-3xl mx-auto py-10 px-4">
+      <div className="max-w-screen-xl mx-auto py-10 px-6">
         <button type="button" onClick={() => router.push('/batches')}
           className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-500 hover:text-blue-600 transition-colors mb-8">
           <ChevronLeft size={16} /> Batch Listesine Dön
         </button>
-        <div className="mb-2">
-          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Yeni Batch & DPP Oluştur</h1>
-          <p className="text-sm text-gray-500 mt-1 font-medium">Üretim partisi bilgilerini girerek DPP oluşturun ve onaya gönderin.</p>
-        </div>
-        <div className="mt-10"><MainStepper current={step} /></div>
 
-        <div className="bg-white border border-gray-100 rounded-2xl p-8 shadow-xl shadow-gray-100 min-h-[400px]">
-          {batchLoading && (
-            <div className="flex flex-col items-center justify-center py-20 gap-4">
-              <div className="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center">
-                <Loader2 size={28} className="text-blue-500 animate-spin" />
-              </div>
-              <div className="text-center">
-                <p className="text-base font-black text-gray-800">Veriler Yükleniyor</p>
-                <p className="text-sm text-gray-400 font-medium mt-1">Mevcut DPP bilgileri getiriliyor…</p>
-              </div>
+        <div className="flex gap-8 items-start">
+          {/* ── Sol kenar çubuğu ── */}
+          <aside className="w-72 shrink-0 sticky top-8">
+            <div className="mb-8">
+              <h1 className="text-2xl font-black text-gray-900 tracking-tight leading-tight">
+                Yeni Batch &amp; DPP Oluştur
+              </h1>
+              <p className="text-sm text-gray-500 mt-2 font-medium leading-relaxed">
+                Üretim partisi bilgilerini girerek DPP oluşturun ve onaya gönderin.
+              </p>
             </div>
-          )}
 
-          {!batchLoading && step === 0 && erpOverlay && (
-            <ErpSyncFlow onSync={handleErpSync} onCancel={() => setErpOverlay(false)} />
-          )}
-          {!batchLoading && step === 0 && !erpOverlay && (
-            <Step1BatchInfo
-              data={batchInfo}
-              onChange={setBatchInfo}
-              erpImported={erpImported}
-              existingLoaded={existingLoaded}
-              onErpClick={() => setErpOverlay(true)}
-              erpLockedFields={erpLockedFields}
-            />
-          )}
-          {!batchLoading && step === 1 && <Step3DppData data={dppData} onChange={setDppData} batchInfo={batchInfo} erpImported={erpImported} erpLockedFields={erpLockedFields} />}
-          {!batchLoading && step === 2 && <Step4Preview batchInfo={batchInfo} dppData={dppData} erpImported={erpImported} />}
-        </div>
+            {/* Dikey stepper */}
+            <div className="flex flex-col gap-1">
+              {STEP_META.map((s, i) => {
+                const isDone    = i < step;
+                const isActive  = i === step;
+                return (
+                  <div key={i} className="flex gap-3">
+                    <div className="flex flex-col items-center">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shrink-0 transition-all
+                        ${isDone ? 'bg-blue-600 text-white' : isActive ? 'bg-blue-600 text-white ring-4 ring-blue-100' : 'bg-gray-100 text-gray-400'}`}>
+                        {isDone ? <CheckCircle2 size={15} /> : i + 1}
+                      </div>
+                      {i < STEP_META.length - 1 && (
+                        <div className={`w-0.5 flex-1 my-1 min-h-[2rem] ${isDone ? 'bg-blue-400' : 'bg-gray-200'}`} />
+                      )}
+                    </div>
+                    <div className={`pb-6 ${i === STEP_META.length - 1 ? 'pb-0' : ''}`}>
+                      <p className={`text-sm font-black leading-none mb-1 ${isActive ? 'text-blue-600' : isDone ? 'text-gray-700' : 'text-gray-400'}`}>
+                        {s.label}
+                      </p>
+                      {isActive && (
+                        <>
+                          <p className="text-xs text-gray-500 font-medium leading-relaxed">{s.desc}</p>
+                          <p className="text-[11px] text-blue-500 font-medium mt-1.5 leading-relaxed">{s.hint}</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
 
-        {!erpOverlay && !batchLoading && (
-          <div className="flex items-center justify-between mt-6">
-            <button type="button" onClick={handleBack}
-              className={`inline-flex items-center gap-1.5 px-5 py-2.5 border border-gray-200 text-gray-600 text-sm font-bold rounded-xl hover:bg-gray-50 transition-colors ${step === 0 ? 'invisible' : ''}`}>
-              <ChevronLeft size={16} /> Geri
-            </button>
-
-            <div className="flex items-center gap-4">
-              <div className="flex flex-col items-end">
+            {/* Taslak kaydet — sol kenar */}
+            {!erpOverlay && !batchLoading && (
+              <div className="mt-8 pt-6 border-t border-gray-100">
                 <button type="button" onClick={handleSaveDraft} disabled={isSaving}
-                  className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-gray-50 border border-gray-200 text-gray-700 text-sm font-bold rounded-xl hover:bg-gray-100 transition-colors disabled:opacity-50">
-                  {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} className="text-gray-500" />}
+                  className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-gray-50 border border-gray-200 text-gray-700 text-sm font-bold rounded-xl hover:bg-gray-100 transition-colors disabled:opacity-50">
+                  {isSaving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} className="text-gray-500" />}
                   {isSaving ? 'Kaydediliyor...' : 'Taslağı Kaydet'}
                 </button>
                 {lastSaved && !isSaving && (
-                  <span className="text-[10px] font-bold text-gray-400 mt-1 flex items-center gap-1 mr-1">
+                  <p className="text-[10px] font-bold text-gray-400 mt-1.5 flex items-center justify-center gap-1">
                     <Clock size={10} /> Son kayıt: {lastSaved.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}
-                  </span>
+                  </p>
                 )}
               </div>
+            )}
+          </aside>
 
-              {step < 2 ? (
-                <button type="button" onClick={handleNext}
-                  disabled={step === 0 && !canProceedStep0}
-                  className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors self-start">
-                  Devam Et <ChevronRight size={16} />
-                </button>
-              ) : (
-                <button type="button" onClick={() => isValidToSubmit && handleSubmitDpp()}
-                  disabled={!isValidToSubmit}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white text-sm font-bold rounded-xl hover:bg-green-700 transition-colors shadow-lg shadow-green-100 disabled:opacity-40 disabled:cursor-not-allowed self-start">
-                  <Send size={16} /> Onaya Gönder
-                </button>
+          {/* ── Sağ içerik alanı ── */}
+          <div className="flex-1 min-w-0">
+            <div className="bg-white border border-gray-100 rounded-2xl p-8 shadow-xl shadow-gray-100 min-h-[500px]">
+              {batchLoading && (
+                <div className="flex flex-col items-center justify-center py-24 gap-4">
+                  <div className="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center">
+                    <Loader2 size={28} className="text-blue-500 animate-spin" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-base font-black text-gray-800">Veriler Yükleniyor</p>
+                    <p className="text-sm text-gray-400 font-medium mt-1">Mevcut DPP bilgileri getiriliyor…</p>
+                  </div>
+                </div>
               )}
+
+              {!batchLoading && step === 0 && erpOverlay && (
+                <ErpSyncFlow onSync={handleErpSync} onCancel={() => setErpOverlay(false)} />
+              )}
+              {!batchLoading && step === 0 && !erpOverlay && (
+                <Step1BatchInfo
+                  data={batchInfo}
+                  onChange={setBatchInfo}
+                  erpImported={erpImported}
+                  existingLoaded={existingLoaded}
+                  onErpClick={() => setErpOverlay(true)}
+                  erpLockedFields={erpLockedFields}
+                />
+              )}
+              {!batchLoading && step === 1 && <Step3DppData data={dppData} onChange={setDppData} batchInfo={batchInfo} erpImported={erpImported} erpLockedFields={erpLockedFields} />}
+              {!batchLoading && step === 2 && <Step4Preview batchInfo={batchInfo} dppData={dppData} erpImported={erpImported} />}
             </div>
+
+            {!erpOverlay && !batchLoading && (
+              <div className="flex items-center justify-between mt-5">
+                <button type="button" onClick={handleBack}
+                  className={`inline-flex items-center gap-1.5 px-5 py-2.5 border border-gray-200 text-gray-600 text-sm font-bold rounded-xl hover:bg-gray-50 transition-colors ${step === 0 ? 'invisible' : ''}`}>
+                  <ChevronLeft size={16} /> Geri
+                </button>
+
+                {step < 2 ? (
+                  <button type="button" onClick={handleNext}
+                    disabled={step === 0 && !canProceedStep0}
+                    className="inline-flex items-center gap-1.5 px-6 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                    Devam Et <ChevronRight size={16} />
+                  </button>
+                ) : (
+                  <button type="button" onClick={() => isValidToSubmit && handleSubmitDpp()}
+                    disabled={!isValidToSubmit}
+                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white text-sm font-bold rounded-xl hover:bg-green-700 transition-colors shadow-lg shadow-green-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                    <Send size={16} /> Onaya Gönder
+                  </button>
+                )}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </ProtectedRoute>
   );
