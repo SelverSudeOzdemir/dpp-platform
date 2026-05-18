@@ -396,7 +396,7 @@ export default function BatchDetailPage() {
 
   if (!data) {
     return (
-      <ProtectedRoute allowedRoles={['ENGINEER']}>
+      <ProtectedRoute allowedRoles={['ENGINEER', 'ADMIN']}>
         <div className="max-w-3xl mx-auto py-16 px-4 text-center">
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-4" />
           <h2 className="text-lg font-black text-gray-700">DPP Pasaport Detayları Yükleniyor...</h2>
@@ -427,7 +427,7 @@ export default function BatchDetailPage() {
   if (adminAction) {
     const approved = adminAction === 'approved';
     return (
-      <ProtectedRoute allowedRoles={['ENGINEER']}>
+      <ProtectedRoute allowedRoles={['ENGINEER', 'ADMIN']}>
         <div className="min-h-screen flex flex-col items-center justify-center gap-6 px-4">
           <div className={`w-20 h-20 rounded-full flex items-center justify-center ${approved ? 'bg-green-100' : 'bg-red-100'}`}>
             {approved ? <CheckCircle2 size={32} className="text-green-600" /> : <XCircle size={32} className="text-red-600" />}
@@ -452,7 +452,7 @@ export default function BatchDetailPage() {
 
   if (submitted) {
     return (
-      <ProtectedRoute allowedRoles={['ENGINEER']}>
+      <ProtectedRoute allowedRoles={['ENGINEER', 'ADMIN']}>
         <div className="min-h-screen flex flex-col items-center justify-center gap-6 px-4">
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
             <Send size={32} className="text-green-600" />
@@ -474,7 +474,7 @@ export default function BatchDetailPage() {
   }
 
   return (
-    <ProtectedRoute allowedRoles={['ENGINEER']}>
+    <ProtectedRoute allowedRoles={['ENGINEER', 'ADMIN']}>
       <div className="max-w-3xl mx-auto py-10 px-4">
 
         {/* Geri */}

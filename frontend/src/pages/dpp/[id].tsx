@@ -17,120 +17,7 @@ const SOURCE_CFG: Record<string, { bg: string; text: string; border: string }> =
   'Manuel':  { bg: 'bg-blue-50',    text: 'text-blue-700',    border: 'border-blue-100'    },
 };
 
-const MOCK_VERSION_HISTORY = [
-  {
-    type: 'creation' as const,
-    timestamp: '2024-01-15T09:42:11Z',
-    operator: 'mehmet.yilmaz@kocaer.com',
-    blockchain_hash: '0x3f7a9c2b8e1d4f56a0c3b7e291d5f8a4',
-    groups: [
-      {
-        section: 'Batch Bilgileri',
-        fields: [
-          { field: 'Parti Numarası',       source: 'SAP/ERP' },
-          { field: 'Tedarikçi Parti Kodu', source: 'SAP/ERP' },
-          { field: 'Ocak / Fırın No',      source: 'SAP/ERP' },
-          { field: 'Üretim Tarihi',        source: 'SAP/ERP' },
-          { field: 'Miktar (ton)',          source: 'SAP/ERP' },
-        ],
-      },
-      {
-        section: 'Kimyasal & Mekanik',
-        fields: [
-          { field: 'C (Karbon) %',      source: 'SAP/ERP' },
-          { field: 'Mn (Manganez) %',   source: 'SAP/ERP' },
-          { field: 'Si (Silisyum) %',   source: 'SAP/ERP' },
-          { field: 'P (Fosfor) %',      source: 'SAP/ERP' },
-          { field: 'S (Kükürt) %',      source: 'SAP/ERP' },
-          { field: 'N (Azot) %',        source: 'SAP/ERP' },
-          { field: 'Akma Dayanımı',     source: 'SAP/ERP' },
-          { field: 'Çekme Dayanımı',    source: 'SAP/ERP' },
-          { field: 'Uzama Oranı',       source: 'SAP/ERP' },
-          { field: 'Darbe Enerjisi',    source: 'Excel'   },
-          { field: 'Test Sıcaklığı',    source: 'Excel'   },
-        ],
-      },
-      {
-        section: 'Tedarik Zinciri',
-        fields: [
-          { field: 'Tedarikçi Adı',      source: 'Excel'  },
-          { field: 'Tedarikçi Lokasyon', source: 'Excel'  },
-          { field: 'Menşei Ülke',        source: 'Excel'  },
-          { field: 'Malzeme',            source: 'Excel'  },
-          { field: 'Tedarik Tarihi',     source: 'Manuel' },
-          { field: 'Miktar & Birim',     source: 'Manuel' },
-        ],
-      },
-      {
-        section: 'Sürdürülebilirlik',
-        fields: [
-          { field: 'CO₂ A1-A3',                  source: 'SAP/ERP' },
-          { field: 'CO₂ A3 (Sadece Üretim)',      source: 'SAP/ERP' },
-          { field: 'Geri Dönüştürülmüş İçerik',  source: 'SAP/ERP' },
-          { field: 'Geri Dönüştürülebilirlik',   source: 'SAP/ERP' },
-          { field: 'Doğrulama Durumu',            source: 'Manuel'  },
-          { field: 'SVHC Beyanı',                 source: 'Manuel'  },
-          { field: 'İmha / Geri Dönüşüm Talimatı', source: 'Manuel' },
-        ],
-      },
-      {
-        section: 'Sertifikalar',
-        fields: [
-          { field: 'EPD Belge No',          source: 'Manuel' },
-          { field: 'EPD Geçerlilik Tarihi', source: 'Manuel' },
-          { field: 'EN 10204 Sertifika No', source: 'Manuel' },
-          { field: 'Sertifika Tipi',        source: 'Manuel' },
-          { field: 'Veren Kuruluş',         source: 'Manuel' },
-        ],
-      },
-    ],
-  },
-  {
-    type: 'update' as const,
-    timestamp: '2024-02-20T14:22:33Z',
-    operator: 'admin@kocaer.com',
-    blockchain_hash: '0x8b2ce1a47f93d0b5c6e428a1f157c392',
-    groups: [
-      {
-        section: 'Sürdürülebilirlik',
-        fields: [
-          { field: 'CO₂ A1-A3',        source: 'SAP/ERP' },
-          { field: 'Doğrulama Durumu', source: 'Manuel'  },
-        ],
-      },
-      {
-        section: 'Sertifikalar',
-        fields: [
-          { field: 'CE Marking Sertifika No', source: 'Manuel' },
-          { field: 'Geçerlilik Tarihi',        source: 'Manuel' },
-        ],
-      },
-    ],
-  },
-  {
-    type: 'update' as const,
-    timestamp: '2024-04-03T11:05:47Z',
-    operator: 'mehmet.yilmaz@kocaer.com',
-    blockchain_hash: '0xc94a3e017b28f6d5e1902c7a84b3d610',
-    groups: [
-      {
-        section: 'Sürdürülebilirlik',
-        fields: [
-          { field: 'EPD Belge No',          source: 'Manuel' },
-          { field: 'EPD Geçerlilik Tarihi', source: 'Manuel' },
-        ],
-      },
-      {
-        section: 'Tedarik Zinciri',
-        fields: [
-          { field: 'Tedarikçi Adı',  source: 'Excel' },
-          { field: 'Menşei Ülke',    source: 'Excel' },
-          { field: 'Tedarik Tarihi', source: 'Manuel' },
-        ],
-      },
-    ],
-  },
-];
+
 
 export default function ProductPassportDetail() {
   const router = useRouter();
@@ -139,7 +26,7 @@ export default function ProductPassportDetail() {
   const [loading, setLoading] = useState(true);
   const [isTechnicalOpen, setIsTechnicalOpen] = useState(false);
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
-  const [versionHistory, setVersionHistory] = useState<any[]>(MOCK_VERSION_HISTORY);
+  const [versionHistory, setVersionHistory] = useState<any[]>([]);
 
   // 1. ÖNCE ROLÜ (KİMLİĞİ) SİSTEMDEN ÇEKİYORUZ
   const { role } = useAuth();
@@ -213,30 +100,8 @@ export default function ProductPassportDetail() {
           name: 'Aliağa Steel Works',
           ...data?.facility
         },
-        supply_chain: data?.supply_chain && data.supply_chain.length > 0 ? data.supply_chain : [
-          {
-            sequence_number: 1,
-            stage_name: 'Raw Material Sourcing',
-            stage_date: '2023-12-20',
-            traceability_id: 'uuid-98a7f-erd-2023',
-            organization: { name: 'Erdemir', role: 'Iron Ore Supplier', location_text: 'Ereğli, Zonguldak', country_code: 'TR' },
-            material: { name: 'Steel Billet', quantity: '25.000', unit: 'tonnes', origin_country: 'Turkey' },
-            process: { name: 'Melting' }
-          },
-          {
-            sequence_number: 2,
-            stage_name: 'Manufacturing & Profiling',
-            stage_date: '2024-01-10',
-            traceability_id: 'uuid-kcr-ipe-2024',
-            organization: { name: 'Kocaer Çelik', role: 'Manufacturer', location_text: 'Aliağa, İzmir', country_code: 'TR' },
-            material: { name: 'Structural Steel (IPE 100)', quantity: '1', unit: 'batch', origin_country: 'Turkey' },
-            process: { name: 'Hot Rolling' }
-          }
-        ],
-        certifications: data?.certifications && data.certifications.length > 0 ? data.certifications : [
-          { cert_type: 'CE Marking', issuer: 'TSE', expiry_date: '2027-01-10' },
-          { cert_type: 'ISO 9001', issuer: 'TÜV NORD', expiry_date: '2026-05-20' }
-        ],
+        supply_chain: data?.supply_chain || [],
+        certifications: data?.certifications || [],
       });
       
       try {
@@ -260,7 +125,7 @@ export default function ProductPassportDetail() {
           setVersionHistory(mappedHistory);
         }
       } catch (err) {
-        console.error("Versiyon geçmişi alınamadı, mock kullanılacak:", err);
+        console.error('Versiyon geçmişi alınamadı:', err);
       }
 
       setLoading(false);

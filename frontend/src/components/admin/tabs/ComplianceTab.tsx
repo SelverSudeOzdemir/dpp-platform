@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { Flag, AlertTriangle, CheckCircle2, XCircle, Calendar, ShieldAlert } from 'lucide-react';
-import { CBAM_LIMIT, CERT_ALERTS, REACH_LIST, REACH_TOTAL } from '../../../constants/adminConstants';
+import { useState, useEffect } from 'react';
+import { Flag, AlertTriangle, CheckCircle2, XCircle, Calendar, ShieldAlert, Loader2 } from 'lucide-react';
+import { CBAM_LIMIT, CERT_ALERTS } from '../../../constants/adminConstants';
+import { apiGetCbamStatus, apiGetReachReport, apiGetProducts } from '../../../lib/api';
 import type { AdminProduct, CertType } from '../../../types/admin';
 
 interface Props {
@@ -10,6 +11,71 @@ interface Props {
 export default function ComplianceTab({ products }: Props) {
   const [certFilter, setCertFilter] = useState<'tumu' | CertType>('tumu');
   const [showAllReach, setShowAllReach] = useState(false);
+
+  // Dinamik REACH verisi — sadece backend'den çekilir
+  const [reachList, setReachList] = useState<{substance: string; cas: string; threshold: number; concentration: number; present: boolean}[]>([]);
+  const [reachTotal, setReachTotal] = useState(0);
+  const [reachLoading, setReachLoading] = useState(true);
+
+  // Dinamik CBAM verisi — sadece backend'den çekilir
+  const [cbamProducts, setCbamProducts] = useState<AdminProduct[]>([]);
+  const [cbamLoading, setCbamLoading] = useState(true);
+
+  useEffect(() => {
+    fetchCbamData();
+    fetchReachData();
+  }, []);
+
+
+
+  const fetchCbamData = async () => {
+    setCbamLoading(true);
+    try {
+      const response = await apiGetCbamStatus();
+      if (response && response.data) {
+        const mapped = response.data.map((item: any) => ({
+          id: item.dpp_id ? String(item.dpp_id).slice(0, 8) : '—',
+          product_name: item.product_name || 'Bilinmeyen Ürün',
+          product_category: 'Structural Steel',
+          co2_cradle_to_gate_kg: item.co2_value || 0,
+          passport_status: 'Yayında' as const,
+          version: '1.0',
+          blockchain_timestamp: '',
+        }));
+        setCbamProducts(mapped);
+      }
+    } catch (err) {
+      console.error('CBAM verileri alınamadı:', err);
+    } finally {
+      setCbamLoading(false);
+    }
+  };
+
+  const fetchReachData = async () => {
+    setReachLoading(true);
+    try {
+      // İlk ürün tipini çekip onun REACH raporunu isteyelim
+      const prods = await apiGetProducts();
+      if (prods && prods.length > 0) {
+        const report = await apiGetReachReport(prods[0].id);
+        if (report && report.results && report.results.length > 0) {
+          const mapped = report.results.map((r: any) => ({
+            substance: r.substance,
+            cas: r.cas,
+            threshold: r.threshold_pct,
+            concentration: r.detected_pct,
+            present: r.detected_pct > 0,
+          }));
+          setReachList(mapped);
+          setReachTotal(mapped.length);
+        }
+      }
+    } catch (err) {
+      console.error('REACH verileri alınamadı:', err);
+    } finally {
+      setReachLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -27,7 +93,8 @@ export default function ComplianceTab({ products }: Props) {
           </div>
         </div>
         <div className="space-y-4">
-          {products.map((p, i) => {
+          {cbamLoading && <div className="flex items-center gap-2 text-xs text-blue-600 font-bold"><Loader2 size={14} className="animate-spin" /> CBAM verileri yükleniyor...</div>}
+          {cbamProducts.map((p, i) => {
             const co2 = p.co2_cradle_to_gate_kg;
             const pct = Math.min((co2 / (CBAM_LIMIT * 1.5)) * 100, 100);
             const isOver = co2 > CBAM_LIMIT;
@@ -137,12 +204,12 @@ export default function ComplianceTab({ products }: Props) {
             ECHA SVHC / REACH Uyumluluk Kontrolü
           </h2>
         </div>
-        <p className="text-xs text-gray-400 font-medium mb-5">Son liste güncelleme: 2026-01-15 • {REACH_TOTAL} madde tarandı</p>
+        <p className="text-xs text-gray-400 font-medium mb-5">Son liste güncelleme: 2026-01-15 • {reachTotal} madde tarandı {reachLoading && <Loader2 size={12} className="inline animate-spin ml-1" />}</p>
 
         {/* Özet Kart */}
         {(() => {
-          const warnings   = REACH_LIST.filter(s => s.concentration >= s.threshold);
-          const nearLimit  = REACH_LIST.filter(s => s.concentration < s.threshold && s.concentration >= s.threshold * 0.7);
+          const warnings   = reachList.filter(s => s.concentration >= s.threshold);
+          const nearLimit  = reachList.filter(s => s.concentration < s.threshold && s.concentration >= s.threshold * 0.7);
           const hasIssues  = warnings.length > 0 || nearLimit.length > 0;
           return (
             <div className="space-y-3">
@@ -166,7 +233,7 @@ export default function ComplianceTab({ products }: Props) {
                         ? `${warnings.length} madde eşiği aşıyor — Beyan zorunlu`
                         : nearLimit.length > 0
                           ? `${nearLimit.length} madde eşiğe yaklaşıyor — Takip gerekli`
-                          : `${REACH_TOTAL} madde tarandı — Uyarı yok`}
+                          : `${reachTotal} madde tarandı — Uyarı yok`}
                     </p>
                     <p className="text-[10px] text-gray-500 font-medium mt-0.5">REACH Madde 33 • Eşik: %0.1 (Cd için %0.01)</p>
                   </div>
@@ -182,12 +249,12 @@ export default function ComplianceTab({ products }: Props) {
                   onClick={() => setShowAllReach(v => !v)}
                   className="w-full text-xs font-black text-gray-400 hover:text-gray-600 py-2 border border-dashed border-gray-200 rounded-xl transition-colors"
                 >
-                  {showAllReach ? 'Gizle ↑' : `Tüm ${REACH_TOTAL} maddeyi gör ↓`}
+                  {showAllReach ? 'Gizle ↑' : `Tüm ${reachTotal} maddeyi gör ↓`}
                 </button>
               )}
 
               {/* Tüm liste — genişletilmiş */}
-              {!hasIssues && showAllReach && REACH_LIST.map((s, i) => (
+              {!hasIssues && showAllReach && reachList.map((s, i) => (
                 <div key={i} className="flex items-center justify-between p-3 bg-green-50 rounded-xl border border-green-100">
                   <div>
                     <p className="text-xs font-bold text-gray-800">{s.substance}</p>

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Download, Globe, FileText, Database, AlertTriangle, XCircle, Loader2 } from 'lucide-react';
-import { INCOMPLETE } from '../../../constants/adminConstants';
 import type { AdminProduct, IncompleteProduct } from '../../../types/admin';
 import { apiGetIncompleteReport } from '../../../lib/api';
 
@@ -17,8 +16,8 @@ export default function ReportsTab({ products }: Props) {
   const [showJsonInfo, setShowJsonInfo] = useState(false);
   const [incompleteFilter, setIncompleteFilter] = useState<'taslak' | 'geri-cagrildi'>('taslak');
   const [selectedIncomplete, setSelectedIncomplete] = useState<IncompleteProduct | null>(null);
-  const [incompleteList, setIncompleteList] = useState<IncompleteProduct[]>(INCOMPLETE);
-  const [loadingIncomplete, setLoadingIncomplete] = useState(false);
+  const [incompleteList, setIncompleteList] = useState<IncompleteProduct[]>([]);
+  const [loadingIncomplete, setLoadingIncomplete] = useState(true);
 
   useEffect(() => {
     const fetchIncomplete = async () => {
@@ -36,7 +35,7 @@ export default function ReportsTab({ products }: Props) {
           setIncompleteList(mapped);
         }
       } catch (err) {
-        console.error('Eksik veri raporu backendden alınamadı, mock kullanılacak:', err);
+        console.error('Eksik veri raporu alınamadı:', err);
       } finally {
         setLoadingIncomplete(false);
       }

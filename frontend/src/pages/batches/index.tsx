@@ -23,51 +23,6 @@ interface Batch {
   red_gerekce?: string;
 }
 
-// ─── MOCK VERİLER ────────────────────────────────────────────────────────────
-const MOCK_BATCHES: Batch[] = [
-  {
-    id: 'B-001',
-    parti_no: 'KCR-2026-0312-A',
-    urun_tipi: 'IPE 200 Yapısal Çelik Profil',
-    ocak_no: 'EAF-03',
-    uretim_tarihi: '2026-03-12',
-    miktar_ton: 42.5,
-    dpp_durum: 'Yayında',
-    olusturan: 'Furkan Yıldız',
-  },
-  {
-    id: 'B-002',
-    parti_no: 'KCR-2026-0315-B',
-    urun_tipi: 'HEB 300 Geniş Başlıklı Profil',
-    ocak_no: 'EAF-01',
-    uretim_tarihi: '2026-03-15',
-    miktar_ton: 68.0,
-    dpp_durum: 'Onay Bekliyor',
-    olusturan: 'Furkan Yıldız',
-  },
-  {
-    id: 'B-003',
-    parti_no: 'KCR-2026-0316-A',
-    urun_tipi: 'CHS 88.9x3.2 Yuvarlak Boru',
-    ocak_no: 'EAF-02',
-    uretim_tarihi: '2026-03-16',
-    miktar_ton: 31.2,
-    dpp_durum: 'Reddedildi',
-    olusturan: 'Furkan Yıldız',
-    red_gerekce: 'CO2 emisyon değeri eksik. Lütfen düzelterek tekrar gönderin.',
-  },
-  {
-    id: 'B-004',
-    parti_no: 'KCR-2026-0317-A',
-    urun_tipi: 'UPN 160 Oluk Profil',
-    ocak_no: 'EAF-03',
-    uretim_tarihi: '2026-03-17',
-    miktar_ton: 25.8,
-    dpp_durum: 'Taslak',
-    olusturan: 'Furkan Yıldız',
-  },
-];
-
 // ─── DURUM STİLLERİ ──────────────────────────────────────────────────────────
 const STATUS_CONFIG: Record<BatchStatus, { label: string; className: string; icon: React.ReactNode }> = {
   'Taslak':        { label: 'Taslak',         className: 'bg-gray-100 text-gray-600',    icon: <FileText size={11} /> },
@@ -97,7 +52,7 @@ function matchesTab(batch: Batch, tab: TabKey): boolean {
 // ─── SAYFA ───────────────────────────────────────────────────────────────────
 export default function BatchList() {
   const router = useRouter();
-  const [batches, setBatches] = useState<Batch[]>(MOCK_BATCHES);
+  const [batches, setBatches] = useState<Batch[]>([]);
   const [search, setSearch]       = useState('');
   const [activeTab, setActiveTab] = useState<TabKey>('Taslak');
   const [menuOpen, setMenuOpen]           = useState(false);
@@ -125,9 +80,12 @@ export default function BatchList() {
           red_gerekce: d.rejection_reason || undefined,
         }));
         setBatches(mapped);
+      } else {
+        setBatches([]);
       }
     } catch (err) {
-      console.error("Batch listesi alınamadı, mock kullanılacak:", err);
+      console.error('Batch listesi alınamadı:', err);
+      setBatches([]);
     }
   };
 
@@ -174,7 +132,7 @@ export default function BatchList() {
   ];
 
   return (
-    <ProtectedRoute allowedRoles={['ENGINEER']}>
+    <ProtectedRoute allowedRoles={['ENGINEER', 'ADMIN']}>
       <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
 
         {/* Başlık */}

@@ -5,7 +5,7 @@ import {
   Bell, Plus, ChevronDown, Loader2, FileText, XCircle, ArrowRight,
 } from 'lucide-react';
 import {
-  INITIAL_PRODUCTS, PENDING_BATCHES, CERT_ALERTS, CBAM_LIMIT, TABS, STATUS_CFG,
+  CERT_ALERTS, CBAM_LIMIT, TABS, STATUS_CFG,
 } from '../../constants/adminConstants';
 import OverviewTab from '../../components/admin/tabs/OverviewTab';
 import ComplianceTab from '../../components/admin/tabs/ComplianceTab';
@@ -26,8 +26,8 @@ import {
 export default function AdminPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('overview');
-  const [products, setProducts] = useState<AdminProduct[]>(INITIAL_PRODUCTS);
-  const [pendingBatches, setPendingBatches] = useState<PendingBatch[]>(PENDING_BATCHES);
+  const [products, setProducts] = useState<AdminProduct[]>([]);
+  const [pendingBatches, setPendingBatches] = useState<PendingBatch[]>([]);
   const [menuOpen, setMenuOpen]               = useState(false);
   const [showBatchPicker, setShowBatchPicker] = useState(false);
   const [loadingBatch, setLoadingBatch]       = useState<string | null>(null);
@@ -68,7 +68,7 @@ export default function AdminPage() {
         setPendingBatches(mappedPending);
       }
     } catch (err) {
-      console.error("Dashboard verileri backend'den alınamadı, mock kullanılacak:", err);
+      console.error('Dashboard verileri alınamadı:', err);
     }
   };
 

@@ -2,39 +2,28 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
 import ProtectedRoute from '../components/auth/ProtectedRoute';
-import { Package, Calendar, ArrowRight, ShieldCheck, Truck, ClipboardList } from 'lucide-react';
+import { Package, Calendar, ArrowRight, ShieldCheck, Truck, ClipboardList, Loader2 } from 'lucide-react';
 import { apiGetDpps } from '../lib/api';
 
-// Her role ait mock DPP listesi
-const ROLE_DATA = {
+// Rol bazlı başlık ve görsel konfigürasyonu (mock veri yok)
+const ROLE_CONFIG: Record<string, { title: string; description: string; icon: any; color: string }> = {
   SUPPLIER: {
     title: 'Tedarik Ettiğiniz Partiler',
     description: 'Hammadde veya yarı mamul tedarik ettiğiniz batch\'lere ait DPP\'ler.',
     icon: Truck,
     color: 'orange',
-    items: [
-      { id: 'KCR-742', name: 'IPE 200 Yapısal Çelik Profil', role_detail: 'Ham Madde Tedarikçisi', date: '2026-03-10', status: 'Yayında', category: 'Structural Steel' },
-      { id: 'KCR-891', name: 'HEB 300 Geniş Başlıklı Profil', role_detail: 'Ham Madde Tedarikçisi', date: '2026-03-12', status: 'Taslak',  category: 'Structural Steel' },
-    ],
   },
   CUSTOMER: {
     title: 'Satın Aldığınız Partiler',
     description: 'Sipariş verdiğiniz veya teslim aldığınız ürünlere ait DPP\'ler.',
     icon: Package,
     color: 'blue',
-    items: [
-      { id: 'KCR-742', name: 'IPE 200 Yapısal Çelik Profil', role_detail: 'Alıcı', date: '2026-03-10', status: 'Yayında', category: 'Structural Steel' },
-    ],
   },
   AUTHORITY: {
     title: 'Denetlemeniz Gereken Partiler',
     description: 'Yasal denetim kapsamındaki ürünlere ait DPP\'ler.',
     icon: ShieldCheck,
     color: 'purple',
-    items: [
-      { id: 'KCR-742', name: 'IPE 200 Yapısal Çelik Profil', role_detail: 'Denetleyici', date: '2026-03-10', status: 'Yayında', category: 'Structural Steel' },
-      { id: 'KCR-558', name: 'CHS 88.9x3.2 Yuvarlak Boru',  role_detail: 'Denetleyici', date: '2026-03-14', status: 'Geri Çağrıldı', category: 'Tubes and Pipes' },
-    ],
   },
 };
 
@@ -71,40 +60,46 @@ export default function MyDpps() {
   const router = useRouter();
   const { role, user } = useAuth();
   const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const data = ROLE_DATA[role as keyof typeof ROLE_DATA];
+  const config = ROLE_CONFIG[role as keyof typeof ROLE_CONFIG];
 
   useEffect(() => {
-    if (!data) return;
+    if (!config) return;
     loadDpps();
   }, [role]);
 
   const loadDpps = async () => {
+    setLoading(true);
     try {
       const dpps = await apiGetDpps();
       if (dpps && dpps.length > 0) {
         const mapped = dpps.map((d: any) => ({
           id: d.id,
-          name: d.name || 'Bilinmeyen Ürün',
+          name: d.product_type?.product_name || 'Bilinmeyen Ürün',
           role_detail: role === 'SUPPLIER' ? 'Ham Madde Tedarikçisi' : role === 'CUSTOMER' ? 'Alıcı' : 'Denetleyici',
-          date: d.production_date || '2026-03-10',
-          status: mapStatus(d.status),
-          category: d.category || 'Structural Steel',
+          date: d.production_date || '',
+          status: mapStatus(d.dpp_status),
+          category: d.product_type?.product_category || 'Structural Steel',
         }));
         setItems(mapped);
       } else {
-        setItems(data.items);
+        setItems([]);
       }
     } catch (err) {
-      console.error("DPP listesi alınamadı, mock kullanılacak:", err);
-      setItems(data?.items || []);
+      console.error("DPP listesi alınamadı:", err);
+      setItems([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Rol değişimi sırasında (ör. logout) data henüz undefined olabilir — render'ı beklet
-  if (!data) return null;
+  // Rol değişimi sırasında (ör. logout) config henüz undefined olabilir — render'ı beklet
+  if (!config) return null;
 
-  // ADMIN bu sayfaya giremez, ADMIN için farklı sayfa var
+  const colorKey = COLOR[config.color || 'blue'];
+  const Icon = config.icon;
+
   const content = (
     <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
 
@@ -113,16 +108,22 @@ export default function MyDpps() {
         <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1">
           Hoş geldiniz, {user?.full_name}
         </p>
-        <h1 className="text-2xl font-black text-gray-900">{data.title}</h1>
-        <p className="text-sm text-gray-500 font-medium mt-1">{data.description}</p>
+        <h1 className="text-2xl font-black text-gray-900">{config.title}</h1>
+        <p className="text-sm text-gray-500 font-medium mt-1">{config.description}</p>
       </div>
 
+      {/* Loading */}
+      {loading && (
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <Loader2 size={32} className="text-blue-500 animate-spin" />
+          <p className="text-sm font-bold text-gray-400">DPP verileri yükleniyor...</p>
+        </div>
+      )}
+
       {/* Liste */}
-      <div className="space-y-4">
-        {items.map((item) => {
-          const colorKey = COLOR[ROLE_DATA[role as keyof typeof ROLE_DATA]?.color || 'blue'];
-          const Icon = data.icon;
-          return (
+      {!loading && (
+        <div className="space-y-4">
+          {items.map((item) => (
             <div
               key={item.id}
               className={`bg-gradient-to-r ${colorKey.header} border rounded-2xl p-5 flex items-center justify-between gap-4 hover:shadow-md transition-shadow cursor-pointer group`}
@@ -134,7 +135,7 @@ export default function MyDpps() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-mono font-bold text-gray-500 bg-white px-2 py-0.5 rounded border border-gray-200">{item.id}</span>
+                    <span className="text-[10px] font-mono font-bold text-gray-500 bg-white px-2 py-0.5 rounded border border-gray-200">{typeof item.id === 'string' && item.id.length > 8 ? item.id.slice(0, 8) + '…' : item.id}</span>
                     <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${STATUS_STYLE[item.status] || 'bg-gray-100 text-gray-600'}`}>
                       {item.status}
                     </span>
@@ -144,20 +145,24 @@ export default function MyDpps() {
                     <span className="text-xs text-gray-500 font-medium">{item.category}</span>
                     <span className="text-gray-300">•</span>
                     <span className={`text-[10px] font-black px-2 py-0.5 rounded ${colorKey.badge}`}>{item.role_detail}</span>
-                    <span className="text-gray-300">•</span>
-                    <span className="text-xs text-gray-400 font-medium flex items-center gap-1">
-                      <Calendar size={11} /> {item.date}
-                    </span>
+                    {item.date && (
+                      <>
+                        <span className="text-gray-300">•</span>
+                        <span className="text-xs text-gray-400 font-medium flex items-center gap-1">
+                          <Calendar size={11} /> {item.date}
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
               <ArrowRight size={18} className="text-gray-300 group-hover:text-gray-600 transition-colors shrink-0" />
             </div>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {items.length === 0 && (
+      {!loading && items.length === 0 && (
         <div className="text-center py-16 text-gray-400">
           <ClipboardList size={40} className="mx-auto mb-3 opacity-40" />
           <p className="font-bold">Size ilişkilendirilmiş DPP bulunamadı.</p>

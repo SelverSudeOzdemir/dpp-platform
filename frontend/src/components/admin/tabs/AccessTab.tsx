@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Activity, User, Lock, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
-import { ACCESS_LOGS, LOGS_PER_PAGE, ACCESS_MATRIX } from '../../../constants/adminConstants';
+import { LOGS_PER_PAGE, ACCESS_MATRIX } from '../../../constants/adminConstants';
 import { RoleBadge } from '../AdminBadges';
 import { apiGetAccessLogs } from '../../../lib/api';
 
 export default function AccessTab() {
   const [logPage, setLogPage] = useState(0);
-  const [logs, setLogs] = useState<any[]>(ACCESS_LOGS);
-  const [loading, setLoading] = useState(false);
+  const [logs, setLogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchLogs = async () => {
@@ -26,7 +26,7 @@ export default function AccessTab() {
           setLogs(mapped);
         }
       } catch (err) {
-        console.error('Erişim logları backendden yüklenemedi, mock kullanılacak:', err);
+        console.error('Erişim logları yüklenemedi:', err);
       } finally {
         setLoading(false);
       }
