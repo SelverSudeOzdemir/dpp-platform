@@ -6,32 +6,38 @@ import ErpSyncFlow from '../../components/batches/ErpSyncFlow';
 import { Step1BatchInfo } from '../../components/batches/Step1BatchInfo';
 import Step3DppData from '../../components/batches/Step3DppData';
 import Step4Preview, { getMissingFields } from '../../components/batches/Step4Preview';
+import SapDocumentsModal, { type SapDocument } from '../../components/batches/SapDocumentsModal';
 import type { BatchInfo, DppData, ExcelImportData } from '../../types/batch';
 import { EMPTY_DPP, MOCK_BATCH_DPP } from '../../constants/batchConstants';
 import {
   ChevronRight, ChevronLeft,
   Send, Loader2,
   Save, Clock, CheckCircle2,
+  Files, ChevronDown, FileText, FileSpreadsheet, Cpu,
 } from 'lucide-react';
 
 export default function NewBatch() {
   const router = useRouter();
-  const [step, setStep]           = useState(0);
-  const [submitted, setSubmitted] = useState(false);
+  const [step, setStep]               = useState(0);
+  const [submitted, setSubmitted]     = useState(false);
   const [erpOverlay, setErpOverlay]   = useState(false);
   const [erpImported, setErpImported] = useState(false);
-  const [batchLoading, setBatchLoading] = useState(false);
+  const [batchLoading, setBatchLoading]   = useState(false);
   const [existingLoaded, setExistingLoaded] = useState(false);
   const [batchInfo, setBatchInfo] = useState<BatchInfo>({
     parti_no: '', tedarikci_parti_kodu: '', urun_no: '', urun_tipi: '',
     ocak_no: '', uretim_tarihi: '', miktar_ton: '',
   });
-  const [dppData, setDppData] = useState<DppData>(EMPTY_DPP);
+  const [dppData, setDppData]           = useState<DppData>(EMPTY_DPP);
   const [erpLockedFields, setErpLockedFields] = useState<Set<string>>(new Set());
-  const [isSaving, setIsSaving] = useState(false);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
-
+  const [isSaving, setIsSaving]         = useState(false);
+  const [lastSaved, setLastSaved]       = useState<Date | null>(null);
   const [productTypes, setProductTypes] = useState<any[]>([]);
+
+  // Belge yönetimi
+  const [showSapDocs, setShowSapDocs]       = useState(false);
+  const [pulledDocuments, setPulledDocuments] = useState<SapDocument[]>([]);
+  const [belgelerOpen, setBelgelerOpen]     = useState(false);
 
   useEffect(() => {
     loadProductTypes();
@@ -42,19 +48,16 @@ export default function NewBatch() {
       const prods = await apiGetProducts();
       setProductTypes(prods);
     } catch (err) {
-      console.error("Urun tipleri alınamadı:", err);
+      console.error('Urun tipleri alınamadı:', err);
     }
   };
 
-  const missingFields = getMissingFields(batchInfo, dppData);
+  const missingFields   = getMissingFields(batchInfo, dppData);
   const isValidToSubmit = missingFields.length === 0;
 
   const handleSaveDraft = () => {
     setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
-      setLastSaved(new Date());
-    }, 1000);
+    setTimeout(() => { setIsSaving(false); setLastSaved(new Date()); }, 1000);
   };
 
   const handleSubmitDpp = async () => {
@@ -62,22 +65,19 @@ export default function NewBatch() {
       const matchingProduct = productTypes.find(
         (p: any) => p.product_name === batchInfo.urun_tipi || p.id === batchInfo.urun_no
       );
-      
       const payload = {
-        product_type_id: matchingProduct ? matchingProduct.id : "c8f5f0b4-5b4d-4e96-a83a-86718d098e94", // fallback seed UUID
-        gs1_serial_number: batchInfo.parti_no || "KCR-2026-0312-A",
-        production_date: batchInfo.uretim_tarihi || "2026-03-12",
-        gtin: batchInfo.urun_no || "08690000112345",
+        product_type_id: matchingProduct ? matchingProduct.id : 'c8f5f0b4-5b4d-4e96-a83a-86718d098e94',
+        gs1_serial_number: batchInfo.parti_no || 'KCR-2026-0312-A',
+        production_date: batchInfo.uretim_tarihi || '2026-03-12',
+        gtin: batchInfo.urun_no || '08690000112345',
       };
-
       const newDpp = await apiCreateDpp(payload);
       if (newDpp && newDpp.id) {
         await apiUpdateDpp(newDpp.id, { dpp_status: 'pending_approval' });
       }
       setSubmitted(true);
     } catch (err: any) {
-      console.error("DPP oluşturulamadı, mock akışa devam ediliyor:", err);
-      // Fallback to preserve working frontend functionality even if backend is empty
+      console.error('DPP oluşturulamadı, mock akışa devam ediliyor:', err);
       setSubmitted(true);
     }
   };
@@ -99,9 +99,7 @@ export default function NewBatch() {
   }, [router.isReady, router.query.batchId]);
 
   const handleErpSync = (d: ExcelImportData) => {
-    if (!existingLoaded) {
-      setBatchInfo(prev => ({ ...prev, ...d.batchInfo }));
-    }
+    if (!existingLoaded) setBatchInfo(prev => ({ ...prev, ...d.batchInfo }));
     setDppData(prev => ({ ...prev, ...d.dppData }));
     setErpImported(true);
     setErpOverlay(false);
@@ -110,22 +108,34 @@ export default function NewBatch() {
       ...Object.keys(d.dppData).filter(k => !!(d.dppData as Record<string, unknown>)[k]),
     ]);
     setErpLockedFields(locked);
+    // SAP belgelerini seç ekranını aç
+    setShowSapDocs(true);
+  };
+
+  const handleDocsPull = (docs: SapDocument[]) => {
+    setPulledDocuments(docs);
+    setShowSapDocs(false);
+    setBelgelerOpen(true);
   };
 
   const canProceedStep0 = existingLoaded || !!(batchInfo.parti_no && batchInfo.urun_tipi && batchInfo.ocak_no && batchInfo.uretim_tarihi);
-  const handleNext = () => { if (step === 0 && !canProceedStep0) return; setStep(s => Math.min(s + 1, 2)); };
-  const handleBack = () => setStep(s => Math.max(s - 1, 0));
+  const handleNext  = () => { if (step === 0 && !canProceedStep0) return; setStep(s => Math.min(s + 1, 2)); };
+  const handleBack  = () => setStep(s => Math.max(s - 1, 0));
   const handleReset = () => {
     setSubmitted(false); setStep(0); setErpOverlay(false); setErpImported(false);
     setBatchInfo({ parti_no: '', tedarikci_parti_kodu: '', urun_no: '', urun_tipi: '', ocak_no: '', uretim_tarihi: '', miktar_ton: '' });
     setDppData(EMPTY_DPP);
+    setPulledDocuments([]);
+    setBelgelerOpen(false);
   };
 
   if (submitted) {
     return (
       <ProtectedRoute allowedRoles={['ENGINEER', 'ADMIN']}>
         <div className="min-h-screen flex flex-col items-center justify-center gap-6 px-4">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center"><Send size={32} className="text-green-600" /></div>
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
+            <Send size={32} className="text-green-600" />
+          </div>
           <div className="text-center">
             <h2 className="text-2xl font-black text-gray-900">Onaya Gönderildi!</h2>
             <p className="text-gray-500 font-medium mt-2 max-w-sm">
@@ -174,6 +184,7 @@ export default function NewBatch() {
         </button>
 
         <div className="flex gap-8 items-start">
+
           {/* ── Sol kenar çubuğu ── */}
           <aside className="w-72 shrink-0 sticky top-8">
             <div className="mb-8">
@@ -188,8 +199,8 @@ export default function NewBatch() {
             {/* Dikey stepper */}
             <div className="flex flex-col gap-1">
               {STEP_META.map((s, i) => {
-                const isDone    = i < step;
-                const isActive  = i === step;
+                const isDone   = i < step;
+                const isActive = i === step;
                 return (
                   <div key={i} className="flex gap-3">
                     <div className="flex flex-col items-center">
@@ -217,7 +228,7 @@ export default function NewBatch() {
               })}
             </div>
 
-            {/* Taslak kaydet — sol kenar */}
+            {/* Taslağı Kaydet */}
             {!erpOverlay && !batchLoading && (
               <div className="mt-8 pt-6 border-t border-gray-100">
                 <button type="button" onClick={handleSaveDraft} disabled={isSaving}
@@ -236,6 +247,67 @@ export default function NewBatch() {
 
           {/* ── Sağ içerik alanı ── */}
           <div className="flex-1 min-w-0">
+
+            {/* Belgeler dropdown — SAP'tan belge çekildiyse görünür */}
+            {pulledDocuments.length > 0 && (
+              <div className="flex justify-end mb-3 relative">
+                <button
+                  type="button"
+                  onClick={() => setBelgelerOpen(o => !o)}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-bold rounded-xl hover:bg-gray-50 shadow-sm transition-colors"
+                >
+                  <Files size={15} className="text-blue-500" />
+                  Belgeler
+                  <span className="bg-blue-100 text-blue-700 text-[11px] font-black px-1.5 py-0.5 rounded-full">
+                    {pulledDocuments.length}
+                  </span>
+                  <ChevronDown size={14} className={`text-gray-400 transition-transform ${belgelerOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {belgelerOpen && (
+                  <>
+                    {/* Arka kapanıcı overlay */}
+                    <div className="fixed inset-0 z-10" onClick={() => setBelgelerOpen(false)} />
+
+                    <div className="absolute top-full right-0 mt-1.5 w-80 bg-white border border-gray-100 rounded-2xl shadow-xl shadow-gray-200 z-20 overflow-hidden">
+                      <div className="px-4 py-3 border-b border-gray-50">
+                        <p className="text-xs font-black text-gray-500 uppercase tracking-widest">SAP&apos;tan Çekilen Belgeler</p>
+                      </div>
+
+                      <div className="py-2 max-h-64 overflow-y-auto">
+                        {pulledDocuments.map(doc => (
+                          <div key={doc.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors">
+                            <div className={`p-1.5 rounded-lg shrink-0 ${doc.ext === 'xlsx' ? 'bg-green-100' : 'bg-red-50'}`}>
+                              {doc.ext === 'xlsx'
+                                ? <FileSpreadsheet size={13} className="text-green-600" />
+                                : <FileText size={13} className="text-red-500" />
+                              }
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-bold text-gray-800 truncate">{doc.name}</p>
+                              <p className="text-[11px] text-gray-400 font-medium">{doc.docType} · {doc.size}</p>
+                            </div>
+                            <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 shrink-0">SAP</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="px-4 py-3 border-t border-gray-100">
+                        <button
+                          type="button"
+                          onClick={() => { setBelgelerOpen(false); alert('Parse işlemi backend entegrasyonunda aktif olacaktır.'); }}
+                          className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-colors"
+                        >
+                          <Cpu size={14} /> Parse Et
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Form kartı */}
             <div className="bg-white border border-gray-100 rounded-2xl p-8 shadow-xl shadow-gray-100 min-h-[500px]">
               {batchLoading && (
                 <div className="flex flex-col items-center justify-center py-24 gap-4">
@@ -262,10 +334,15 @@ export default function NewBatch() {
                   erpLockedFields={erpLockedFields}
                 />
               )}
-              {!batchLoading && step === 1 && <Step3DppData data={dppData} onChange={setDppData} batchInfo={batchInfo} erpImported={erpImported} erpLockedFields={erpLockedFields} />}
-              {!batchLoading && step === 2 && <Step4Preview batchInfo={batchInfo} dppData={dppData} erpImported={erpImported} />}
+              {!batchLoading && step === 1 && (
+                <Step3DppData data={dppData} onChange={setDppData} batchInfo={batchInfo} erpImported={erpImported} erpLockedFields={erpLockedFields} />
+              )}
+              {!batchLoading && step === 2 && (
+                <Step4Preview batchInfo={batchInfo} dppData={dppData} erpImported={erpImported} />
+              )}
             </div>
 
+            {/* Navigasyon butonları */}
             {!erpOverlay && !batchLoading && (
               <div className="flex items-center justify-between mt-5">
                 <button type="button" onClick={handleBack}
@@ -291,6 +368,16 @@ export default function NewBatch() {
           </div>
         </div>
       </div>
+
+      {/* SAP Belge Seçim Modalı */}
+      {showSapDocs && (
+        <SapDocumentsModal
+          batchNo={batchInfo.parti_no}
+          onPull={handleDocsPull}
+          onCancel={() => setShowSapDocs(false)}
+        />
+      )}
+
     </ProtectedRoute>
   );
 }
