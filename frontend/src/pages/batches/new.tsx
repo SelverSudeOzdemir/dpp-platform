@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import ProtectedRoute from '../../components/auth/ProtectedRoute';
+import { useAuth } from '../../contexts/AuthContext';
 import { apiCreateDpp, apiGetProducts, apiUpdateDpp } from '../../lib/api';
 import ErpSyncFlow from '../../components/batches/ErpSyncFlow';
 import { Step1BatchInfo } from '../../components/batches/Step1BatchInfo';
@@ -18,6 +19,8 @@ import {
 
 export default function NewBatch() {
   const router = useRouter();
+  const { role } = useAuth();
+  const isAdmin = role === 'ADMIN';
   const [step, setStep]               = useState(0);
   const [submitted, setSubmitted]     = useState(false);
   const [erpOverlay, setErpOverlay]   = useState(false);
@@ -143,9 +146,9 @@ export default function NewBatch() {
             </p>
           </div>
           <div className="flex gap-3 mt-2">
-            <button onClick={() => router.push('/batches')}
+            <button onClick={() => router.push(isAdmin ? '/admin' : '/batches')}
               className="px-5 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-colors">
-              Batch Listesine Dön
+              {isAdmin ? 'Admin Paneline Dön' : 'Batch Listesine Dön'}
             </button>
             <button onClick={handleReset}
               className="px-5 py-2.5 border border-gray-200 text-gray-600 text-sm font-bold rounded-xl hover:bg-gray-50 transition-colors">
@@ -178,9 +181,9 @@ export default function NewBatch() {
   return (
     <ProtectedRoute allowedRoles={['ENGINEER', 'ADMIN']}>
       <div className="max-w-screen-xl mx-auto py-10 px-6">
-        <button type="button" onClick={() => router.push('/batches')}
+        <button type="button" onClick={() => router.push(isAdmin ? '/admin' : '/batches')}
           className="inline-flex items-center gap-1.5 text-sm font-bold text-gray-500 hover:text-blue-600 transition-colors mb-8">
-          <ChevronLeft size={16} /> Batch Listesine Dön
+          <ChevronLeft size={16} /> {isAdmin ? 'Admin Paneline Dön' : 'Batch Listesine Dön'}
         </button>
 
         <div className="flex gap-8 items-start">

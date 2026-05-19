@@ -464,9 +464,9 @@ export default function BatchDetailPage() {
               revize edilerek Admin onayına iletildi.
             </p>
           </div>
-          <button onClick={() => router.push('/batches')}
+          <button onClick={() => router.push(isAdmin ? '/admin' : '/batches')}
             className="px-5 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-colors">
-            Batch Listesine Dön
+            {isAdmin ? 'Admin Paneline Dön' : 'Batch Listesine Dön'}
           </button>
         </div>
       </ProtectedRoute>

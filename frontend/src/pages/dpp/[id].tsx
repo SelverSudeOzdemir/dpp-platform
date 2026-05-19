@@ -1,7 +1,7 @@
 // src/pages/product/[id].tsx
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { productService, Product } from '../../Services/productService';
+import { productService } from '../../Services/productService';
 import Spinner from '../../components/ui/spinner';
 import Button from '../../components/ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
@@ -37,21 +37,12 @@ export default function ProductPassportDetail() {
   const canDownloadTestReports = ['ADMIN'].includes(role);                                      // test raporu PDF indirme — AUTHORITY göremez (ticari sır; CE belgesi yeterli)
   const canViewSupplyChain = ['AUTHORITY', 'ADMIN'].includes(role);                         // tam tedarik zinciri (SUPPLIER gizli — rekabetçi istihbarat)
   const canViewOwnStage = role === 'SUPPLIER';                                           // SUPPLIER sadece kendi katkısını görür
-  const canViewBatchNumber = ['SUPPLIER', 'AUTHORITY', 'ADMIN'].includes(role);             // iç parti takip no
   const canViewFullAddress = ['CUSTOMER', 'SUPPLIER', 'AUTHORITY', 'ADMIN'].includes(role); // üretici & tesis adresi
   const canViewGlnCode = ['SUPPLIER', 'AUTHORITY', 'ADMIN'].includes(role);             // küresel lokasyon no
   const canViewTaxId = ['AUTHORITY', 'ADMIN'].includes(role);                         // vergi no (hassas)
   const canViewVersion = ['AUTHORITY', 'ADMIN'].includes(role);                         // pasaport versiyonu
   const canViewLifecycle = ['AUTHORITY', 'ADMIN'].includes(role);                         // yaşam döngüsü olayları
   const canViewComplianceDetail = ['AUTHORITY', 'ADMIN'].includes(role);                        // ESPR/CBAM zorunlu uyumluluk alanları (denetim)
-  const chemicalData = [
-    { name: 'Fe (Demir)', value: 98.50, color: '#e2e8f0' }, // Büyük kütle açık gri
-    { name: 'Mn (Manganez)', value: 0.80, color: '#3b82f6' }, // Mavi
-    { name: 'C (Karbon)', value: 0.25, color: '#ef4444' }, // Kırmızı
-    { name: 'Si (Silisyum)', value: 0.20, color: '#eab308' }, // Sarı
-    { name: 'P (Fosfor)', value: 0.05, color: '#f97316' }, // Turuncu
-    { name: 'S (Kükürt)', value: 0.04, color: '#8b5cf6' }, // Mor
-  ];
 
   useEffect(() => {
     if (!id) return;
@@ -71,6 +62,8 @@ export default function ProductPassportDetail() {
         co2_a1a3: '1.85',                                   // CBAM Yönetmeliği 2023/956 — A1-A3 gömülü emisyon
         co2_verification: 'Üçüncü Taraf Doğrulamalı',      // CBAM Madde 4 — doğrulama yöntemi
         production_route: 'EAF (Elektrik Ark Ocağı)',       // CBAM — çelik üretim rotası zorunlu
+        ocak_no: 'EAF-03',                                  // TODO: backend — DPP response'a eklenecek
+        miktar_ton: '42.5',                                 // TODO: backend — DPP response'a eklenecek
         en10204_cert_no: '3.1-20240115-001',
         en10204_tip: '3.1',
         test_standard: 'EN 10025-2:2019',
@@ -152,6 +145,23 @@ export default function ProductPassportDetail() {
     );
   }
 
+  const c  = parseFloat(product.c_pct)  || 0.25;
+  const mn = parseFloat(product.mn_pct) || 0.80;
+  const si = parseFloat(product.si_pct) || 0.20;
+  const p  = parseFloat(product.p_pct)  || 0.05;
+  const s  = parseFloat(product.s_pct)  || 0.04;
+  const n  = parseFloat(product.n_pct)  || 0;
+  const fe = parseFloat(Math.max(0, 100 - c - mn - si - p - s - n).toFixed(2));
+  const chemicalData = [
+    { name: 'Fe (Demir)',    value: fe,  color: '#e2e8f0' },
+    { name: 'Mn (Manganez)', value: mn,  color: '#3b82f6' },
+    { name: 'C (Karbon)',    value: c,   color: '#ef4444' },
+    { name: 'Si (Silisyum)', value: si,  color: '#eab308' },
+    { name: 'P (Fosfor)',    value: p,   color: '#f97316' },
+    { name: 'S (Kükürt)',    value: s,   color: '#8b5cf6' },
+    ...(n > 0 ? [{ name: 'N (Azot)', value: n, color: '#06b6d4' }] : []),
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50/50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto">
@@ -212,15 +222,9 @@ export default function ProductPassportDetail() {
                 <span className="font-mono font-bold text-gray-900">{product.gtin || '8691234567890'}</span>
               </div>
               <div className="flex items-center gap-2 text-sm bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-                <span className="font-bold text-gray-400 uppercase text-xs">Parti:</span>
-                <span className="font-mono font-bold text-gray-900">{product.id}</span>
+                <span className="font-bold text-gray-400 uppercase text-xs">Parti No:</span>
+                <span className="font-mono font-bold text-gray-900">{product.batch_number || product.id}</span>
               </div>
-              {canViewBatchNumber && product.batch_number && (
-                <div className="flex items-center gap-2 text-sm bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-                  <span className="font-bold text-gray-400 uppercase text-xs">Batch:</span>
-                  <span className="font-mono font-bold text-gray-900">{product.batch_number}</span>
-                </div>
-              )}
               {product.valid_until && (
                 <div className="flex items-center gap-2 text-sm bg-green-50 px-3 py-1.5 rounded-lg border border-green-100">
                   <span className="font-bold text-green-500 uppercase text-xs">Geçerlilik:</span>
@@ -263,7 +267,7 @@ export default function ProductPassportDetail() {
                     <div>
                       <p className="text-xs text-gray-500 font-bold mb-0.5">Üretici Firma</p>
                       <p className="text-sm font-black text-gray-900">{product.manufacturer?.name || 'Kocaer Çelik'}</p>
-                      <p className="text-xs text-gray-500 mt-1">{product.manufacturer?.city}, {product.manufacturer?.country}</p>
+                      <p className="text-xs text-gray-500 mt-1">{product.manufacturer?.city || 'Aliağa'}, {product.manufacturer?.country === 'TR' ? 'Türkiye' : (product.manufacturer?.country || 'Türkiye')}</p>
                     </div>
                   </div>
                   {/* EKSİK 2 TAMAMLANDI: İletişim Noktası (Yasal Zorunluluk) */}
@@ -307,6 +311,16 @@ export default function ProductPassportDetail() {
                     {canViewFullAddress && product.facility?.address && (
                       <p className="text-xs text-gray-400 mt-1">{product.facility.address}</p>
                     )}
+                    {product.ocak_no && (
+                      <p className="text-xs text-gray-600 font-bold mt-2 flex items-center gap-1">
+                        <Flame size={12} className="text-gray-400" /> Ocak: <span className="font-mono">{product.ocak_no}</span>
+                      </p>
+                    )}
+                    {product.miktar_ton && (
+                      <p className="text-xs text-gray-600 font-bold mt-1 flex items-center gap-1">
+                        <Box size={12} className="text-gray-400" /> {product.miktar_ton} ton
+                      </p>
+                    )}
                     {canViewComplianceDetail && product.production_route && (
                       <p className="text-xs text-orange-600 font-bold mt-2 flex items-center gap-1">
                         <Flame size={12} /> {product.production_route}
@@ -339,7 +353,18 @@ export default function ProductPassportDetail() {
                 </div>
                 <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center justify-center text-center">
                   <p className="text-[10px] text-gray-500 uppercase font-black tracking-widest mb-1">Ebatlar</p>
-                  <p className="text-sm font-black text-gray-900">100x55 <span className="text-xs text-gray-500">mm</span></p>
+                  <p className="text-sm font-black text-gray-900">
+                    {product.en_mm && product.kalinlik_mm
+                      ? <>{product.en_mm}×{product.kalinlik_mm} <span className="text-xs text-gray-500">mm</span></>
+                      : product.dimensions
+                        ? <>{product.dimensions} <span className="text-xs text-gray-500">mm</span></>
+                        : <span className="text-gray-400">—</span>}
+                  </p>
+                  {product.boy_mm && (
+                    <p className="text-xs text-gray-500 font-bold mt-1">
+                      Boy: {product.boy_mm} <span className="text-gray-400">mm</span>
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -482,31 +507,35 @@ export default function ProductPassportDetail() {
 
                           <ul className="space-y-3">
                             {/* Akma Dayanımı */}
+                            {product.yield_mpa && (
                             <li className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                               <span className="text-gray-600 font-bold text-xs">Akma Dayanımı (Yield)</span>
                               <div className="flex items-center gap-3">
                                 <span className="text-[10px] text-green-700 bg-green-100 px-2 py-0.5 rounded font-black tracking-wider">MİN: 275</span>
-                                <span className="font-black text-blue-700 text-sm">285 <span className="text-[10px] text-gray-400">MPa</span></span>
+                                <span className="font-black text-blue-700 text-sm">{product.yield_mpa} <span className="text-[10px] text-gray-400">MPa</span></span>
                               </div>
                             </li>
+                            )}
 
-                            {/* Çekme Dayanımı */}
+                            {product.tensile_mpa && (
                             <li className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                               <span className="text-gray-600 font-bold text-xs">Çekme Dayanımı (Tensile)</span>
                               <div className="flex items-center gap-3">
                                 <span className="text-[10px] text-green-700 bg-green-100 px-2 py-0.5 rounded font-black tracking-wider">MİN: 410</span>
-                                <span className="font-black text-blue-700 text-sm">450 <span className="text-[10px] text-gray-400">MPa</span></span>
+                                <span className="font-black text-blue-700 text-sm">{product.tensile_mpa} <span className="text-[10px] text-gray-400">MPa</span></span>
                               </div>
                             </li>
+                            )}
 
-                            {/* Uzama */}
+                            {product.elongation_pct && (
                             <li className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                               <span className="text-gray-600 font-bold text-xs">Uzama Oranı (Elongation)</span>
                               <div className="flex items-center gap-3">
                                 <span className="text-[10px] text-green-700 bg-green-100 px-2 py-0.5 rounded font-black tracking-wider">MİN: %23</span>
-                                <span className="font-black text-blue-700 text-sm">%25</span>
+                                <span className="font-black text-blue-700 text-sm">%{product.elongation_pct}</span>
                               </div>
                             </li>
+                            )}
                             {/* Darbe Enerjisi — EN 10025-2 zorunlu */}
                             {product.impact_energy_j && (
                               <li className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
