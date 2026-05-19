@@ -31,18 +31,18 @@ export default function ProductPassportDetail() {
   // 1. ÖNCE ROLÜ (KİMLİĞİ) SİSTEMDEN ÇEKİYORUZ
   const { role } = useAuth();
 
-  // 2. ROL BAZLI YETKİ KALKANLARı — final karar tablosuna göre
+  // 2. ROL BAZLI YETKİ KALKANLARı — şimdilik filtreleme yok, ileride role göre kısıtlanacak
   const isPublic = role === 'PUBLIC';
-  const canViewTechnical = ['CUSTOMER', 'AUTHORITY', 'ADMIN'].includes(role);             // kimyasal kompozisyon + mekanik test rakamları (SUPPLIER gizli — Kocaer iç verisi)
-  const canDownloadTestReports = ['ADMIN'].includes(role);                                      // test raporu PDF indirme — AUTHORITY göremez (ticari sır; CE belgesi yeterli)
-  const canViewSupplyChain = ['AUTHORITY', 'ADMIN'].includes(role);                         // tam tedarik zinciri (SUPPLIER gizli — rekabetçi istihbarat)
-  const canViewOwnStage = role === 'SUPPLIER';                                           // SUPPLIER sadece kendi katkısını görür
-  const canViewFullAddress = ['CUSTOMER', 'SUPPLIER', 'AUTHORITY', 'ADMIN'].includes(role); // üretici & tesis adresi
-  const canViewGlnCode = ['SUPPLIER', 'AUTHORITY', 'ADMIN'].includes(role);             // küresel lokasyon no
-  const canViewTaxId = ['AUTHORITY', 'ADMIN'].includes(role);                         // vergi no (hassas)
-  const canViewVersion = ['AUTHORITY', 'ADMIN'].includes(role);                         // pasaport versiyonu
-  const canViewLifecycle = ['AUTHORITY', 'ADMIN'].includes(role);                         // yaşam döngüsü olayları
-  const canViewComplianceDetail = ['AUTHORITY', 'ADMIN'].includes(role);                        // ESPR/CBAM zorunlu uyumluluk alanları (denetim)
+  const canViewTechnical = !isPublic;
+  const canDownloadTestReports = !isPublic;
+  const canViewSupplyChain = !isPublic;
+  const canViewOwnStage = role === 'SUPPLIER';
+  const canViewFullAddress = !isPublic;
+  const canViewGlnCode = !isPublic;
+  const canViewTaxId = !isPublic;
+  const canViewVersion = !isPublic;
+  const canViewLifecycle = !isPublic;
+  const canViewComplianceDetail = !isPublic;
 
   useEffect(() => {
     if (!id) return;
@@ -169,7 +169,7 @@ export default function ProductPassportDetail() {
 
         {!isPublic && (
           <button
-            onClick={() => router.push(role === 'ADMIN' ? '/' : '/my-dpps')}
+            onClick={() => router.push(role === 'ADMIN' ? '/' : role === 'ENGINEER' ? '/batches' : '/my-dpps')}
             className="mb-6 text-blue-600 hover:text-blue-800 font-bold text-sm flex items-center gap-2 transition-colors"
           >
             ← {role === 'ADMIN' ? "Dashboard'a Dön" : 'DPP Listem\'e Dön'}

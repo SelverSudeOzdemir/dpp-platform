@@ -229,7 +229,7 @@ export default function BatchList() {
               <div
                 key={batch.id}
                 className="bg-white border border-gray-100 rounded-2xl p-5 flex items-center justify-between gap-4 hover:shadow-md hover:border-blue-100 transition-all cursor-pointer group"
-                onClick={() => router.push(`/batches/${batch.id}`)}
+                onClick={() => router.push(`/dpp/${batch.id}`)}
               >
                 <div className="flex items-center gap-4 min-w-0">
                   <div className={`p-3 rounded-2xl shrink-0 ${STATUS_ICON_STYLE[batch.dpp_durum]}`}>
