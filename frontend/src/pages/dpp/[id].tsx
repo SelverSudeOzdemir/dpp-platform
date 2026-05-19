@@ -99,21 +99,22 @@ export default function ProductPassportDetail() {
       
       try {
         const changelog = await apiGetDppChangelog(id as string);
-        if (changelog && changelog.length > 0) {
-          const mappedHistory = changelog.map((c: any) => ({
+        if (changelog && changelog.data && changelog.data.length > 0) {
+          const mappedHistory = changelog.data.map((c: any) => ({
             type: c.change_type === 'create' ? 'creation' : 'update',
-            timestamp: c.changed_at || new Date().toISOString(),
-            operator: c.changed_by || 'mehmet.yilmaz@kocaer.com',
-            blockchain_hash: c.tx_hash || '0x3f7a9c2b8e1d4f56a0c3b7e291d5f8a4',
-            groups: [
-              {
-                section: 'Güncellenen Değerler',
-                fields: Object.keys(c.changed_fields || {}).map((k: string) => ({
-                  field: k,
-                  source: 'SAP/ERP',
-                })),
-              }
-            ]
+            timestamp: c.created_at || new Date().toISOString(),
+            operator: c.changed_by_name || c.changed_by_email || 'Sistem',
+            blockchain_hash: c.tx_hash || null,
+            version: c.version || null,
+            groups: (() => {
+              const state = c.new_state || c.changed_fields || {};
+              const keys = Object.keys(state);
+              if (keys.length === 0) return [];
+              return [{
+                section: c.change_type === 'create' ? 'Oluşturulan Alanlar' : 'Güncellenen Değerler',
+                fields: keys.map((k: string) => ({ field: k, source: 'SAP/ERP' })),
+              }];
+            })(),
           }));
           setVersionHistory(mappedHistory);
         }
@@ -600,7 +601,7 @@ export default function ProductPassportDetail() {
             )}
 
             {/* 6. TEDARİK ZİNCİRİ (Sadece Yetkili Roller!) */}
-            {canViewSupplyChain && product.supply_chain && (
+            {canViewSupplyChain && (
               <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-200 shadow-sm relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
                   <Milestone size={120} className="text-blue-900" />
@@ -609,72 +610,117 @@ export default function ProductPassportDetail() {
                   <Milestone size={20} className="text-blue-600" />
                   Tedarik Zinciri ve İzlenebilirlik Raporu
                 </h3>
-                <div className="relative border-l-2 border-gray-100 ml-4 md:ml-6 space-y-10 mt-6">
-                  {product.supply_chain.map((stage: any, index: number) => (
-                    <div key={index} className="relative pl-8 md:pl-10 group">
-                      <div className="absolute -left-[21px] top-1 bg-white border-4 border-gray-200 w-10 h-10 rounded-full flex items-center justify-center group-hover:border-blue-500 group-hover:bg-blue-50 transition-colors z-10 shadow-sm">
-                        {stage.sequence_number === 1 ? <Flame size={16} className="text-gray-500 group-hover:text-orange-600" /> : <Factory size={16} className="text-gray-500 group-hover:text-green-600" />}
-                      </div>
-                      <div className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-                        <div className="bg-gray-50 px-5 py-3 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                          <div className="flex items-center gap-3">
-                            <span className="bg-blue-600 text-white text-[10px] font-black px-2 py-1 rounded-md tracking-widest uppercase">
-                              ADIM {stage.sequence_number}
+
+                {(!product.supply_chain || product.supply_chain.length === 0) ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 mb-4">
+                      <Milestone size={32} className="text-gray-300" />
+                    </div>
+                    <p className="text-sm font-black text-gray-400">Tedarik zinciri verisi henüz girilmemiş</p>
+                    <p className="text-xs text-gray-400 font-medium mt-1">Bu DPP için tedarik aşamaları sisteme kaydedildiğinde burada görünür.</p>
+                  </div>
+                ) : (
+                  <div className="relative border-l-2 border-gray-100 ml-4 md:ml-6 space-y-10 mt-6">
+                    {product.supply_chain.map((stage: any, index: number) => (
+                      <div key={index} className="relative pl-8 md:pl-10 group">
+                        <div className="absolute -left-[21px] top-1 bg-white border-4 border-gray-200 w-10 h-10 rounded-full flex items-center justify-center group-hover:border-blue-500 group-hover:bg-blue-50 transition-colors z-10 shadow-sm">
+                          {stage.sequence_number === 1 ? <Flame size={16} className="text-gray-500 group-hover:text-orange-600" /> : <Factory size={16} className="text-gray-500 group-hover:text-green-600" />}
+                        </div>
+                        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+                          <div className="bg-gray-50 px-5 py-3 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div className="flex items-center gap-3">
+                              <span className="bg-blue-600 text-white text-[10px] font-black px-2 py-1 rounded-md tracking-widest uppercase">
+                                ADIM {stage.sequence_number}
+                              </span>
+                              <span className="font-bold text-gray-900 text-sm">{stage.stage_name}</span>
+                            </div>
+                            <span className="text-xs font-bold text-gray-500 flex items-center gap-1">
+                              <Calendar size={12} /> {stage.stage_date}
                             </span>
-                            <span className="font-bold text-gray-900 text-sm">{stage.stage_name}</span>
                           </div>
-                          <span className="text-xs font-bold text-gray-500 flex items-center gap-1">
-                            <Calendar size={12} /> {stage.stage_date}
-                          </span>
-                        </div>
-                        <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div>
-                            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-3 flex items-center gap-1.5"><MapPin size={12} /> Organizasyon</p>
-                            <p className="text-base font-black text-gray-900">{stage.organization.name}</p>
-                            <p className="text-xs font-bold text-blue-600 mt-0.5">{stage.organization.role}</p>
-                            <div className="flex items-center gap-2 mt-2 text-xs text-gray-500 font-medium">
-                              <Globe2 size={12} /> {stage.organization.location_text} ({stage.organization.country_code})
+                          <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                              <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-3 flex items-center gap-1.5"><MapPin size={12} /> Organizasyon</p>
+                              <p className="text-base font-black text-gray-900">{stage.organization_name}</p>
+                              <p className="text-xs font-bold text-blue-600 mt-0.5">{stage.organization_role}</p>
+                              {(stage.location || stage.country_code) && (
+                                <div className="flex items-center gap-2 mt-2 text-xs text-gray-500 font-medium">
+                                  <Globe2 size={12} />
+                                  {stage.location}{stage.location && stage.country_code ? ` (${stage.country_code})` : stage.country_code}
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-3 flex items-center gap-1.5"><Box size={12} /> Malzeme & İşlem</p>
+                              <p className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                                {stage.process_name}
+                                {stage.process_name && stage.material_name && <span className="text-gray-300">→</span>}
+                                {stage.material_name}
+                              </p>
+                              <div className="flex gap-3 mt-2 flex-wrap">
+                                {stage.quantity && (
+                                  <div className="bg-gray-50 px-3 py-1.5 rounded border border-gray-100">
+                                    <span className="block text-[10px] text-gray-500 font-bold uppercase">Miktar</span>
+                                    <span className="text-xs font-black text-gray-900">{stage.quantity} {stage.unit}</span>
+                                  </div>
+                                )}
+                                {stage.origin_country && (
+                                  <div className="bg-gray-50 px-3 py-1.5 rounded border border-gray-100">
+                                    <span className="block text-[10px] text-gray-500 font-bold uppercase">Menşei</span>
+                                    <span className="text-xs font-black text-gray-900">{stage.origin_country}</span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
-                          <div>
-                            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-3 flex items-center gap-1.5"><Box size={12} /> Malzeme & İşlem</p>
-                            <p className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                              {stage.process.name} <span className="text-gray-300">→</span> {stage.material.name}
-                            </p>
-                            <div className="flex gap-4 mt-2">
-                              <div className="bg-gray-50 px-3 py-1.5 rounded border border-gray-100">
-                                <span className="block text-[10px] text-gray-500 font-bold uppercase">Miktar</span>
-                                <span className="text-xs font-black text-gray-900">{stage.material.quantity} {stage.material.unit}</span>
-                              </div>
-                              <div className="bg-gray-50 px-3 py-1.5 rounded border border-gray-100">
-                                <span className="block text-[10px] text-gray-500 font-bold uppercase">Menşei</span>
-                                <span className="text-xs font-black text-gray-900">{stage.material.origin_country}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="bg-slate-50 px-5 py-2.5 border-t border-slate-100 flex flex-wrap items-center gap-x-6 gap-y-1.5">
-                          <div className="flex items-center gap-2">
-                            <Hash size={12} className="text-slate-400" />
-                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Traceability ID:</span>
-                            <span className="text-[11px] font-mono text-slate-700 font-bold">{stage.traceability_id}</span>
-                          </div>
-                          {stage.sequence_number === 1 && product.tedarikci_parti_kodu && (
-                            <div className="flex items-center gap-2">
-                              <Hash size={12} className="text-orange-400" />
-                              <span className="text-[10px] font-bold text-orange-500 uppercase tracking-widest">Tedarikçi Parti Kodu:</span>
-                              <span className="text-[11px] font-mono text-orange-700 font-bold">{product.tedarikci_parti_kodu}</span>
+                          {(stage.transport_method || stage.distance_km) && (
+                            <div className="px-5 py-3 border-t border-gray-100 bg-blue-50/30 flex flex-wrap items-center gap-x-6 gap-y-1.5">
+                              {stage.transport_method && (
+                                <div className="flex items-center gap-2 text-xs text-gray-600 font-medium">
+                                  <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Taşıma:</span>
+                                  {stage.transport_method}
+                                </div>
+                              )}
+                              {stage.distance_km && (
+                                <div className="flex items-center gap-2 text-xs text-gray-600 font-medium">
+                                  <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Mesafe:</span>
+                                  {stage.distance_km} km
+                                </div>
+                              )}
+                              {stage.co2_kg_per_km && (
+                                <div className="flex items-center gap-2 text-xs text-green-700 font-bold">
+                                  <span className="text-[10px] font-black text-green-600 uppercase tracking-widest">CO₂:</span>
+                                  {stage.co2_kg_per_km} kg/km
+                                  <span className="text-[9px] font-black bg-green-100 text-green-700 px-1.5 py-0.5 rounded">CBAM</span>
+                                </div>
+                              )}
                             </div>
                           )}
+                          <div className="bg-slate-50 px-5 py-2.5 border-t border-slate-100 flex flex-wrap items-center gap-x-6 gap-y-1.5">
+                            {stage.traceability_id && (
+                              <div className="flex items-center gap-2">
+                                <Hash size={12} className="text-slate-400" />
+                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Traceability ID:</span>
+                                <span className="text-[11px] font-mono text-slate-700 font-bold">{stage.traceability_id}</span>
+                              </div>
+                            )}
+                            {stage.sequence_number === 1 && product.tedarikci_parti_kodu && (
+                              <div className="flex items-center gap-2">
+                                <Hash size={12} className="text-orange-400" />
+                                <span className="text-[10px] font-bold text-orange-500 uppercase tracking-widest">Tedarikçi Parti Kodu:</span>
+                                <span className="text-[11px] font-mono text-orange-700 font-bold">{product.tedarikci_parti_kodu}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
             {/* 6b. SUPPLIER'IN KATKISI — sadece SUPPLIER (tam zincir gizli) */}
-            {canViewOwnStage && product.supply_chain && (
+            {canViewOwnStage && product.supply_chain && product.supply_chain.length > 0 && (
               <div className="bg-white p-6 rounded-3xl border border-orange-200 shadow-sm">
                 <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-4 flex items-center gap-2 border-b border-gray-100 pb-4">
                   <Milestone size={18} className="text-orange-500" />
@@ -684,9 +730,11 @@ export default function ProductPassportDetail() {
                   <p className="text-xs font-black text-orange-600 uppercase tracking-widest mb-1">Tedarik Ettiğiniz Aşama</p>
                   <p className="text-sm font-black text-gray-900">{product.supply_chain[0]?.stage_name}</p>
                   <div className="flex flex-wrap gap-4 mt-3 text-xs text-gray-600 font-medium">
-                    <span>📦 {product.supply_chain[0]?.material?.name} — {product.supply_chain[0]?.material?.quantity} {product.supply_chain[0]?.material?.unit}</span>
-                    <span>🗓 {product.supply_chain[0]?.stage_date}</span>
-                    <span>🌍 {product.supply_chain[0]?.material?.origin_country}</span>
+                    {(product.supply_chain[0]?.material_name || product.supply_chain[0]?.quantity) && (
+                      <span>📦 {product.supply_chain[0]?.material_name}{product.supply_chain[0]?.quantity ? ` — ${product.supply_chain[0].quantity} ${product.supply_chain[0].unit || ''}` : ''}</span>
+                    )}
+                    {product.supply_chain[0]?.stage_date && <span>🗓 {product.supply_chain[0].stage_date}</span>}
+                    {product.supply_chain[0]?.origin_country && <span>🌍 {product.supply_chain[0].origin_country}</span>}
                   </div>
                 </div>
                 <p className="text-[10px] text-gray-400 font-medium mt-3 text-center">
@@ -904,7 +952,8 @@ export default function ProductPassportDetail() {
                 <div className="text-left">
                   <h3 className="text-sm font-black text-gray-900">Versiyon Geçmişi & Blockchain Denetimi</h3>
                   <p className="text-[11px] text-gray-400 font-medium mt-0.5">
-                    {versionHistory.length} kayıt · Son: {versionHistory[versionHistory.length - 1]?.timestamp.split('T')[0]}
+                    {versionHistory.length} kayıt
+                    {versionHistory.length > 0 && ` · Son: ${versionHistory[0]?.timestamp.split('T')[0]}`}
                   </p>
                 </div>
               </div>
@@ -913,6 +962,15 @@ export default function ProductPassportDetail() {
 
             {/* İçerik — kapalıyken peek, açıkken tam */}
             <div className="border-t border-gray-100">
+              {versionHistory.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-10 text-center px-6">
+                  <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100 mb-3">
+                    <GitBranch size={24} className="text-gray-300" />
+                  </div>
+                  <p className="text-sm font-black text-gray-400">Henüz versiyon kaydı yok</p>
+                  <p className="text-xs text-gray-400 font-medium mt-1">DPP oluşturulduğunda veya güncellendiğinde otomatik olarak burada görünür.</p>
+                </div>
+              )}
               <div className={`relative ${!isVersionHistoryOpen ? 'max-h-52 overflow-hidden' : ''}`}>
                 <div className="px-6 py-5 space-y-6">
                   {versionHistory.map((entry, i) => (
@@ -940,6 +998,11 @@ export default function ProductPassportDetail() {
                           }`}>
                             {entry.type === 'creation' ? 'DPP Oluşturuldu' : 'DPP Güncellendi'}
                           </span>
+                          {entry.version && (
+                            <span className="text-[10px] font-black text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full font-mono">
+                              v{entry.version}
+                            </span>
+                          )}
                           <span className="text-[10px] text-gray-400 font-mono">
                             {entry.timestamp.replace('T', ' ').replace('Z', '')}
                           </span>
@@ -947,10 +1010,20 @@ export default function ProductPassportDetail() {
                           <span className="text-[10px] text-gray-500 font-medium">{entry.operator}</span>
                         </div>
                         {/* Blockchain damgası */}
-                        <div className="flex items-center gap-1.5 mb-3 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100 w-fit">
-                          <ShieldCheck size={11} className="text-green-600 shrink-0" />
-                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Blockchain:</span>
-                          <span className="text-[10px] font-mono text-gray-600 truncate max-w-[220px]">{entry.blockchain_hash}</span>
+                        <div className="flex items-center gap-1.5 mb-3 px-3 py-1.5 rounded-lg border w-fit
+                          bg-gray-50 border-gray-100">
+                          {entry.blockchain_hash ? (
+                            <>
+                              <ShieldCheck size={11} className="text-green-600 shrink-0" />
+                              <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Blockchain:</span>
+                              <span className="text-[10px] font-mono text-gray-600 truncate max-w-[220px]">{entry.blockchain_hash}</span>
+                            </>
+                          ) : (
+                            <>
+                              <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse shrink-0" />
+                              <span className="text-[10px] font-bold text-yellow-600">Blockchain damgası bekleniyor</span>
+                            </>
+                          )}
                         </div>
                         {/* Per-field kaynak etiketleri — bölüm gruplarıyla */}
                         <div className="space-y-3">
