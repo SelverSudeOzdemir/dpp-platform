@@ -74,6 +74,10 @@ class DigitalProductPassport(Base, UUIDMixin, TimestampMixin):
     production_date = Column(Date, nullable=False)
     production_line = Column(String(255))
     shift = Column(String(100))
+    # CBAM & Production Info
+    production_route = Column(String(100))
+    ocak_no = Column(String(50))
+    miktar_ton = Column(Numeric(10, 2))
     # DPP Hosting
     api_endpoint = Column(String(500), default="https://api.kocaersteel.com/dpp/v1/")
     backup_primary_url = Column(String(500))

@@ -79,6 +79,8 @@ class ProductType(Base, UUIDMixin, TimestampMixin):
     dim_width_mm = Column(Numeric(8, 2))
     dim_width_tolerance = Column(String(20))
     dim_web_thickness_mm = Column(Numeric(6, 3))
+    boy_mm = Column(Numeric(8, 2))
+    hs_code = Column(String(20))
     dim_web_tolerance = Column(String(20))
     dim_flange_thickness_mm = Column(Numeric(6, 3))
     dim_flange_tolerance = Column(String(20))

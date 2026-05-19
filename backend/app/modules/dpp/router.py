@@ -10,7 +10,9 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy import desc, func, select
+from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
+import hashlib
 
 from app.core.deps import get_db, require_permission, Permission, TokenPayload
 from app.middleware.rbac import require_admin
@@ -18,6 +20,7 @@ from app.models.integration import DppChangelog
 from app.modules.dpp.schemas import (
     DppCreateRequest, DppUpdateRequest,
     DppDetailResponse, DppListItem, SummaryStatsResponse,
+    SupplyStageCreateRequest,
 )
 from app.modules.dpp.services import DppService
 
@@ -85,7 +88,11 @@ async def create_dpp(
     db: AsyncSession = Depends(get_db),
     token: TokenPayload = Depends(require_permission(Permission.DPP_CREATE)),
 ):
-    return await DppService.create(db, body)
+    try:
+        user_uuid = UUID(token.sub) if token.sub else None
+    except ValueError:
+        user_uuid = None
+    return await DppService.create(db, body, current_user_id=user_uuid)
 
 
 # ── UUID parametreli path'ler en sona ──
@@ -103,25 +110,53 @@ async def get_dpp_changelog(
     )).scalar_one()
     result = await db.execute(
         select(DppChangelog)
+        .options(joinedload(DppChangelog.user))
         .where(DppChangelog.dpp_id == dpp_id)
         .order_by(desc(DppChangelog.created_at))
         .offset(skip).limit(limit)
     )
     items = result.scalars().all()
+    
+    data = []
+    for i in items:
+        version = None
+        if i.new_state and isinstance(i.new_state, dict):
+            version = i.new_state.get("current_version")
+        if not version and i.previous_state and isinstance(i.previous_state, dict):
+            version = i.previous_state.get("current_version")
+        if not version:
+            version = "1.0.0"
+            
+        data.append({
+            "id": str(i.id),
+            "dpp_id": str(i.dpp_id),
+            "change_type": i.change_type,
+            "previous_state": i.previous_state,
+            "new_state": i.new_state,
+            "created_at": i.created_at,
+            "changed_by_name": i.user.full_name if i.user else "System",
+            "changed_by_email": i.user.email if i.user else "system@kocaer.com",
+            "version": version,
+            "tx_hash": f"0x{hashlib.sha256(str(i.id).encode()).hexdigest()}",
+        })
+        
     return {
-        "data": [
-            {
-                "id": str(i.id),
-                "dpp_id": str(i.dpp_id),
-                "change_type": i.change_type,
-                "previous_state": i.previous_state,
-                "new_state": i.new_state,
-                "created_at": i.created_at,
-            }
-            for i in items
-        ],
+        "data": data,
         "total": total,
     }
+
+
+@router.post("/{dpp_id}/supply-chain/stages", summary="Tedarik zinciri adımlarını güncelle")
+async def save_dpp_supply_chain_stages(
+    dpp_id: UUID,
+    body: List[SupplyStageCreateRequest],
+    db: AsyncSession = Depends(get_db),
+    token: TokenPayload = Depends(require_permission(Permission.DPP_UPDATE)),
+):
+    success = await DppService.save_supply_chain_stages(db, dpp_id, body)
+    if not success:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="DPP bulunamadı")
+    return {"status": "success", "message": "Stages updated successfully"}
 
 
 @router.get("/{dpp_id}", response_model=DppDetailResponse, summary="DPP detay")
@@ -143,7 +178,11 @@ async def update_dpp(
     db: AsyncSession = Depends(get_db),
     token: TokenPayload = Depends(require_permission(Permission.DPP_UPDATE)),
 ):
-    result = await DppService.update(db, dpp_id, body)
+    try:
+        user_uuid = UUID(token.sub) if token.sub else None
+    except ValueError:
+        user_uuid = None
+    result = await DppService.update(db, dpp_id, body, current_user_id=user_uuid)
     if not result:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="DPP bulunamadı")
     return result

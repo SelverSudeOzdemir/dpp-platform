@@ -21,6 +21,9 @@ class DppCreateRequest(BaseModel):
     shift: Optional[str] = Field(None, max_length=100)
     dpp_version: str = "1.0.0"
     dpp_standard: str = "CIRPASS-Compatible"
+    production_route: Optional[str] = Field(None, max_length=100)
+    ocak_no: Optional[str] = Field(None, max_length=50)
+    miktar_ton: Optional[float] = None
 
 
 class DppUpdateRequest(BaseModel):
@@ -31,6 +34,9 @@ class DppUpdateRequest(BaseModel):
     html_content: Optional[str] = None
     current_version: Optional[str] = None
     is_active: Optional[bool] = None
+    production_route: Optional[str] = None
+    ocak_no: Optional[str] = None
+    miktar_ton: Optional[float] = None
 
 
 # ─── NESTED RESPONSE PARÇALARI ────────────────────────────────────────────────
@@ -60,6 +66,7 @@ class CertificationInfo(BaseModel):
     issue_date: Optional[str] = None
     expiry_date: Optional[str] = None
     document_url: Optional[str] = None
+    test_standard: Optional[str] = None
 
 
 class SupplyChainStageInfo(BaseModel):
@@ -75,6 +82,10 @@ class SupplyChainStageInfo(BaseModel):
     process_name: Optional[str] = None
     stage_date: Optional[str] = None
     traceability_id: Optional[str] = None
+    origin_country: Optional[str] = None
+    transport_method: Optional[str] = None
+    distance_km: Optional[float] = None
+    co2_kg_per_km: Optional[float] = None
 
 
 class LifecycleEventInfo(BaseModel):
@@ -107,6 +118,33 @@ class DppListItem(BaseModel):
     dismantling_difficulty: Optional[str] = None
     issued_at: Optional[str] = None
     valid_until: Optional[str] = None
+    # Kimyasal Sekmesi
+    c_pct: Optional[float] = None
+    mn_pct: Optional[float] = None
+    si_pct: Optional[float] = None
+    p_pct: Optional[float] = None
+    s_pct: Optional[float] = None
+    n_pct: Optional[float] = None
+    # Mekanik Sekmesi
+    yield_mpa: Optional[float] = None
+    tensile_mpa: Optional[float] = None
+    elongation_pct: Optional[float] = None
+    # Ebat / Ürün Kataloğu
+    en_mm: Optional[float] = None
+    kalinlik_mm: Optional[float] = None
+    boy_mm: Optional[float] = None
+    hs_code: Optional[str] = None
+    # CBAM & Batch Üretim Bilgileri
+    production_route: Optional[str] = None
+    ocak_no: Optional[str] = None
+    miktar_ton: Optional[float] = None
+    # Reddetme Bilgileri
+    dpp_status: str
+    rejection_reason: Optional[str] = None
+    rejection_fields: Optional[List[str]] = None
+    rejected_by: Optional[str] = None
+    rejected_at: Optional[str] = None
+
     manufacturer: Optional[ManufacturerInfo] = None
     facility: Optional[FacilityInfo] = None
     certifications: Optional[List[CertificationInfo]] = []
@@ -136,3 +174,21 @@ class SummaryStatsResponse(BaseModel):
     pending_approval: int
     rejected: int
     archived: int
+
+
+class SupplyStageCreateRequest(BaseModel):
+    sequence_number: Optional[int] = None
+    stage_name: str
+    organization: str
+    role: Optional[str] = None
+    location: Optional[str] = None
+    country_code: Optional[str] = None
+    material: Optional[str] = None
+    quantity: Optional[float] = None
+    unit: Optional[str] = None
+    material_origin: Optional[str] = None
+    process: Optional[str] = None
+    date: Optional[str] = None
+    transport_method: Optional[str] = None
+    distance_km: Optional[float] = None
+    co2_kg_per_km: Optional[float] = None

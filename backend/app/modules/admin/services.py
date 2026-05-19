@@ -96,15 +96,33 @@ class AdminService:
         dpp.dpp_status = body.status
         dpp.status_changed_at = datetime.now()
 
+        user_uuid = None
+        if current_user_id:
+            try:
+                from uuid import UUID as uuid_class
+                user_uuid = uuid_class(str(current_user_id))
+            except ValueError:
+                pass
+
+        if body.status == DppStatusEnum.REJECTED:
+            dpp.rejection_reason = body.rejection_reason
+            dpp.rejection_fields = body.failed_fields
+            dpp.rejected_by = str(user_uuid) if user_uuid else str(current_user_id)
+            dpp.rejected_at = datetime.now()
+
         changelog = DppChangelog(
             dpp_id=dpp_id,
-            changed_by_user_id=current_user_id,
+            changed_by_user_id=user_uuid,
             change_type="STATUS_UPDATE",
-            previous_state={"status": str(old_status.value if hasattr(old_status, 'value') else old_status)},
+            previous_state={
+                "status": str(old_status.value if hasattr(old_status, 'value') else old_status),
+                "current_version": dpp.current_version
+            },
             new_state={
                 "status": str(body.status.value if hasattr(body.status, 'value') else body.status),
                 "rejection_reason": body.rejection_reason if body.status == DppStatusEnum.REJECTED else None,
-                "failed_fields": body.failed_fields if body.status == DppStatusEnum.REJECTED else None
+                "failed_fields": body.failed_fields if body.status == DppStatusEnum.REJECTED else None,
+                "current_version": dpp.current_version
             }
         )
         db.add(changelog)

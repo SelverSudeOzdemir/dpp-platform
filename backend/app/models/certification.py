@@ -52,6 +52,7 @@ class Certification(Base, UUIDMixin, TimestampMixin):
     expiry_date = Column(Date)
     scope = Column(Text)
     document_url = Column(String(500))
+    test_standard = Column(String(100))
     status = Column(
         Enum(CertificationStatusEnum, name="certification_status_enum", create_type=False, values_callable=lambda x: [e.value for e in x]),
         nullable=False,
