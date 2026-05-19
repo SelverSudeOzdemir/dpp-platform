@@ -16,7 +16,7 @@ interface Props {
   pendingBatches: PendingBatch[];
   cbamWarnings: AdminProduct[];
   onApprove: (id: string) => void;
-  onRejectConfirm: (id: string) => void;
+  onRejectConfirm: (id: string, reason: string, fields: string[]) => void;
   setActiveTab: (tab: string) => void;
 }
 
@@ -42,7 +42,7 @@ export default function OverviewTab({
 
   const handleRejectBatch = (id: string) => {
     if (!rejectReason.trim()) return;
-    onRejectConfirm(id);
+    onRejectConfirm(id, rejectReason, rejectFields);
     setRejectId(null);
     setRejectReason('');
     setRejectFields([]);

@@ -272,11 +272,11 @@ export async function apiApproveDpp(dppId: string) {
   return res.json();
 }
 
-export async function apiRejectDpp(dppId: string, reason: string) {
+export async function apiRejectDpp(dppId: string, reason: string, fields: string[] = []) {
   const res = await authFetch(`${BASE_URL}/admin/reject/${dppId}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...getAuthHeader() },
-    body: JSON.stringify({ status: "REJECTED", rejection_reason: reason }),
+    body: JSON.stringify({ status: "rejected", rejection_reason: reason, failed_fields: fields }),
   });
   if (!res.ok) throw new Error("Red işlemi başarısız");
   return res.json();

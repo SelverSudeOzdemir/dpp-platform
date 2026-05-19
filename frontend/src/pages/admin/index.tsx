@@ -100,9 +100,9 @@ export default function AdminPage() {
     }
   };
 
-  const handleRejectBatch = async (id: string, reason?: string) => {
+  const handleRejectBatch = async (id: string, reason: string, fields: string[]) => {
     try {
-      await apiRejectDpp(id, reason || 'Kriterleri karşılamıyor.');
+      await apiRejectDpp(id, reason, fields);
       setPendingBatches(prev => prev.filter(b => b.id !== id));
       await loadDashboardData();
     } catch (err: any) {

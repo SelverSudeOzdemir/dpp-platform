@@ -7,8 +7,17 @@ import Button from '../../components/ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiGetDppChangelog } from '../../lib/api';
 // YENİ İKONLAR EKLENDİ (Globe, Mail, Info) Yasal zorunluluk alanları için
-import { CheckCircle2, ShieldCheck, LockKeyhole, ChevronDown, Scale, FlaskConical, QrCode, Leaf, Calendar, Award, AlertTriangle, Recycle, Globe, Mail, Info, Download, FileText, MapPin, Factory, Flame, Box, Hash, Globe2, Milestone, Activity, GitBranch } from 'lucide-react';
+import { CheckCircle2, ShieldCheck, LockKeyhole, ChevronDown, Scale, FlaskConical, QrCode, Leaf, Calendar, Award, AlertTriangle, Recycle, Globe, Mail, Info, Download, FileText, MapPin, Factory, Flame, Box, Hash, Globe2, Milestone, Activity, GitBranch, XCircle } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+
+const REJECTION_FIELD_LABELS: Record<string, string> = {
+  co2_a1a3:           'CO₂ A1–A3 Emisyon Değeri',
+  geri_donusum_orani: 'Geri Dönüşüm Oranı',
+  svhc_free:          'SVHC / REACH Beyanı',
+  celik_kalitesi:     'Çelik Kalitesi',
+  cift_kodu:          'Çift Kodu (Heat No)',
+  parti_no:           'Parti Numarası',
+};
 
 
 const SOURCE_CFG: Record<string, { bg: string; text: string; border: string }> = {
@@ -174,6 +183,32 @@ export default function ProductPassportDetail() {
           >
             ← {role === 'ADMIN' ? "Dashboard'a Dön" : 'DPP Listem\'e Dön'}
           </button>
+        )}
+
+        {/* RED BANNER */}
+        {product.dpp_status === 'rejected' && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-2xl p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <XCircle size={16} className="text-red-600 shrink-0" />
+              <h3 className="text-sm font-black text-red-700 uppercase tracking-wider">Bu DPP Reddedildi</h3>
+            </div>
+            {product.rejection_reason && (
+              <p className="text-sm text-red-800 font-medium mb-3 ml-6">{product.rejection_reason}</p>
+            )}
+            {product.rejection_fields && product.rejection_fields.length > 0 && (
+              <div className="ml-6">
+                <p className="text-xs font-black text-red-600 uppercase tracking-wider mb-2">Düzeltilmesi Gereken Alanlar:</p>
+                <div className="flex flex-wrap gap-2">
+                  {product.rejection_fields.map((key: string) => (
+                    <span key={key} className="inline-flex items-center gap-1.5 bg-red-100 border border-red-300 text-red-800 text-xs font-bold px-2.5 py-1 rounded-lg">
+                      <AlertTriangle size={11} />
+                      {REJECTION_FIELD_LABELS[key] || key}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         )}
 
         {/* 1. HERO ALANI */}
