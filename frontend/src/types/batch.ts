@@ -6,6 +6,7 @@ export interface BatchInfo {
   ocak_no: string;
   uretim_tarihi: string;
   miktar_ton: string;
+  production_route: string;
 }
 
 export interface Certification {
@@ -15,6 +16,7 @@ export interface Certification {
   cert_no: string;
   issue_date: string;
   expiry_date: string;
+  test_standard: string;
   file_name: string;
 }
 

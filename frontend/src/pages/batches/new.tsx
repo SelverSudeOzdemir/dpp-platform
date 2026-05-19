@@ -29,7 +29,7 @@ export default function NewBatch() {
   const [existingLoaded, setExistingLoaded] = useState(false);
   const [batchInfo, setBatchInfo] = useState<BatchInfo>({
     parti_no: '', tedarikci_parti_kodu: '', urun_no: '', urun_tipi: '',
-    ocak_no: '', uretim_tarihi: '', miktar_ton: '',
+    ocak_no: '', uretim_tarihi: '', miktar_ton: '', production_route: '',
   });
   const [dppData, setDppData]           = useState<DppData>(EMPTY_DPP);
   const [erpLockedFields, setErpLockedFields] = useState<Set<string>>(new Set());
@@ -126,7 +126,7 @@ export default function NewBatch() {
   const handleBack  = () => setStep(s => Math.max(s - 1, 0));
   const handleReset = () => {
     setSubmitted(false); setStep(0); setErpOverlay(false); setErpImported(false);
-    setBatchInfo({ parti_no: '', tedarikci_parti_kodu: '', urun_no: '', urun_tipi: '', ocak_no: '', uretim_tarihi: '', miktar_ton: '' });
+    setBatchInfo({ parti_no: '', tedarikci_parti_kodu: '', urun_no: '', urun_tipi: '', ocak_no: '', uretim_tarihi: '', miktar_ton: '', production_route: '' });
     setDppData(EMPTY_DPP);
     setPulledDocuments([]);
     setBelgelerOpen(false);

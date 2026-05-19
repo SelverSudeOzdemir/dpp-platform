@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Database, CheckCircle2, Lock, Factory } from 'lucide-react';
-import { Field, SectionTitle } from './BatchFormFields';
-import { URUN_KATALOGU } from '../../constants/batchConstants';
+import { Field, SelectField, SectionTitle } from './BatchFormFields';
+import { URUN_KATALOGU, PRODUCTION_ROUTE_OPTIONS } from '../../constants/batchConstants';
 import type { BatchInfo } from '../../types/batch';
 
 export function Step1BatchInfo({ data, onChange, erpImported, existingLoaded = false, onErpClick, erpLockedFields = new Set() }: {
@@ -104,6 +104,7 @@ export function Step1BatchInfo({ data, onChange, erpImported, existingLoaded = f
             <ROField label="Ocak / Fırın No" value={data.ocak_no} mono />
             <ROField label="Üretim Tarihi" value={data.uretim_tarihi} />
             <ROField label="Miktar" value={data.miktar_ton ? `${data.miktar_ton} ton` : ''} />
+            <ROField label="Üretim Rotası" value={data.production_route} sapLocked={!!data.production_route} />
           </div>
         </div>
       </div>
@@ -237,6 +238,20 @@ export function Step1BatchInfo({ data, onChange, erpImported, existingLoaded = f
             <ROField label="Miktar" value={`${data.miktar_ton} ton`} sapLocked />
           ) : (
             <Field label="Miktar (ton)" value={data.miktar_ton} onChange={(v) => onChange({ ...data, miktar_ton: v })} type="number" placeholder="42.5" required />
+          )}
+          {erpLockedFields.has('production_route') ? (
+            <ROField label="Üretim Rotası" value={data.production_route} sapLocked />
+          ) : (
+            <div>
+              <SelectField
+                label="Üretim Rotası"
+                value={data.production_route}
+                onChange={(v) => onChange({ ...data, production_route: v })}
+                options={PRODUCTION_ROUTE_OPTIONS}
+                required
+              />
+              <p className="text-[11px] text-gray-400 mt-1">CBAM beyanında zorunlu — çeliğin nasıl üretildiği</p>
+            </div>
           )}
         </div>
       </div>

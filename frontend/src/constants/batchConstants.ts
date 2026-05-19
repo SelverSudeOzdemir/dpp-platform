@@ -13,6 +13,7 @@ export const URUN_KATALOGU: UrunKatalog[] = [
 
 export const DISMANTLING_OPTIONS = ['Çok Kolay', 'Kolay', 'Orta', 'Zor', 'Çok Zor'];
 export const CO2_VERIFICATION_OPTIONS = ['Üçüncü Taraf Doğrulamalı', 'EPD Belgeli', 'Dahili Hesaplama', 'Varsayılan Değer'];
+export const PRODUCTION_ROUTE_OPTIONS = ['EAF (Elektrik Ark Ocağı)', 'BOF (Bazik Oksijen Fırını)', 'EAF + LF (Pota Fırını)'];
 
 export const MAIN_STEPS = ['Batch Bilgileri', 'DPP Verileri', 'Önizleme'];
 
@@ -102,6 +103,7 @@ export const ERP_MOCK_BATCHINFO: Partial<BatchInfo> = {
   parti_no: 'KCR-2026-0318-A', urun_no: 'IPE-200',
   urun_tipi: 'IPE 200 Yapısal Çelik Profil',
   ocak_no: 'EAF-03', uretim_tarihi: '2026-03-18', miktar_ton: '48.5',
+  production_route: 'EAF (Elektrik Ark Ocağı)',
 };
 
 export const ERP_MOCK_DPPDATA: Partial<DppData> = {

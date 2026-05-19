@@ -34,7 +34,7 @@ export default function Step3DppData({ data, onChange, batchInfo, erpImported, e
   const setB = (field: keyof DppData) => (v: boolean) => onChange({ ...data, [field]: v });
 
   // Sertifika yönetimi
-  const addCert = () => onChange({ ...data, certifications: [...data.certifications, { id: Date.now(), cert_type: '', issuer: '', cert_no: '', issue_date: '', expiry_date: '', file_name: '' }] });
+  const addCert = () => onChange({ ...data, certifications: [...data.certifications, { id: Date.now(), cert_type: '', issuer: '', cert_no: '', issue_date: '', expiry_date: '', test_standard: '', file_name: '' }] });
   const removeCert = (id: number) => onChange({ ...data, certifications: data.certifications.filter(c => c.id !== id) });
   const setCert = (id: number, field: keyof Certification, v: string) =>
     onChange({ ...data, certifications: data.certifications.map(c => c.id === id ? { ...c, [field]: v } : c) });
@@ -232,6 +232,12 @@ export default function Step3DppData({ data, onChange, batchInfo, erpImported, e
                     <Field label="Geçerlilik Tarihi" value={cert.expiry_date}
                       onChange={(v) => setCert(cert.id, 'expiry_date', v)}
                       type="date" required />
+                    <div className="md:col-span-2">
+                      <Field label="Referans Test Standardı" value={cert.test_standard}
+                        onChange={(v) => setCert(cert.id, 'test_standard', v)}
+                        placeholder="EN 10025-2:2019"
+                        hint="Test sonuçlarının hangi standarda göre ölçüldüğü — EN 10204 zorunlu alanı" />
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-1.5">
