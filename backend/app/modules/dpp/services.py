@@ -38,7 +38,7 @@ def _map_list_item(dpp: DigitalProductPassport) -> DppListItem:
         contact_email=mfr.contact_email if mfr else None,
         website=mfr.website if mfr else None,
         country=mfr.country_code if mfr else None,
-        city="İzmir" if mfr and mfr.name and "Kocaer" in mfr.name else (mfr.headquarters_address.split(',')[-2].strip() if mfr and mfr.headquarters_address and ',' in mfr.headquarters_address else None),
+        city=mfr.city if mfr else None,
         address=mfr.headquarters_address if mfr else None,
     ) if mfr else None
 
@@ -124,8 +124,8 @@ def _map_list_item(dpp: DigitalProductPassport) -> DppListItem:
         tensile_mpa=float(mech.tensile_strength_mpa) if mech and mech.tensile_strength_mpa is not None else None,
         elongation_pct=float(mech.elongation_pct) if mech and mech.elongation_pct is not None else None,
         # Sizes/ebat
-        en_mm=float(pt.dim_width_mm) if pt and pt.dim_width_mm is not None else None,
-        kalinlik_mm=float(pt.dim_web_thickness_mm or pt.dim_flange_thickness_mm or 0) if pt and (pt.dim_web_thickness_mm is not None or pt.dim_flange_thickness_mm is not None) else None,
+        en_mm=float(pt.dim_height_mm) if pt and pt.dim_height_mm is not None else None,
+        kalinlik_mm=float(pt.dim_web_thickness_mm) if pt and pt.dim_web_thickness_mm is not None else (float(pt.dim_flange_thickness_mm) if pt and pt.dim_flange_thickness_mm is not None else None),
         boy_mm=float(pt.boy_mm) if pt and pt.boy_mm is not None else None,
         hs_code=pt.hs_code if pt else None,
         # CBAM fields
