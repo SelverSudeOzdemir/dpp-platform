@@ -41,3 +41,9 @@ implementation_plan.md
 
 backend/scratch/.env
 
+# Local test files
+backend/test.db
+backend/test_db.py
+backend/test_flow.py
+
+

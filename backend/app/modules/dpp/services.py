@@ -23,29 +23,26 @@ from app.modules.dpp.schemas import (
 )
 
 
-def _status_str(status: DppStatusEnum) -> str:
-    return status.value.upper()
-
-
 def _map_list_item(dpp: DigitalProductPassport) -> DppListItem:
     pt: Optional[ProductType] = dpp.product_type
     mfr: Optional[Manufacturer] = pt.manufacturer if pt else None
     fac: Optional[ProductionFacility] = dpp.production_facility
 
     mfr_info = ManufacturerInfo(
-        name=mfr.name if mfr else None,
-        tax_id=mfr.vat_number if mfr else None,
-        contact_email=mfr.contact_email if mfr else None,
-        website=mfr.website if mfr else None,
-        country=mfr.country_code if mfr else None,
-        city=mfr.city if mfr else None,
-        address=mfr.headquarters_address if mfr else None,
+        name=str(mfr.name) if mfr and mfr.name else None,
+        tax_id=str(mfr.vat_number) if mfr and mfr.vat_number else None,
+        contact_email=str(mfr.contact_email) if mfr and mfr.contact_email else None,
+        website=str(mfr.website) if mfr and mfr.website else None,
+        country=str(mfr.country_code) if mfr and mfr.country_code else None,
+        city=str(mfr.city) if mfr and mfr.city else None,
+        address=str(mfr.headquarters_address) if mfr and mfr.headquarters_address else None,
     ) if mfr else None
 
     fac_info = FacilityInfo(
-        name=fac.facility_name if fac else None,
-        country=fac.country_code if fac else None,
-        address=fac.location_text if fac else None,
+        name=str(fac.facility_name) if fac and fac.facility_name else None,
+        gln_code=str(fac.gln) if hasattr(fac, 'gln') and fac.gln else None,
+        country=str(fac.country_code) if fac and fac.country_code else None,
+        address=str(fac.location_text) if fac and fac.location_text else None,
     ) if fac else None
 
     certs = [
@@ -95,21 +92,20 @@ def _map_list_item(dpp: DigitalProductPassport) -> DppListItem:
 
     return DppListItem(
         id=str(dpp.id),
-        name=pt.product_name if pt else "Bilinmeyen Ürün",
-        category=pt.product_category.value if pt and pt.product_category else "",
-        gtin=dpp.gtin,
-        batch_number=dpp._batch_number,
-        material_standard=pt.material_standard if pt else None,
+        name=str(pt.product_name) if pt and pt.product_name else "Bilinmeyen Ürün",
+        category=str(pt.product_category.value) if pt and pt.product_category else "",
+        gtin=str(dpp.gtin) if dpp and dpp.gtin else None,
+        batch_number=str(dpp._batch_number) if dpp and dpp._batch_number else None,
+        material_standard=str(pt.material_standard) if pt and pt.material_standard else None,
         steel_grade=pt.steel_grade.value if pt and pt.steel_grade else None,
-        weight_per_meter=float(pt.weight_per_meter_kg) if pt and pt.weight_per_meter_kg else None,
+        weight_per_meter=float(pt.weight_per_meter_kg) if pt and pt.weight_per_meter_kg else None,  # type: ignore
         production_date=str(dpp.production_date) if dpp.production_date else None,
-        version=dpp.current_version,
-        status=_status_str(dpp.dpp_status),
-        carbon_footprint=float(pt.co2_cradle_to_gate_kg) if pt and pt.co2_cradle_to_gate_kg else None,
-        recycled_content=float(pt.recycled_content_pct) if pt and pt.recycled_content_pct else None,
-        recyclability=float(pt.recyclability_pct) if pt and pt.recyclability_pct else None,
+        version=str(dpp.current_version) if dpp and dpp.current_version else None,
+        carbon_footprint=float(pt.co2_cradle_to_gate_kg) if pt and pt.co2_cradle_to_gate_kg else None,  # type: ignore
+        recycled_content=float(pt.recycled_content_pct) if pt and pt.recycled_content_pct else None,  # type: ignore
+        water_consumption_l_kg=float(pt.water_consumption_l_kg) if pt and pt.water_consumption_l_kg is not None else None,  # type: ignore
         svhc_free=(not pt.hazardous_materials) if pt and pt.hazardous_materials is not None else None,
-        dismantling_difficulty=pt.dismantling_difficulty if pt else None,
+        dismantling_difficulty=str(pt.dismantling_difficulty) if pt and pt.dismantling_difficulty else None,
         issued_at=dpp.created_at.isoformat() if dpp.created_at else None,
         valid_until=str(pt.epd_valid_until) if pt and pt.epd_valid_until else None,
         # Chemical fields
@@ -124,19 +120,19 @@ def _map_list_item(dpp: DigitalProductPassport) -> DppListItem:
         tensile_mpa=float(mech.tensile_strength_mpa) if mech and mech.tensile_strength_mpa is not None else None,
         elongation_pct=float(mech.elongation_pct) if mech and mech.elongation_pct is not None else None,
         # Sizes/ebat
-        en_mm=float(pt.dim_height_mm) if pt and pt.dim_height_mm is not None else None,
-        kalinlik_mm=float(pt.dim_web_thickness_mm) if pt and pt.dim_web_thickness_mm is not None else (float(pt.dim_flange_thickness_mm) if pt and pt.dim_flange_thickness_mm is not None else None),
-        boy_mm=float(pt.boy_mm) if pt and pt.boy_mm is not None else None,
-        hs_code=pt.hs_code if pt else None,
+        en_mm=float(pt.dim_height_mm) if pt and pt.dim_height_mm is not None else (float(pt.dim_width_mm) if pt and pt.dim_width_mm is not None else None),
+        kalinlik_mm=float(pt.dim_flange_thickness_mm) if pt and pt.dim_flange_thickness_mm is not None and pt.dim_flange_thickness_mm != 0 else (float(pt.dim_web_thickness_mm) if pt and pt.dim_web_thickness_mm is not None and pt.dim_web_thickness_mm != 0 else None),
+        boy_mm=float(pt.boy_mm) if pt and pt.boy_mm is not None else None,  # type: ignore
+        hs_code=str(pt.hs_code) if pt and pt.hs_code else None,
         # CBAM fields
-        production_route=dpp.production_route,
-        ocak_no=dpp.ocak_no,
-        miktar_ton=float(dpp.miktar_ton) if dpp.miktar_ton is not None else None,
+        production_route=str(dpp.production_route) if dpp and dpp.production_route else None,
+        ocak_no=str(dpp.ocak_no) if dpp and dpp.ocak_no else None,
+        miktar_ton=float(dpp.miktar_ton) if dpp and dpp.miktar_ton is not None else None,  # type: ignore
         # Rejection fields
         dpp_status=dpp.dpp_status.value if hasattr(dpp.dpp_status, 'value') else str(dpp.dpp_status),
-        rejection_reason=dpp.rejection_reason,
-        rejection_fields=dpp.rejection_fields,
-        rejected_by=dpp.rejected_by,
+        rejection_reason=str(dpp.rejection_reason) if dpp and dpp.rejection_reason else None,
+        rejection_fields=list(dpp.rejection_fields) if dpp and dpp.rejection_fields else None,  # type: ignore
+        rejected_by=str(dpp.rejected_by) if dpp and dpp.rejected_by else None,
         rejected_at=dpp.rejected_at.isoformat() if dpp.rejected_at else None,
         # Nested structures
         manufacturer=mfr_info, facility=fac_info,
@@ -150,13 +146,13 @@ def _map_detail(dpp: DigitalProductPassport) -> DppDetailResponse:
         **base.model_dump(),
         product_type_id=str(dpp.product_type_id) if dpp.product_type_id else None,
         public_identifier=str(dpp.public_identifier),
-        gs1_serial_number=dpp.gs1_serial_number,
-        dpp_version=dpp.dpp_version,
-        dpp_standard=dpp.dpp_standard,
-        data_carrier_type=dpp.data_carrier_type.value if dpp.data_carrier_type else None,
-        production_line=dpp.production_line,
-        shift=dpp.shift,
-        is_active=dpp.is_active,
+        gs1_serial_number=str(dpp.gs1_serial_number) if dpp and dpp.gs1_serial_number else "",
+        dpp_version=str(dpp.dpp_version) if dpp and dpp.dpp_version else "1.0.0",
+        dpp_standard=str(dpp.dpp_standard) if dpp and dpp.dpp_standard else "CIRPASS-Compatible",
+        data_carrier_type=str(dpp.data_carrier_type.value) if dpp and dpp.data_carrier_type else None,
+        production_line=str(dpp.production_line) if dpp and dpp.production_line else None,
+        shift=str(dpp.shift) if dpp and dpp.shift else None,
+        is_active=bool(dpp.is_active) if dpp and dpp.is_active is not None else True,
         updated_at=dpp.updated_at.isoformat() if dpp.updated_at else None,
     )
 
@@ -253,7 +249,10 @@ class DppService:
         )
         db.add(changelog)
         await db.commit()
-        return await DppService.get_by_id(db, dpp.id)
+        res = await DppService.get_by_id(db, dpp.id)  # type: ignore
+        if res is None:
+            raise Exception("Failed to retrieve created DPP")
+        return res
 
     @staticmethod
     async def update(db: AsyncSession, dpp_id: UUID,
@@ -282,11 +281,11 @@ class DppService:
             setattr(dpp, field, value)
             
         if status_changed:
-            new_version = _bump_version(old_version, minor=True)
-            dpp.current_version = new_version
+            new_version = _bump_version(str(old_version), minor=True)
+            dpp.current_version = new_version  # type: ignore
         elif other_changed:
-            new_version = _bump_version(old_version, minor=False)
-            dpp.current_version = new_version
+            new_version = _bump_version(str(old_version), minor=False)
+            dpp.current_version = new_version  # type: ignore
         else:
             new_version = old_version
             
@@ -315,8 +314,8 @@ class DppService:
         dpp = result.scalars().first()
         if not dpp:
             return False
-        dpp.is_active = False
-        dpp.dpp_status = DppStatusEnum.ARCHIVED
+        setattr(dpp, 'is_active', False)
+        setattr(dpp, 'dpp_status', DppStatusEnum.ARCHIVED)
         await db.commit()
         return True
 

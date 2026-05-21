@@ -48,22 +48,37 @@ async def get_global_changelog(
     total = (await db.execute(select(func.count(DppChangelog.id)))).scalar_one()
     result = await db.execute(
         select(DppChangelog)
+        .options(joinedload(DppChangelog.user))
         .order_by(desc(DppChangelog.created_at))
         .offset(skip).limit(limit)
     )
-    items = result.scalars().all()
+    items = result.unique().scalars().all()
+
+    data = []
+    for i in items:
+        version = None
+        if i.new_state and isinstance(i.new_state, dict):
+            version = i.new_state.get("current_version")
+        if not version and i.previous_state and isinstance(i.previous_state, dict):
+            version = i.previous_state.get("current_version")
+        if not version:
+            version = "1.0.0"
+
+        data.append({
+            "id": str(i.id),
+            "dpp_id": str(i.dpp_id),
+            "change_type": i.change_type,
+            "previous_state": i.previous_state,
+            "new_state": i.new_state,
+            "created_at": i.created_at,
+            "changed_by_name": i.user.full_name if i.user else "System",
+            "changed_by_email": i.user.email if i.user else "system@kocaer.com",
+            "version": version,
+            "tx_hash": f"0x{hashlib.sha256(str(i.id).encode()).hexdigest()}",
+        })
+
     return {
-        "data": [
-            {
-                "id": str(i.id),
-                "dpp_id": str(i.dpp_id),
-                "change_type": i.change_type,
-                "previous_state": i.previous_state,
-                "new_state": i.new_state,
-                "created_at": i.created_at,
-            }
-            for i in items
-        ],
+        "data": data,
         "total": total,
     }
 

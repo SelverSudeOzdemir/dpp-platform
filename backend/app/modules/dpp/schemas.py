@@ -110,10 +110,10 @@ class DppListItem(BaseModel):
     weight_per_meter: Optional[float] = None
     production_date: Optional[str] = None
     version: Optional[str] = None
-    status: str
     carbon_footprint: Optional[float] = None
     recycled_content: Optional[float] = None
     recyclability: Optional[float] = None
+    water_consumption_l_kg: Optional[float] = None
     svhc_free: Optional[bool] = None
     dismantling_difficulty: Optional[str] = None
     issued_at: Optional[str] = None

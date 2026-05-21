@@ -18,10 +18,18 @@ export interface BackendProduct {
   dimensions?: string;
   production_date?: string;
   version?: string;
-  status?: string;
+  dpp_status?: string;
+  en_mm?: number;
+  kalinlik_mm?: number;
+  boy_mm?: number;
+  rejection_reason?: string;
+  rejection_fields?: string[];
+  rejected_by?: string;
+  rejected_at?: string;
   carbon_footprint?: number;
   recycled_content?: number;
   recyclability?: number;
+  water_consumption_l_kg?: number;
   svhc_free?: boolean;
   disposal_instructions?: string;
   dismantling_difficulty?: string;
@@ -76,7 +84,7 @@ export function mapBackendProduct(raw: BackendProduct): Product {
   return {
     id: raw.id,
     product_type_id: raw.product_type_id,
-    status: mapStatus(raw.status),
+    status: mapStatus(raw.dpp_status),
     createdAt: raw.issued_at ? new Date(raw.issued_at).toLocaleDateString("tr-TR") : "",
     product_name: raw.name,
     product_category: raw.category as Product["product_category"],
@@ -86,11 +94,20 @@ export function mapBackendProduct(raw: BackendProduct): Product {
     steel_grade: raw.steel_grade as Product["steel_grade"],
     weight_per_meter_kg: raw.weight_per_meter,
     dimensions: raw.dimensions,
+    en_mm: raw.en_mm,
+    kalinlik_mm: raw.kalinlik_mm,
+    boy_mm: raw.boy_mm,
+    dpp_status: raw.dpp_status,
+    rejection_reason: raw.rejection_reason,
+    rejection_fields: raw.rejection_fields,
+    rejected_by: raw.rejected_by,
+    rejected_at: raw.rejected_at,
     production_date: raw.production_date,
     version: raw.version,
     co2_cradle_to_gate_kg: raw.carbon_footprint,
     recycled_content_pct: raw.recycled_content,
     recyclability_pct: raw.recyclability,
+    water_consumption_l_kg: raw.water_consumption_l_kg,
     hazardous_materials: raw.svhc_free === undefined ? undefined : !raw.svhc_free,
     disposal_instructions: raw.disposal_instructions,
     dismantling_difficulty: raw.dismantling_difficulty,
@@ -160,6 +177,14 @@ export interface Product {
   gtin?: string;
   batch_number?: string;
   dimensions?: string;
+  en_mm?: number;
+  kalinlik_mm?: number;
+  boy_mm?: number;
+  dpp_status?: string;
+  rejection_reason?: string;
+  rejection_fields?: string[];
+  rejected_by?: string;
+  rejected_at?: string;
   manufacturer_part_number?: string;
   dimensional_standard?: string;
   material_standard?: string;

@@ -23,6 +23,7 @@ class Manufacturer(Base, UUIDMixin, TimestampMixin):
     registration_number = Column(String(100))
     vat_number = Column(String(50))
     headquarters_address = Column(Text)
+    city = Column(String(100))
     country_code = Column(String(2))
     website = Column(String(255))
     contact_email = Column(String(255))
