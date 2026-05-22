@@ -3,8 +3,6 @@ from app.db.session import AsyncSessionLocal
 from typing import AsyncGenerator
 
 
-# 🟢 DEV-3 — rbac dependency'lerini re-export et
-# Diğer ekip üyeleri buradan import edebilir
 from app.middleware.rbac import (  # noqa: F401
     Permission,
     TokenPayload,
@@ -12,6 +10,7 @@ from app.middleware.rbac import (  # noqa: F401
     has_permission,
     has_role,
     require_admin,
+    require_admin_or_engineer,
     require_any_auth,
     require_auditor,
     require_manufacturer,

@@ -272,11 +272,19 @@ export async function apiApproveDpp(dppId: string) {
   return res.json();
 }
 
-export async function apiRejectDpp(dppId: string, reason: string, fields: string[] = []) {
+export async function apiRejectDpp(
+  dppId: string,
+  reason: string,
+  fields: string[] = []
+) {
   const res = await authFetch(`${BASE_URL}/admin/reject/${dppId}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...getAuthHeader() },
-    body: JSON.stringify({ status: "rejected", rejection_reason: reason, failed_fields: fields }),
+    body: JSON.stringify({
+      status: "rejected",
+      rejection_reason: reason,
+      failed_fields: fields,
+    }),
   });
   if (!res.ok) throw new Error("Red işlemi başarısız");
   return res.json();
@@ -367,7 +375,7 @@ export async function apiGetChemicalComposition(productId: string) {
   const res = await authFetch(`${BASE_URL}/products/${productId}/chemical`, {
     headers: { ...getAuthHeader() },
   });
-  if (!res.ok) throw new Error("Kimyasal veri alınamadı");
+  if (!res.ok) return null;
   return res.json();
 }
 
@@ -375,7 +383,7 @@ export async function apiGetMechanicalProperties(productId: string) {
   const res = await authFetch(`${BASE_URL}/products/${productId}/mechanical`, {
     headers: { ...getAuthHeader() },
   });
-  if (!res.ok) throw new Error("Mekanik veri alınamadı");
+  if (!res.ok) return null;
   return res.json();
 }
 
@@ -413,7 +421,10 @@ export async function apiGetDppAuditLogs(dppId: string) {
   return res.json();
 }
 
-export async function apiChangePassword(currentPassword: string, newPassword: string) {
+export async function apiChangePassword(
+  currentPassword: string,
+  newPassword: string
+) {
   const res = await authFetch(`${BASE_URL}/users/me/password`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", ...getAuthHeader() },
