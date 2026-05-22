@@ -6,13 +6,6 @@ import type { AdminProduct, CertType, PendingBatch, IncompleteProduct, PassportS
 
 export const CBAM_LIMIT = 2.0;
 
-export const INITIAL_PRODUCTS: AdminProduct[] = [
-  { id: 'KCR-742', product_name: 'IPE 200 Yapısal Çelik Profil', product_category: 'Structural Steel', co2_cradle_to_gate_kg: 1.15, passport_status: 'Yayında',      version: '1.2', blockchain_timestamp: '2026-03-10T08:42:11Z' },
-  { id: 'KCR-891', product_name: 'HEB 300 Geniş Başlıklı Profil', product_category: 'Structural Steel', co2_cradle_to_gate_kg: 2.31, passport_status: 'Taslak',       version: '1.0', blockchain_timestamp: '' },
-  { id: 'KCR-315', product_name: 'UPN 160 U Profil',              product_category: 'Structural Steel', co2_cradle_to_gate_kg: 1.72, passport_status: 'Arşivlendi',   version: '2.1', blockchain_timestamp: '2026-01-01T10:00:00Z' },
-  { id: 'KCR-558', product_name: 'CHS 88.9x3.2 Yuvarlak Boru',   product_category: 'Tubes and Pipes',  co2_cradle_to_gate_kg: 2.78, passport_status: 'Geri Çağrıldı', version: '1.1', blockchain_timestamp: '' },
-];
-
 export const CERT_ALERTS: { product: string; id: string; cert: string; issuer: string; expiry: string; days_left: number; type: CertType }[] = [
   // ── Firma Geneli ──────────────────────────────────────────────────────────
   { product: 'Firma Geneli', id: '', cert: 'ISO 9001 KYS',          issuer: 'TÜV NORD',                   expiry: '2026-04-15', days_left: 19,   type: 'firma' },
@@ -46,13 +39,8 @@ export const CERT_ALERTS: { product: string; id: string; cert: string; issuer: s
   { product: 'UPN 160 U Profil',       id: 'KCR-315', cert: 'EN 10204 3.1', issuer: 'Kocaer QC', expiry: '2026-01-01', days_left: -85, type: 'batch' },
 ];
 
-export const VERSION_HISTORY = [
-  { id: 'KCR-742', name: 'IPE 200', version: '1.2', by: 'mehmet.yilmaz@kocaer.com', at: '2026-03-10 08:42', changes: 'CO₂ değeri SAP entegrasyonu ile güncellendi (1.22 → 1.15)' },
-  { id: 'KCR-742', name: 'IPE 200', version: '1.1', by: 'admin@kocaer.com',          at: '2026-02-15 11:20', changes: 'ISO 9001 sertifikası eklendi, EPD numarası güncellendi' },
-  { id: 'KCR-742', name: 'IPE 200', version: '1.0', by: 'admin@kocaer.com',          at: '2026-01-10 09:00', changes: 'İlk pasaport oluşturuldu' },
-  { id: 'KCR-891', name: 'HEB 300', version: '1.0', by: 'kemal.arslan@kocaer.com',   at: '2026-03-12 14:30', changes: 'İlk taslak oluşturuldu, kimyasal veriler manuel girildi' },
-  { id: 'KCR-315', name: 'UPN 100', version: '2.1', by: 'admin@kocaer.com',          at: '2026-01-01 10:00', changes: 'Arşivleme işlemi yapıldı, QR kodu devre dışı bırakıldı' },
-];
+// VERSION_HISTORY removed
+
 
 export const ACCESS_LOGS = [
   // Sayfa 1
@@ -118,26 +106,8 @@ export const INCOMPLETE: IncompleteProduct[] = [
   },
 ];
 
-export const PENDING_BATCHES: PendingBatch[] = [
-  {
-    id: 'PB-001',
-    parti_no: 'KCR-2026-0315-B',
-    urun_tipi: 'HEB 300 Geniş Başlıklı Profil',
-    miktar_ton: 68.0,
-    olusturan: 'Furkan Yıldız',
-    gonderilme_tarihi: '2026-03-15 14:22',
-    co2_a1a3: 1.92, co2_verification: 'Dahili Hesaplama',
-  },
-  {
-    id: 'PB-002',
-    parti_no: 'KCR-2026-0314-A',
-    urun_tipi: 'UPN 160 Oluk Profil',
-    miktar_ton: 25.8,
-    olusturan: 'Furkan Yıldız',
-    gonderilme_tarihi: '2026-03-14 09:05',
-    co2_a1a3: 2.45, co2_verification: 'Dahili Hesaplama',
-  },
-];
+// PENDING_BATCHES removed
+
 
 export const REACH_LIST = [
   { substance: 'Lead (Pb)',       cas: '7439-92-1',  threshold: 0.1,  concentration: 0.003, present: false },

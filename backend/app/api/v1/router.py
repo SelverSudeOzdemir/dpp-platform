@@ -11,6 +11,7 @@ from app.modules.export.router import router as export_router
 from app.modules.certifications.router import router as certifications_router
 from app.modules.compliance.cbam import router as cbam_router
 from app.modules.compliance.reach import router as reach_router
+from app.modules.integration.router import router as integrations_router
 
 router = APIRouter()
 
@@ -36,3 +37,4 @@ router.include_router(cbam_router)
 router.include_router(reach_router)
 from app.modules.products.router import router as products_router
 router.include_router(products_router)
+router.include_router(integrations_router)

@@ -8,6 +8,7 @@ import {
   ERP_MOCK_DPPDATA,
 } from '../../constants/batchConstants';
 import type { ExcelImportData } from '../../types/batch';
+import { apiSyncSap } from '../../lib/api';
 
 export default function ErpSyncFlow({ onSync, onCancel }: { onSync: (d: ExcelImportData) => void; onCancel?: () => void }) {
   const [subStep, setSubStep] = useState<'select' | 'syncing' | 'done'>('select');
@@ -15,6 +16,24 @@ export default function ErpSyncFlow({ onSync, onCancel }: { onSync: (d: ExcelImp
   const [batchRef, setBatchRef] = useState('');
   const [syncedCount, setSyncedCount] = useState(0);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [fetchedData, setFetchedData] = useState<ExcelImportData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (subStep !== 'syncing') return;
+    setError(null);
+    apiSyncSap(batchRef || 'KCR-2026-0318-A')
+      .then(res => {
+        setFetchedData(res);
+      })
+      .catch(err => {
+        console.warn("Backend SAP sync failed, using static mock fallback:", err);
+        setFetchedData({
+          batchInfo: ERP_MOCK_BATCHINFO,
+          dppData: ERP_MOCK_DPPDATA,
+        });
+      });
+  }, [subStep, batchRef]);
 
   const selectedConn = ERP_CONNECTIONS.find(c => c.id === selectedErp);
   const canSync = selectedConn?.status === 'connected';
@@ -256,7 +275,7 @@ export default function ErpSyncFlow({ onSync, onCancel }: { onSync: (d: ExcelImp
         </div>
       )}
 
-      <button type="button" onClick={() => onSync({ batchInfo: ERP_MOCK_BATCHINFO, dppData: ERP_MOCK_DPPDATA })}
+      <button type="button" onClick={() => onSync(fetchedData || { batchInfo: ERP_MOCK_BATCHINFO, dppData: ERP_MOCK_DPPDATA })}
         className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-xl transition-colors shadow-sm shadow-green-100">
         <CheckCircle2 size={15} /> Onayla ve Forma Geç
       </button>

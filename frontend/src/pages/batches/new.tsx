@@ -4,6 +4,7 @@ import ProtectedRoute from '../../components/auth/ProtectedRoute';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiCreateDpp, apiGetProducts, apiUpdateDpp } from '../../lib/api';
 import ErpSyncFlow from '../../components/batches/ErpSyncFlow';
+import { ExcelUploadFlow } from '../../components/batches/ExcelUploadFlow';
 import { Step1BatchInfo } from '../../components/batches/Step1BatchInfo';
 import Step3DppData from '../../components/batches/Step3DppData';
 import Step4Preview, { getMissingFields } from '../../components/batches/Step4Preview';
@@ -24,6 +25,7 @@ export default function NewBatch() {
   const [step, setStep]               = useState(0);
   const [submitted, setSubmitted]     = useState(false);
   const [erpOverlay, setErpOverlay]   = useState(false);
+  const [excelOverlay, setExcelOverlay] = useState(false);
   const [erpImported, setErpImported] = useState(false);
   const [batchLoading, setBatchLoading]   = useState(false);
   const [existingLoaded, setExistingLoaded] = useState(false);
@@ -117,6 +119,18 @@ export default function NewBatch() {
     setShowSapDocs(true);
   };
 
+  const handleExcelImport = (d: ExcelImportData) => {
+    if (!existingLoaded) setBatchInfo(prev => ({ ...prev, ...d.batchInfo }));
+    setDppData(prev => ({ ...prev, ...d.dppData }));
+    setErpImported(true);
+    setExcelOverlay(false);
+    const locked = new Set<string>([
+      ...Object.keys(d.batchInfo).filter(k => !!(d.batchInfo as Record<string, unknown>)[k]),
+      ...Object.keys(d.dppData).filter(k => !!(d.dppData as Record<string, unknown>)[k]),
+    ]);
+    setErpLockedFields(locked);
+  };
+
   const handleDocsPull = (docs: SapDocument[]) => {
     setPulledDocuments(docs);
     setShowSapDocs(false);
@@ -127,7 +141,7 @@ export default function NewBatch() {
   const handleNext  = () => { if (step === 0 && !canProceedStep0) return; setStep(s => Math.min(s + 1, 2)); };
   const handleBack  = () => setStep(s => Math.max(s - 1, 0));
   const handleReset = () => {
-    setSubmitted(false); setStep(0); setErpOverlay(false); setErpImported(false);
+    setSubmitted(false); setStep(0); setErpOverlay(false); setExcelOverlay(false); setErpImported(false);
     setBatchInfo({ parti_no: '', tedarikci_parti_kodu: '', urun_no: '', urun_tipi: '', ocak_no: '', uretim_tarihi: '', miktar_ton: '', production_route: '' });
     setDppData(EMPTY_DPP);
     setPulledDocuments([]);
@@ -234,7 +248,7 @@ export default function NewBatch() {
             </div>
 
             {/* Taslağı Kaydet */}
-            {!erpOverlay && !batchLoading && (
+            {!erpOverlay && !excelOverlay && !batchLoading && (
               <div className="mt-8 pt-6 border-t border-gray-100">
                 <button type="button" onClick={handleSaveDraft} disabled={isSaving}
                   className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-gray-50 border border-gray-200 text-gray-700 text-sm font-bold rounded-xl hover:bg-gray-100 transition-colors disabled:opacity-50">
@@ -329,13 +343,17 @@ export default function NewBatch() {
               {!batchLoading && step === 0 && erpOverlay && (
                 <ErpSyncFlow onSync={handleErpSync} onCancel={() => setErpOverlay(false)} />
               )}
-              {!batchLoading && step === 0 && !erpOverlay && (
+              {!batchLoading && step === 0 && excelOverlay && (
+                <ExcelUploadFlow onImport={handleExcelImport} />
+              )}
+              {!batchLoading && step === 0 && !erpOverlay && !excelOverlay && (
                 <Step1BatchInfo
                   data={batchInfo}
                   onChange={setBatchInfo}
                   erpImported={erpImported}
                   existingLoaded={existingLoaded}
                   onErpClick={() => setErpOverlay(true)}
+                  onExcelClick={() => setExcelOverlay(true)}
                   erpLockedFields={erpLockedFields}
                 />
               )}
@@ -348,7 +366,7 @@ export default function NewBatch() {
             </div>
 
             {/* Navigasyon butonları */}
-            {!erpOverlay && !batchLoading && (
+            {!erpOverlay && !excelOverlay && !batchLoading && (
               <div className="flex items-center justify-between mt-5">
                 <button type="button" onClick={handleBack}
                   className={`inline-flex items-center gap-1.5 px-5 py-2.5 border border-gray-200 text-gray-600 text-sm font-bold rounded-xl hover:bg-gray-50 transition-colors ${step === 0 ? 'invisible' : ''}`}>
