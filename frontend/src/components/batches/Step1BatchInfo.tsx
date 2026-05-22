@@ -1,15 +1,16 @@
 import { useState } from 'react';
-import { Database, CheckCircle2, Lock, Factory } from 'lucide-react';
+import { Database, CheckCircle2, Lock, Factory, FileSpreadsheet } from 'lucide-react';
 import { Field, SelectField, SectionTitle } from './BatchFormFields';
 import { URUN_KATALOGU, PRODUCTION_ROUTE_OPTIONS } from '../../constants/batchConstants';
 import type { BatchInfo } from '../../types/batch';
 
-export function Step1BatchInfo({ data, onChange, erpImported, existingLoaded = false, onErpClick, erpLockedFields = new Set() }: {
+export function Step1BatchInfo({ data, onChange, erpImported, existingLoaded = false, onErpClick, onExcelClick, erpLockedFields = new Set() }: {
   data: BatchInfo;
   onChange: (d: BatchInfo) => void;
   erpImported: boolean;
   existingLoaded?: boolean;
   onErpClick: () => void;
+  onExcelClick?: () => void;
   erpLockedFields?: Set<string>;
 }) {
   const [showConfirm, setShowConfirm] = useState(false);
@@ -42,13 +43,24 @@ export function Step1BatchInfo({ data, onChange, erpImported, existingLoaded = f
               <p className="text-sm text-gray-500">Mevcut DPP — temel bilgiler salt okunur.</p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowConfirm(true)}
-            className="shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 text-xs font-black rounded-xl transition-colors"
-          >
-            <Database size={13} /> SAP&apos;tan Veri Çek
-          </button>
+          <div className="flex gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowConfirm(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 text-xs font-black rounded-xl transition-colors"
+            >
+              <Database size={13} /> SAP&apos;tan Veri Çek
+            </button>
+            {onExcelClick && (
+              <button
+                type="button"
+                onClick={onExcelClick}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-black rounded-xl transition-colors"
+              >
+                <FileSpreadsheet size={13} /> Excel / CSV
+              </button>
+            )}
+          </div>
         </div>
 
         {showConfirm && (
@@ -121,13 +133,24 @@ export function Step1BatchInfo({ data, onChange, erpImported, existingLoaded = f
             <p className="text-sm text-gray-500">Bu batch&apos;e ait temel üretim bilgilerini girin.</p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={onErpClick}
-          className="shrink-0 inline-flex items-center gap-2 px-4 py-2 bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 text-xs font-black rounded-xl transition-colors"
-        >
-          <Database size={13} /> SAP&apos;tan Veri Çek
-        </button>
+        <div className="flex gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={onErpClick}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 hover:bg-green-100 border border-green-200 text-green-700 text-xs font-black rounded-xl transition-colors"
+          >
+            <Database size={13} /> SAP&apos;tan Veri Çek
+          </button>
+          {onExcelClick && (
+            <button
+              type="button"
+              onClick={onExcelClick}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-black rounded-xl transition-colors"
+            >
+              <FileSpreadsheet size={13} /> Excel / CSV
+            </button>
+          )}
+        </div>
       </div>
 
       {erpImported && (

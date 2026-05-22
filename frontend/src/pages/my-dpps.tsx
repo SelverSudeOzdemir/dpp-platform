@@ -58,16 +58,18 @@ function mapStatus(raw?: string): string {
 
 export default function MyDpps() {
   const router = useRouter();
-  const { role, user } = useAuth();
+  const { role, user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const config = ROLE_CONFIG[role as keyof typeof ROLE_CONFIG];
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!isAuthenticated) return;
     if (!config) return;
     loadDpps();
-  }, [role]);
+  }, [role, isAuthenticated, authLoading]);
 
   const loadDpps = async () => {
     setLoading(true);
@@ -76,11 +78,11 @@ export default function MyDpps() {
       if (dpps && dpps.length > 0) {
         const mapped = dpps.map((d: any) => ({
           id: d.id,
-          name: d.product_type?.product_name || 'Bilinmeyen Ürün',
+          name: d.name || d.product_type?.product_name || 'Bilinmeyen Ürün',
           role_detail: role === 'SUPPLIER' ? 'Ham Madde Tedarikçisi' : role === 'CUSTOMER' ? 'Alıcı' : 'Denetleyici',
           date: d.production_date || '',
           status: mapStatus(d.dpp_status),
-          category: d.product_type?.product_category || 'Structural Steel',
+          category: d.category || d.product_type?.product_category || 'Structural Steel',
         }));
         setItems(mapped);
       } else {

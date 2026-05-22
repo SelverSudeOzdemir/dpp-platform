@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ClipboardList, Zap, GitBranch, Shield, Eye, X } from 'lucide-react';
-import { VERSION_HISTORY } from '../../../constants/adminConstants';
 import type { AdminProduct, PendingBatch, PassportStatus } from '../../../types/admin';
+import { apiGetGlobalChangelog } from '../../../lib/api';
 
 interface Props {
   products: AdminProduct[];
@@ -14,6 +14,13 @@ export default function PassportsTab({ products, pendingBatches, onStatusChange,
   const [search, setSearch] = useState('');
   const [pendingStatusChange, setPendingStatusChange] = useState<{ id: string; status: PassportStatus } | null>(null);
   const [inspectPopup, setInspectPopup] = useState(false);
+  const [changelog, setChangelog] = useState<any[]>([]);
+
+  useEffect(() => {
+    apiGetGlobalChangelog().then(data => {
+      setChangelog(data.items || []);
+    }).catch(console.error);
+  }, []);
 
   const filteredProducts = search.trim()
     ? products.filter(p =>
@@ -150,7 +157,7 @@ export default function PassportsTab({ products, pendingBatches, onStatusChange,
           Versiyon Geçmişi (Audit Trail)
         </h2>
         <div className="relative border-l-2 border-gray-100 ml-3 space-y-5">
-          {VERSION_HISTORY.map((v, i) => (
+          {changelog.length > 0 ? changelog.map((v, i) => (
             <div key={i} className="relative pl-6">
               <div className="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full bg-white border-2 border-purple-300 flex items-center justify-center">
                 <span className="w-1.5 h-1.5 rounded-full bg-purple-500 block" />
@@ -158,16 +165,18 @@ export default function PassportsTab({ products, pendingBatches, onStatusChange,
               <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{v.id}</span>
-                    <span className="text-[10px] font-mono font-black text-purple-700 bg-purple-50 px-2 py-0.5 rounded">v{v.version}</span>
+                    <span className="text-[10px] font-mono font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{v.dpp_id || 'DPP'}</span>
+                    <span className="text-[10px] font-mono font-black text-purple-700 bg-purple-50 px-2 py-0.5 rounded">v{v.version || '1.0'}</span>
                   </div>
-                  <span className="text-[10px] text-gray-400 font-bold">{v.at}</span>
+                  <span className="text-[10px] text-gray-400 font-bold">{new Date(v.created_at).toLocaleString()}</span>
                 </div>
-                <p className="text-sm font-bold text-gray-800">{v.changes}</p>
-                <p className="text-[10px] text-gray-400 font-medium mt-1">→ {v.by}</p>
+                <p className="text-sm font-bold text-gray-800">{v.action} - {v.details}</p>
+                <p className="text-[10px] text-gray-400 font-medium mt-1">→ {v.performed_by}</p>
               </div>
             </div>
-          ))}
+          )) : (
+            <p className="text-xs text-gray-400">Henüz aktivite bulunmuyor.</p>
+          )}
         </div>
       </div>
       {inspectPopup && (

@@ -1,13 +1,12 @@
 import { useState } from 'react';
-import { ChevronLeft, FileSpreadsheet, CheckCircle2, AlertCircle, Package, Upload, Download, X } from 'lucide-react';
+import { ChevronLeft, FileSpreadsheet, CheckCircle2, AlertCircle, Package, Upload, Download, X, Loader2 } from 'lucide-react';
+import { apiParseExcel } from '../../lib/api';
 import {
   MOCK_EXISTING_BATCHES,
   MOCK_UPLOADED_FILES,
   DURUM_CLASS,
   CATEGORIES,
   DPP_FIELDS,
-  USER_EXCEL_HEADERS,
-  EXCEL_MOCK_VALUES,
   AUTO_MAPPING,
   FIELD_TO_BATCHINFO,
   FIELD_TO_DPPDATA,
@@ -117,9 +116,43 @@ function ExcelFileHistory({
   );
 }
 
+function findFuzzyMatch(key: string, headers: string[]): string {
+  const normKey = key.toLowerCase();
+  
+  const keywordMap: Record<string, string[]> = {
+    c_pct: ['karbon', 'carbon', 'c %', 'c_pct', 'c'],
+    mn_pct: ['mangan', 'manganese', 'mn %', 'mn_pct', 'mn'],
+    si_pct: ['silisyum', 'silicon', 'si %', 'si_pct', 'si'],
+    p_pct: ['fosfor', 'phosphorus', 'p %', 'p_pct', 'p'],
+    s_pct: ['kükürt', 'kükurt', 'kukurt', 'sulfur', 's %', 's_pct', 's'],
+    n_pct: ['azot', 'nitrogen', 'n %', 'n_pct', 'n'],
+    yield_mpa: ['akma', 'yield', 'strength'],
+    tensile_mpa: ['çekme', 'cekme', 'tensile'],
+    elongation_pct: ['uzama', 'elongation'],
+    recycled_content_pct: ['geri dönüşüm', 'recycled', 'recycle', 'geri donusum'],
+  };
+
+  const keywords = keywordMap[key];
+  if (!keywords) return '— Eşleştirme Yok —';
+
+  for (const header of headers) {
+    const normHeader = header.toLowerCase();
+    for (const kw of keywords) {
+      if (normHeader.includes(kw)) {
+        return header;
+      }
+    }
+  }
+
+  return '— Eşleştirme Yok —';
+}
+
 function ExcelUploadFlow({ onImport, selectedBatchId }: { onImport: (d: ExcelImportData) => void; selectedBatchId?: string | null }) {
   const [subStep, setSubStep]   = useState<0 | 1>(0);
   const [fileName, setFileName] = useState('');
+  const [isParsing, setIsParsing] = useState(false);
+  const [excelHeaders, setExcelHeaders] = useState<string[]>(['— Eşleştirme Yok —']);
+  const [excelValues, setExcelValues] = useState<Record<string, string>>({});
 
   // Hangi Excel sütunu hangi DPP alanına eşleşiyor
   const [mapping, setMapping] = useState<Record<string, string>>(() =>
@@ -130,15 +163,48 @@ function ExcelUploadFlow({ onImport, selectedBatchId }: { onImport: (d: ExcelImp
   const [values, setValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(DPP_FIELDS.map(f => {
       const col = AUTO_MAPPING[f.key];
-      return [f.key, col ? (EXCEL_MOCK_VALUES[col] ?? '') : ''];
+      return [f.key, col ? (excelValues[col] ?? '') : ''];
     }))
   );
 
   const handleMappingChange = (fieldKey: string, excelCol: string) => {
     setMapping(prev => ({ ...prev, [fieldKey]: excelCol }));
     // Yeni sütun seçilince değeri otomatik doldur
-    const excelVal = excelCol === '— Eşleştirme Yok —' ? '' : (EXCEL_MOCK_VALUES[excelCol] ?? '');
+    const excelVal = excelCol === '— Eşleştirme Yok —' ? '' : (excelValues[excelCol] ?? '');
     setValues(prev => ({ ...prev, [fieldKey]: excelVal }));
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsParsing(true);
+    try {
+      const res = await apiParseExcel(file);
+      setFileName(res.file_name);
+      
+      const newHeaders = ['— Eşleştirme Yok —', ...res.headers];
+      setExcelHeaders(newHeaders);
+      setExcelValues(res.values);
+
+      const newMapping: Record<string, string> = {};
+      const newValues: Record<string, string> = {};
+      
+      DPP_FIELDS.forEach(f => {
+        const matchedHeader = findFuzzyMatch(f.key, res.headers);
+        newMapping[f.key] = matchedHeader;
+        newValues[f.key] = matchedHeader === '— Eşleştirme Yok —' ? '' : (res.values[matchedHeader] ?? '');
+      });
+
+      setMapping(newMapping);
+      setValues(newValues);
+      setSubStep(1);
+    } catch (err: any) {
+      console.error("Backend parsing failed:", err);
+      alert("Excel ayrıştırma başarısız: " + (err.message || 'Bilinmeyen hata'));
+    } finally {
+      setIsParsing(false);
+    }
   };
 
   const autoCount = DPP_FIELDS.filter(f => mapping[f.key] !== '— Eşleştirme Yok —').length;
@@ -233,13 +299,30 @@ function ExcelUploadFlow({ onImport, selectedBatchId }: { onImport: (d: ExcelImp
           </div>
 
           <div
-            className="border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center bg-gray-50 hover:border-blue-400 hover:bg-blue-50 transition-colors cursor-pointer"
-            onClick={() => { setFileName('kimyasal_kompozisyon_mart2026.xlsx'); setSubStep(1); }}
+            className="border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center bg-gray-50 hover:border-blue-400 hover:bg-blue-50 transition-colors cursor-pointer relative"
+            onClick={() => document.getElementById('excel-file-input')?.click()}
           >
-            <Upload size={36} className="mx-auto text-gray-300 mb-3" />
-            <p className="text-sm font-bold text-gray-600">Dosyayı buraya sürükleyin</p>
-            <p className="text-xs text-gray-400 mt-1 mb-4">veya tıklayarak seçin</p>
-            <span className="text-[11px] font-bold bg-gray-200 text-gray-500 px-3 py-1 rounded-full">.xlsx &nbsp;·&nbsp; .csv</span>
+            {isParsing ? (
+              <div className="flex flex-col items-center gap-2">
+                <Loader2 className="animate-spin text-blue-500" size={36} />
+                <p className="text-sm font-bold text-gray-600">Dosya ayrıştırılıyor...</p>
+              </div>
+            ) : (
+              <>
+                <Upload size={36} className="mx-auto text-gray-300 mb-3" />
+                <p className="text-sm font-bold text-gray-600">Dosyayı buraya sürükleyin</p>
+                <p className="text-xs text-gray-400 mt-1 mb-4">veya tıklayarak seçin</p>
+                <span className="text-[11px] font-bold bg-gray-200 text-gray-500 px-3 py-1 rounded-full">.xlsx &nbsp;·&nbsp; .csv</span>
+              </>
+            )}
+            <input
+              type="file"
+              id="excel-file-input"
+              accept=".xlsx,.csv"
+              className="hidden"
+              onChange={handleFileChange}
+              disabled={isParsing}
+            />
           </div>
           <p className="text-center text-xs text-gray-400">Demo için alana tıklayın — örnek kimyasal kompozisyon verisi yüklenecektir.</p>
         </div>
@@ -254,7 +337,7 @@ function ExcelUploadFlow({ onImport, selectedBatchId }: { onImport: (d: ExcelImp
             <div className="flex items-center gap-3">
               <FileSpreadsheet size={16} className="text-blue-600" />
               <span className="text-sm font-bold text-blue-800">{fileName}</span>
-              <span className="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full font-bold">{Object.keys(EXCEL_MOCK_VALUES).length} sütun okundu</span>
+              <span className="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full font-bold">{Object.keys(excelValues).length} sütun okundu</span>
               <span className="text-xs text-green-700 bg-green-100 px-2 py-0.5 rounded-full font-bold">{autoCount} alan otomatik eşleşti</span>
             </div>
             <button onClick={() => { setFileName(''); setSubStep(0); }} className="text-gray-400 hover:text-gray-600">
@@ -290,7 +373,7 @@ function ExcelUploadFlow({ onImport, selectedBatchId }: { onImport: (d: ExcelImp
                   {fields.map(field => {
                     const selectedCol = mapping[field.key];
                     const isMapped = selectedCol !== '— Eşleştirme Yok —';
-                    const rawVal = isMapped ? (EXCEL_MOCK_VALUES[selectedCol] ?? '') : '';
+                    const rawVal = isMapped ? (excelValues[selectedCol] ?? '') : '';
                     const isAuto = !!AUTO_MAPPING[field.key];
                     return (
                       <div key={field.key} className={`grid grid-cols-12 items-center px-4 py-2.5 gap-2 border-b border-gray-50 last:border-0 ${!isMapped ? 'bg-gray-50/50' : ''}`}>
@@ -309,7 +392,7 @@ function ExcelUploadFlow({ onImport, selectedBatchId }: { onImport: (d: ExcelImp
                               !isMapped ? 'border-gray-200 text-gray-400' : isAuto ? 'border-green-200 text-green-700' : 'border-blue-200 text-blue-700'
                             }`}
                           >
-                            {USER_EXCEL_HEADERS.map(h => <option key={h} value={h}>{h}</option>)}
+                            {excelHeaders.map(h => <option key={h} value={h}>{h}</option>)}
                           </select>
                         </div>
 

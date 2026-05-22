@@ -35,7 +35,7 @@ export default function ComplianceTab({ products }: Props) {
       if (response && response.data) {
         const mapped = response.data.map((item: any) => ({
           id: item.dpp_id ? String(item.dpp_id).slice(0, 8) : '—',
-          product_name: item.product_name || 'Bilinmeyen Ürün',
+          product_name: item.name || item.product_name || 'Bilinmeyen Ürün',
           product_category: 'Structural Steel',
           co2_cradle_to_gate_kg: item.co2_value || 0,
           passport_status: 'Yayında' as const,

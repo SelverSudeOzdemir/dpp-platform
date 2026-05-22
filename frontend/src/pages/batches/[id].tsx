@@ -79,121 +79,7 @@ interface BatchDetail {
 }
 
 // ─── MOCK VERİ ───────────────────────────────────────────────────────────────
-const MOCK_DETAIL: Record<string, BatchDetail> = {
-  'B-001': {
-    id: 'B-001', parti_no: 'KCR-2026-0312-A', tedarikci_parti_kodu: 'ERD-2026-03041',
-    urun_tipi: 'IPE 200 Yapısal Çelik Profil',
-    ocak_no: 'EAF-03', uretim_tarihi: '2026-03-12', miktar_ton: '42.5', cift_kodu: 'H-20260312-003',
-    dpp_durum: 'Yayında', olusturan: 'Furkan Yıldız',
-    celik_kalitesi: 'S355JR', en_mm: '200', boy_mm: '6000', kalinlik_mm: '8.5', agirlik_m: '26.2',
-    co2_a1a3: '1.15', co2_a3: '0.38', co2_a4: '0.07', co2_verification: 'Üçüncü Taraf Doğrulamalı',
-    geri_donusum_orani: '82', svhc_free: true,
-    uretici_adi: 'Kocaer Çelik A.Ş.', tesis_adi: 'Aliağa Üretim Tesisi', tesis_ulkesi: 'Türkiye',
-    gtin: '08690000112345', hs_code: '7216.32', material_standard: 'EN 10025-2:2019',
-    c_pct: '0.19', si_pct: '0.30', mn_pct: '1.45', p_pct: '0.022', s_pct: '0.018', n_pct: '0.009',
-    yield_mpa: '370', tensile_mpa: '530', elongation_pct: '24', impact_energy_j: '27', impact_temp_c: '20',
-    test_standard: 'EN 10025-2:2019', test_tarihi: '2026-03-12',
-    en10204_cert_no: '3.1-20260312-003', en10204_tip: '3.1',
-    certifications: [
-      { id: 1, cert_type: 'EN 10204 3.1', cert_no: '3.1-20260312-003', issuer: 'Kocaer Çelik Lab.', issue_date: '2026-03-12', expiry_date: '2029-03-12', file_name: 'en10204_31_B001.pdf' },
-      { id: 2, cert_type: 'CE İşareti', cert_no: 'CE-2026-IPE200-003', issuer: 'TÜV Rheinland', issue_date: '2026-01-15', expiry_date: '2029-01-15', file_name: 'ce_mark_B001.pdf' },
-      { id: 3, cert_type: 'EPD', cert_no: 'EPD-KCR-2024-001', issuer: 'IBU Berlin', issue_date: '2024-06-01', expiry_date: '2029-06-01', file_name: 'epd_KCR2024.pdf' },
-    ],
-    epd_cert_no: 'EPD-KCR-2024-001', epd_valid_until: '2029-06-01', epd_url: 'https://www.ibu-epd.com/epd-KCR2024',
-    recyclability_pct: '98',
-    hazardous_substances: [],
-    eol_disassembly: 'Kolay — Standart kesme ekipmanı yeterlidir',
-    eol_disposal: 'Çelik geri dönüşüm tesisine teslim edilmeli. Ayrıştırma gerekmez.',
-    supply_chain: [
-      { sequence: 1, stage_name: 'Hammadde Tedariki', organization: 'Erdemir A.Ş.', role: 'Demir Cevheri Tedarikçisi', location: 'Ereğli, Zonguldak', date: '2026-02-20', processes: ['Demir Cevheri Çıkarımı'], material: 'Demir Cevheri', material_origin: 'Türkiye', quantity: '850', unit: 'kg/ton çelik' },
-      { sequence: 2, stage_name: 'Çelik Üretimi', organization: 'Kocaer Çelik A.Ş.', role: 'Üretici', location: 'Aliağa, İzmir', date: '2026-03-12', processes: ['EAF Ergitme', 'Sürekli Döküm', 'Sıcak Haddeleme', 'Soğutma'] },
-    ],
-  },
-  'B-002': {
-    id: 'B-002', parti_no: 'KCR-2026-0315-B', tedarikci_parti_kodu: '',
-    urun_tipi: 'HEB 300 Geniş Başlıklı Profil',
-    ocak_no: 'EAF-01', uretim_tarihi: '2026-03-15', miktar_ton: '68.0', cift_kodu: 'H-20260315-001',
-    dpp_durum: 'Onay Bekliyor', olusturan: 'Furkan Yıldız',
-    celik_kalitesi: 'S275JR', en_mm: '300', boy_mm: '6000', kalinlik_mm: '11.0', agirlik_m: '117.0',
-    co2_a1a3: '1.92', co2_a3: '0.45', co2_a4: '0.08', co2_verification: 'Dahili Hesaplama',
-    geri_donusum_orani: '79', svhc_free: true,
-    uretici_adi: 'Kocaer Çelik A.Ş.', tesis_adi: 'Aliağa Üretim Tesisi', tesis_ulkesi: 'Türkiye',
-  },
-  'B-003': {
-    id: 'B-003', parti_no: 'KCR-2026-0316-A', tedarikci_parti_kodu: '',
-    urun_tipi: 'CHS 88.9x3.2 Yuvarlak Boru',
-    ocak_no: 'EAF-02', uretim_tarihi: '2026-03-16', miktar_ton: '31.2', cift_kodu: '',
-    dpp_durum: 'Reddedildi', olusturan: 'Furkan Yıldız',
-    celik_kalitesi: 'S235JR', en_mm: '88.9', boy_mm: '6000', kalinlik_mm: '3.2', agirlik_m: '6.76',
-    co2_a1a3: '', co2_a3: '', co2_a4: '', co2_verification: '',
-    geri_donusum_orani: '71', svhc_free: false,
-    uretici_adi: 'Kocaer Çelik A.Ş.', tesis_adi: 'Aliağa Üretim Tesisi', tesis_ulkesi: 'Türkiye',
-    red_gerekce: 'CO2 emisyon değeri (A1-A3) girilmemiş. Ayrıca SVHC beyanının doğrulanması gerekiyor.',
-    red_fields: ['co2_a1a3', 'svhc_free'],
-    red_tarihi: '2026-03-17 10:14',
-    red_yapan: 'admin@kocaer.com',
-  },
-  'B-004': {
-    id: 'B-004', parti_no: 'KCR-2026-0317-A', tedarikci_parti_kodu: '',
-    urun_tipi: 'UPN 160 Oluk Profil',
-    ocak_no: 'EAF-03', uretim_tarihi: '2026-03-17', miktar_ton: '25.8', cift_kodu: '',
-    dpp_durum: 'Taslak', olusturan: 'Furkan Yıldız',
-    celik_kalitesi: 'S355JR', en_mm: '160', boy_mm: '6000', kalinlik_mm: '7.5', agirlik_m: '18.8',
-    co2_a1a3: '1.74', co2_a3: '0.42', co2_a4: '', co2_verification: 'Dahili Hesaplama',
-    geri_donusum_orani: '', svhc_free: false,
-    uretici_adi: 'Kocaer Çelik A.Ş.', tesis_adi: 'Aliağa Üretim Tesisi', tesis_ulkesi: 'Türkiye',
-  },
-  'PB-001': {
-    id: 'PB-001', parti_no: 'KCR-2026-0315-B', tedarikci_parti_kodu: 'ERD-2026-03048',
-    urun_tipi: 'HEB 300 Geniş Başlıklı Profil',
-    ocak_no: 'EAF-01', uretim_tarihi: '2026-03-15', miktar_ton: '68.0', cift_kodu: 'H-20260315-002',
-    dpp_durum: 'Onay Bekliyor', olusturan: 'Furkan Yıldız',
-    celik_kalitesi: 'S275JR', en_mm: '300', boy_mm: '6000', kalinlik_mm: '11.0', agirlik_m: '117.0',
-    co2_a1a3: '1.92', co2_a3: '0.45', co2_a4: '0.08', co2_verification: 'Dahili Hesaplama',
-    geri_donusum_orani: '79', svhc_free: true,
-    uretici_adi: 'Kocaer Çelik A.Ş.', tesis_adi: 'Aliağa Üretim Tesisi', tesis_ulkesi: 'Türkiye',
-    hs_code: '7216.33', material_standard: 'EN 10025-2:2019',
-    c_pct: '0.21', si_pct: '0.28', mn_pct: '1.40', p_pct: '0.025', s_pct: '0.020', n_pct: '0.010',
-    yield_mpa: '285', tensile_mpa: '430', elongation_pct: '23', impact_energy_j: '27', impact_temp_c: '20',
-    test_standard: 'EN 10025-2:2019', test_tarihi: '2026-03-15',
-    en10204_cert_no: '3.1-20260315-001', en10204_tip: '3.1',
-    certifications: [
-      { id: 1, cert_type: 'EN 10204 3.1', cert_no: '3.1-20260315-001', issuer: 'Kocaer Çelik Lab.', issue_date: '2026-03-15', expiry_date: '2029-03-15', file_name: 'en10204_31_PB001.pdf' },
-    ],
-    hazardous_substances: [],
-    eol_disassembly: 'Orta güçlük — Kaynaklı bağlantı varsa söküm ekipmanı gerektirebilir',
-    eol_disposal: 'Çelik geri dönüşüm tesisine teslim edilmeli. Ayrıştırma gerekmez.',
-    supply_chain: [
-      { sequence: 1, stage_name: 'Hammadde Tedariki', organization: 'Erdemir A.Ş.', role: 'Demir Cevheri Tedarikçisi', location: 'Ereğli, Zonguldak', date: '2026-02-25', processes: ['Demir Cevheri Çıkarımı'], material: 'Demir Cevheri', material_origin: 'Türkiye', quantity: '870', unit: 'kg/ton çelik' },
-      { sequence: 2, stage_name: 'Çelik Üretimi', organization: 'Kocaer Çelik A.Ş.', role: 'Üretici', location: 'Aliağa, İzmir', date: '2026-03-15', processes: ['EAF Ergitme', 'Sürekli Döküm', 'Sıcak Haddeleme'] },
-    ],
-  },
-  'PB-002': {
-    id: 'PB-002', parti_no: 'KCR-2026-0314-A', tedarikci_parti_kodu: '',
-    urun_tipi: 'UPN 160 Oluk Profil',
-    ocak_no: 'EAF-02', uretim_tarihi: '2026-03-14', miktar_ton: '25.8', cift_kodu: 'H-20260314-001',
-    dpp_durum: 'Onay Bekliyor', olusturan: 'Furkan Yıldız',
-    celik_kalitesi: 'S275JR', en_mm: '160', boy_mm: '6000', kalinlik_mm: '7.5', agirlik_m: '18.8',
-    co2_a1a3: '2.45', co2_a3: '0.61', co2_a4: '0.09', co2_verification: 'Dahili Hesaplama',
-    geri_donusum_orani: '74', svhc_free: false,
-    uretici_adi: 'Kocaer Çelik A.Ş.', tesis_adi: 'Aliağa Üretim Tesisi', tesis_ulkesi: 'Türkiye',
-    hs_code: '7216.31', material_standard: 'EN 10025-2:2019',
-    c_pct: '0.22', si_pct: '0.25', mn_pct: '1.38', p_pct: '0.028', s_pct: '0.022', n_pct: '0.012',
-    yield_mpa: '290', tensile_mpa: '440', elongation_pct: '22', impact_energy_j: '27', impact_temp_c: '20',
-    test_standard: 'EN 10025-2:2019', test_tarihi: '2026-03-14',
-    en10204_cert_no: '3.1-20260314-002', en10204_tip: '3.1',
-    certifications: [
-      { id: 1, cert_type: 'EN 10204 3.1', cert_no: '3.1-20260314-002', issuer: 'Kocaer Çelik Lab.', issue_date: '2026-03-14', expiry_date: '2029-03-14', file_name: 'en10204_31_PB002.pdf' },
-    ],
-    hazardous_substances: [],
-    eol_disassembly: 'Kolay — Standart kesme ekipmanı yeterlidir',
-    eol_disposal: 'Çelik geri dönüşüm tesisine teslim edilmeli.',
-    supply_chain: [
-      { sequence: 1, stage_name: 'Hammadde Tedariki', organization: 'Erdemir A.Ş.', role: 'Demir Cevheri Tedarikçisi', location: 'Ereğli, Zonguldak', date: '2026-02-22', processes: ['Demir Cevheri Çıkarımı'], material: 'Demir Cevheri', material_origin: 'Türkiye', quantity: '820', unit: 'kg/ton çelik' },
-      { sequence: 2, stage_name: 'Çelik Üretimi', organization: 'Kocaer Çelik A.Ş.', role: 'Üretici', location: 'Aliağa, İzmir', date: '2026-03-14', processes: ['EAF Ergitme', 'Sürekli Döküm', 'Sıcak Haddeleme'] },
-    ],
-  },
-};
+// Mock data removed. Component is now fully connected to the backend.
 
 // ─── DURUM KONFIG ────────────────────────────────────────────────────────────
 const STATUS_CFG: Record<BatchStatus, { label: string; className: string; icon: React.ReactNode }> = {
@@ -291,10 +177,8 @@ function SectionCard({ title, icon, children }: { title: string; icon: React.Rea
 // ─── ANA SAYFA ───────────────────────────────────────────────────────────────
 export default function BatchDetailPage() {
   const router = useRouter();
-  const { role } = useAuth();
+  const { role, isAuthenticated, isLoading: authLoading } = useAuth();
   const { id } = router.query;
-
-  const initial = MOCK_DETAIL[id as string];
 
   const [data, setData] = useState<BatchDetail | null>(null);
   const [submitted, setSubmitted] = useState(false);
@@ -304,9 +188,11 @@ export default function BatchDetailPage() {
   const [showRejectForm, setShowRejectForm] = useState(false);
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!isAuthenticated) return;
     if (!id) return;
     loadBatchDetail();
-  }, [id]);
+  }, [id, authLoading, isAuthenticated]);
 
   const loadBatchDetail = async () => {
     try {
@@ -331,7 +217,7 @@ export default function BatchDetailPage() {
         id: String(d.id),
         parti_no: d.gs1_serial_number || d.public_identifier || 'Parti No Yok',
         tedarikci_parti_kodu: d._batch_number || 'Tedarikçi Kodu Yok',
-        urun_tipi: d.product_type?.product_name || 'IPE 200 Yapısal Çelik Profil',
+        urun_tipi: d.name || d.product_type?.product_name || 'IPE 200 Yapısal Çelik Profil',
         ocak_no: d.production_line || 'EAF-01',
         uretim_tarihi: d.production_date || '2026-03-12',
         miktar_ton: '45.0',
@@ -368,11 +254,10 @@ export default function BatchDetailPage() {
         hs_code: '7216.32',
       };
       setData(mapped);
-    } catch (err) {
-      console.error("Batch detayları backend'den alınamadı, mock kullanılacak:", err);
-      const initial = MOCK_DETAIL[id as string];
-      if (initial) {
-        setData(initial);
+    } catch (err: any) {
+      console.error("Batch detayları backend'den alınamadı:", err);
+      if (err.message) {
+        alert("DPP detayları alınırken hata oluştu: " + err.message);
       }
     }
   };

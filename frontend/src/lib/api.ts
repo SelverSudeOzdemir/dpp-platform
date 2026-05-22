@@ -42,7 +42,13 @@ export async function apiLogin(data: LoginRequest): Promise<TokenResponse> {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail ?? "Giriş başarısız");
+    throw new Error(
+      typeof err.detail === "string"
+        ? err.detail
+        : err.detail
+        ? JSON.stringify(err.detail)
+        : "Giriş başarısız"
+    );
   }
   return res.json();
 }
@@ -98,7 +104,13 @@ export async function apiCreateUser(data: {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail ?? "Kullanıcı oluşturulamadı");
+    throw new Error(
+      typeof err.detail === "string"
+        ? err.detail
+        : err.detail
+        ? JSON.stringify(err.detail)
+        : "Kullanıcı oluşturulamadı"
+    );
   }
   return res.json();
 }
@@ -233,7 +245,13 @@ export async function apiCreateDpp(data: {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail ?? "DPP oluşturulamadı");
+    throw new Error(
+      typeof err.detail === "string"
+        ? err.detail
+        : err.detail
+        ? JSON.stringify(err.detail)
+        : "DPP oluşturulamadı"
+    );
   }
   return res.json();
 }
@@ -359,7 +377,16 @@ export async function apiGetProducts() {
   const res = await authFetch(`${BASE_URL}/products/`, {
     headers: { ...getAuthHeader() },
   });
-  if (!res.ok) throw new Error("Ürünler alınamadı");
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    const msg =
+      typeof err.detail === "string"
+        ? err.detail
+        : err.detail
+        ? JSON.stringify(err.detail)
+        : "Ürünler alınamadı";
+    throw new Error(msg);
+  }
   return res.json();
 }
 
@@ -433,8 +460,90 @@ export async function apiChangePassword(
       new_password: newPassword,
     }),
   });
+  if (res.ok) return;
+  const err = await res.json().catch(() => ({}));
+  throw new Error(
+    typeof err.detail === "string"
+      ? err.detail
+      : err.detail
+      ? JSON.stringify(err.detail)
+      : "Şifre değiştirme işlemi başarısız."
+  );
+}
+
+// ── INTEGRATIONS ─────────────────────────────────────────────────────────────
+
+export async function apiSyncSap(batchNo: string): Promise<{
+  batchInfo: any;
+  dppData: any;
+}> {
+  const res = await authFetch(
+    `${BASE_URL}/integrations/sap/${encodeURIComponent(batchNo)}`,
+    {
+      headers: { ...getAuthHeader() },
+    }
+  );
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail ?? "Şifre değiştirme işlemi başarısız.");
+    throw new Error(
+      typeof err.detail === "string"
+        ? err.detail
+        : err.detail
+        ? JSON.stringify(err.detail)
+        : "SAP senkronizasyonu başarısız"
+    );
   }
+  return res.json();
+}
+
+export async function apiParseExcel(file: File): Promise<{
+  file_name: string;
+  headers: string[];
+  values: Record<string, string>;
+}> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await authFetch(`${BASE_URL}/integrations/excel/parse`, {
+    method: "POST",
+    headers: {
+      ...getAuthHeader(),
+    },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(
+      typeof err.detail === "string"
+        ? err.detail
+        : err.detail
+        ? JSON.stringify(err.detail)
+        : "Excel ayrıştırma başarısız"
+    );
+  }
+  return res.json();
+}
+
+// ── USERS MANAGEMENT ─────────────────────────────────────────────────────────
+
+// ── DPP MANAGEMENT ───────────────────────────────────────────────────────────
+
+export async function apiGetDppSummary() {
+  const res = await authFetch(`${BASE_URL}/dpps/summary-stats`, {
+    headers: { ...getAuthHeader() },
+  });
+  if (!res.ok) throw new Error("Özet istatistikler alınamadı");
+  return res.json();
+}
+
+export async function apiGetGlobalChangelog(skip = 0, limit = 50) {
+  const res = await authFetch(
+    `${BASE_URL}/dpps/admin/changelog?skip=${skip}&limit=${limit}`,
+    {
+      headers: { ...getAuthHeader() },
+    }
+  );
+  if (!res.ok) throw new Error("Global changelog alınamadı");
+  return res.json();
 }

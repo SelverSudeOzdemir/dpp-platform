@@ -18,16 +18,6 @@ type UserRow = {
   last_login?: string;
 };
 
-const MOCK_USERS: UserRow[] = [
-  { id: '1', full_name: 'Admin Kullanıcı', email: 'admin@kocaer.com',    role: 'ADMIN',     status: 'ACTIVE',    invited_at: '2026-01-10', last_login: '2026-05-10' },
-  { id: '2', full_name: 'Mühendis Ali',    email: 'ali@kocaer.com',      role: 'ENGINEER',  status: 'ACTIVE',    invited_at: '2026-01-15', last_login: '2026-05-09' },
-  { id: '3', full_name: 'Ahmet Yılmaz',   email: 'ahmet@erdemir.com',   role: 'SUPPLIER',  status: 'ACTIVE',    invited_at: '2026-02-03', last_login: '2026-05-07' },
-  { id: '4', full_name: 'Ayşe Kara',      email: 'ayse@demir.com',      role: 'CUSTOMER',  status: 'SUSPENDED', invited_at: '2026-02-20', last_login: '2026-04-01' },
-  { id: '5', full_name: 'Denetçi Mehmet', email: 'mehmet@kkdik.gov.tr', role: 'AUTHORITY', status: 'ACTIVE',    invited_at: '2026-03-01', last_login: '2026-05-08' },
-  { id: '6', full_name: 'Yeni Tedarikçi', email: 'info@celiksan.com',   role: 'SUPPLIER',  status: 'PENDING',   invited_at: '2026-05-09' },
-  { id: '7', full_name: 'Eski Müşteri',   email: 'satis@eskimuster.com',role: 'CUSTOMER',  status: 'INACTIVE',  invited_at: '2026-01-05', last_login: '2026-02-10' },
-];
-
 const ROLE_OPTIONS: Role[] = ['ENGINEER', 'SUPPLIER', 'CUSTOMER', 'AUTHORITY', 'ADMIN'];
 
 const ROLE_CFG: Record<Role, { label: string; style: string }> = {
@@ -167,7 +157,7 @@ function ActionMenu({ user, currentUserEmail, onAction }: {
 
 function UsersPage() {
   const { user: currentUser } = useAuth();
-  const [users, setUsers]     = useState<UserRow[]>(MOCK_USERS);
+  const [users, setUsers]     = useState<UserRow[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch]   = useState('');
   const [filterRole, setFilterRole]     = useState<Role | 'ALL'>('ALL');
