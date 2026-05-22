@@ -4,6 +4,7 @@ import { productService, Product } from '../Services/productService';
 import { apiGetDppSummaryStats } from '../lib/api';
 import Spinner from '../components/ui/spinner';
 import ProtectedRoute from '../components/auth/ProtectedRoute';
+import { useAuth } from '../contexts/AuthContext';
 import { Plus, ChevronDown, FileText, XCircle, ArrowRight, Loader2, Search, CheckCircle2, Clock, AlertCircle, Zap } from 'lucide-react';
 
 interface SummaryStats {
@@ -12,6 +13,7 @@ interface SummaryStats {
 }
 
 export default function Dashboard() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [products, setProducts]               = useState<Product[]>([]);
   const [stats, setStats]                     = useState<SummaryStats | null>(null);
   const [loading, setLoading]                 = useState(true);
@@ -55,7 +57,14 @@ export default function Dashboard() {
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    if (authLoading) return;
+    if (!isAuthenticated) {
+      setLoading(false);
+      return;
+    }
+    loadData();
+  }, [authLoading, isAuthenticated]);
 
   if (loading) {
     return (

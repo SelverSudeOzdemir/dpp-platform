@@ -291,7 +291,7 @@ function SectionCard({ title, icon, children }: { title: string; icon: React.Rea
 // ─── ANA SAYFA ───────────────────────────────────────────────────────────────
 export default function BatchDetailPage() {
   const router = useRouter();
-  const { role } = useAuth();
+  const { role, isAuthenticated, isLoading: authLoading } = useAuth();
   const { id } = router.query;
 
   const initial = MOCK_DETAIL[id as string];
@@ -304,9 +304,11 @@ export default function BatchDetailPage() {
   const [showRejectForm, setShowRejectForm] = useState(false);
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!isAuthenticated) return;
     if (!id) return;
     loadBatchDetail();
-  }, [id]);
+  }, [id, authLoading, isAuthenticated]);
 
   const loadBatchDetail = async () => {
     try {

@@ -58,16 +58,18 @@ function mapStatus(raw?: string): string {
 
 export default function MyDpps() {
   const router = useRouter();
-  const { role, user } = useAuth();
+  const { role, user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const config = ROLE_CONFIG[role as keyof typeof ROLE_CONFIG];
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!isAuthenticated) return;
     if (!config) return;
     loadDpps();
-  }, [role]);
+  }, [role, isAuthenticated, authLoading]);
 
   const loadDpps = async () => {
     setLoading(true);

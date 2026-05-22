@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import ProtectedRoute from '../../components/auth/ProtectedRoute';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   Package, Calendar, ArrowRight, Clock, CheckCircle2,
   XCircle, FileText, Plus, Search, ChevronDown, Loader2,
@@ -51,6 +52,7 @@ function matchesTab(batch: Batch, tab: TabKey): boolean {
 
 // ─── SAYFA ───────────────────────────────────────────────────────────────────
 export default function BatchList() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [batches, setBatches] = useState<Batch[]>([]);
   const [search, setSearch]       = useState('');
@@ -61,8 +63,10 @@ export default function BatchList() {
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!isAuthenticated) return;
     loadBatches();
-  }, []);
+  }, [authLoading, isAuthenticated]);
 
   const loadBatches = async () => {
     try {

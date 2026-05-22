@@ -19,7 +19,7 @@ import {
 
 export default function NewBatch() {
   const router = useRouter();
-  const { role } = useAuth();
+  const { role, isAuthenticated, isLoading: authLoading } = useAuth();
   const isAdmin = role === 'ADMIN';
   const [step, setStep]               = useState(0);
   const [submitted, setSubmitted]     = useState(false);
@@ -43,8 +43,10 @@ export default function NewBatch() {
   const [belgelerOpen, setBelgelerOpen]     = useState(false);
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!isAuthenticated) return;
     loadProductTypes();
-  }, []);
+  }, [authLoading, isAuthenticated]);
 
   const loadProductTypes = async () => {
     try {

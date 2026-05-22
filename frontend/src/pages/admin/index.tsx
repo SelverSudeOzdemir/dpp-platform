@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import ProtectedRoute from '../../components/auth/ProtectedRoute';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   Bell, Plus, ChevronDown, Loader2, FileText, XCircle, ArrowRight,
 } from 'lucide-react';
@@ -24,6 +25,7 @@ import {
 } from '../../lib/api';
 
 export default function AdminPage() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('overview');
   const [products, setProducts] = useState<AdminProduct[]>([]);
@@ -34,8 +36,10 @@ export default function AdminPage() {
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!isAuthenticated) return;
     loadDashboardData();
-  }, []);
+  }, [authLoading, isAuthenticated]);
 
   const loadDashboardData = async () => {
     try {
