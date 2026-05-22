@@ -12,6 +12,7 @@ import openpyxl
 
 from app.core.deps import get_db, require_permission, Permission, TokenPayload
 from app.models.product import ProductType, ChemicalComposition, MechanicalProperties
+from app.modules.audit.services import AuditService
 
 router = APIRouter(prefix="/integrations", tags=["Integrations"])
 
@@ -62,7 +63,7 @@ async def sync_sap_batch(
     # Batch Bilgileri (sap'tan gelen temel üst veriler)
     batch_info = {
         "parti_no": batch_no,
-        "urun_no": str(matched_product.id) if matched_product else "c8f5f0b4-5b4d-4e96-a83a-86718d098e94",
+        "urun_no": str(matched_product.id) if matched_product else "6f7ead01-432f-4754-ba5d-fc5c18734def",
         "urun_tipi": matched_product.product_name if matched_product else "IPE 200 Yapısal Çelik Profil",
         "ocak_no": "EAF-03",
         "uretim_tarihi": str(date.today()),
@@ -121,6 +122,14 @@ async def sync_sap_batch(
             dpp_data["co2_a1a3"] = str(matched_product.co2_cradle_to_gate_kg)
         if matched_product.recycled_content_pct is not None:
             dpp_data["recycled_content_pct"] = str(matched_product.recycled_content_pct)
+
+    await AuditService.log(
+        action=f"SAP'den '{batch_no}' parti numarası için veri çekildi",
+        db=db,
+        user_id=token.sub,
+        resource_type="ERP_SYNC",
+        resource_id=batch_no,
+    )
 
     return {
         "batchInfo": batch_info,

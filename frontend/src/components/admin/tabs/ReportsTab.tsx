@@ -27,7 +27,7 @@ export default function ReportsTab({ products }: Props) {
         if (data && data.length > 0) {
           const mapped = data.map((item: any) => ({
             id: item.dpp_id ? (item.dpp_id.length > 8 ? item.dpp_id.slice(0, 8) + '…' : item.dpp_id) : '—',
-            product: item.product_name || 'Bilinmeyen Ürün',
+            product: item.name || item.product_name || 'Bilinmeyen Ürün',
             version: '1.0',
             status: 'Taslak',
             missing: item.missing || []

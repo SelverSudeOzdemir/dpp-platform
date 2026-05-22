@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import ProtectedRoute from '../../components/auth/ProtectedRoute';
 import { useAuth } from '../../contexts/AuthContext';
-import { apiCreateDpp, apiGetProducts, apiUpdateDpp } from '../../lib/api';
+import { apiCreateDpp, apiGetProducts, apiUpdateDpp, apiGetDppById } from '../../lib/api';
 import ErpSyncFlow from '../../components/batches/ErpSyncFlow';
 import { ExcelUploadFlow } from '../../components/batches/ExcelUploadFlow';
 import { Step1BatchInfo } from '../../components/batches/Step1BatchInfo';
@@ -10,7 +10,7 @@ import Step3DppData from '../../components/batches/Step3DppData';
 import Step4Preview, { getMissingFields } from '../../components/batches/Step4Preview';
 import SapDocumentsModal, { type SapDocument } from '../../components/batches/SapDocumentsModal';
 import type { BatchInfo, DppData, ExcelImportData } from '../../types/batch';
-import { EMPTY_DPP, MOCK_BATCH_DPP } from '../../constants/batchConstants';
+import { EMPTY_DPP } from '../../constants/batchConstants';
 import {
   ChevronRight, ChevronLeft,
   Send, Loader2,
@@ -72,20 +72,26 @@ export default function NewBatch() {
       const matchingProduct = productTypes.find(
         (p: any) => p.product_name === batchInfo.urun_tipi || p.id === batchInfo.urun_no
       );
-      const payload = {
-        product_type_id: matchingProduct ? matchingProduct.id : 'c8f5f0b4-5b4d-4e96-a83a-86718d098e94',
+      
+      const payload: any = {
+        product_type_id: matchingProduct ? matchingProduct.id : '6f7ead01-432f-4754-ba5d-fc5c18734def',
         gs1_serial_number: batchInfo.parti_no || 'KCR-2026-0312-A',
         production_date: batchInfo.uretim_tarihi || '2026-03-12',
-        gtin: batchInfo.urun_no || '08690000112345',
       };
+      
+      const pGtin = matchingProduct?.gtin || batchInfo.urun_no;
+      if (pGtin && pGtin.length <= 14) {
+        payload.gtin = pGtin;
+      }
+
       const newDpp = await apiCreateDpp(payload);
       if (newDpp && newDpp.id) {
         await apiUpdateDpp(newDpp.id, { dpp_status: 'pending_approval' });
       }
       setSubmitted(true);
     } catch (err: any) {
-      console.error('DPP oluşturulamadı, mock akışa devam ediliyor:', err);
-      setSubmitted(true);
+      console.error('DPP oluşturulamadı:', err);
+      alert('HATA: ' + (err.message || 'Bilinmeyen hata oluştu'));
     }
   };
 
@@ -93,16 +99,31 @@ export default function NewBatch() {
     if (!router.isReady) return;
     const batchId = router.query.batchId as string | undefined;
     if (!batchId) return;
-    const existing = MOCK_BATCH_DPP[batchId];
-    if (!existing) return;
     setBatchLoading(true);
-    const t = setTimeout(() => {
-      setBatchInfo(prev => ({ ...prev, ...existing.batchInfo }));
-      setDppData(prev => ({ ...prev, ...existing.dppData }));
-      setExistingLoaded(true);
-      setBatchLoading(false);
-    }, 1300);
-    return () => clearTimeout(t);
+    apiGetDppById(batchId)
+      .then(data => {
+        const bInfo = {
+          parti_no: data.gs1_serial_number || '',
+          urun_no: data.gtin || '',
+          uretim_tarihi: data.production_date ? data.production_date.split('T')[0] : '',
+          urun_tipi: data.product_type?.product_name || '',
+          tedarikci_parti_kodu: '',
+          ocak_no: '',
+          miktar_ton: '',
+          production_route: '',
+        };
+        const dData = {
+          ...EMPTY_DPP,
+          ...(data.chemical_composition || {}),
+          ...(data.mechanical_properties || {}),
+          ...(data.sustainability_metrics || {}),
+        };
+        setBatchInfo(prev => ({ ...prev, ...bInfo }));
+        setDppData(prev => ({ ...prev, ...dData }));
+        setExistingLoaded(true);
+      })
+      .catch(err => console.error('DPP yüklenemedi:', err))
+      .finally(() => setBatchLoading(false));
   }, [router.isReady, router.query.batchId]);
 
   const handleErpSync = (d: ExcelImportData) => {
@@ -314,7 +335,7 @@ export default function NewBatch() {
                       <div className="px-4 py-3 border-t border-gray-100">
                         <button
                           type="button"
-                          onClick={() => { setBelgelerOpen(false); alert('Parse işlemi backend entegrasyonunda aktif olacaktır.'); }}
+                          onClick={() => { setBelgelerOpen(false); alert('Veriler SAP entegrasyonu sırasında otomatik olarak ayrıştırıldı ve forma aktarıldı.'); }}
                           className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-colors"
                         >
                           <Cpu size={14} /> Parse Et

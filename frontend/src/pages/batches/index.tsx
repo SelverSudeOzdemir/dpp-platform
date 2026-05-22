@@ -75,7 +75,7 @@ export default function BatchList() {
         const mapped = dpps.map((d: any) => ({
           id: d.id,
           parti_no: d.gs1_serial_number || d.public_identifier || 'B-000',
-          urun_tipi: d.product_type?.product_name || 'IPE 200 Yapısal Çelik Profil',
+          urun_tipi: d.name || d.product_type?.product_name || 'IPE 200 Yapısal Çelik Profil',
           ocak_no: d.production_line || 'EAF-01',
           uretim_tarihi: d.production_date || '2026-03-12',
           miktar_ton: 45.0,

@@ -52,15 +52,6 @@ export const DPP_FIELDS = [
   { category: 'Sürdürülebilirlik',    key: 'recycled_content_pct', label: 'Geri Dönüştürülmüş İçerik %', required: false },
 ];
 
-export const USER_EXCEL_HEADERS = ['— Eşleştirme Yok —', 'Karbon (C)', 'Mangan (Mn)', 'Akma (Yield)', 'Çekme (Tensile)', 'Geri Dönüşüm Oranı'];
-
-export const EXCEL_MOCK_VALUES: Record<string, string> = {
-  'Karbon (C)':        '0.18',
-  'Mangan (Mn)':       '1.45',
-  'Akma (Yield)':      '390',
-  'Çekme (Tensile)':   '510',
-  'Geri Dönüşüm Oranı': '85',
-};
 
 export const AUTO_MAPPING: Record<string, string> = {
   'c_pct':               'Karbon (C)',
@@ -99,18 +90,7 @@ export const ERP_MISSING_FIELDS = [
   'Geri Dönüştürülebilirlik %',
 ];
 
-export const ERP_MOCK_BATCHINFO: Partial<BatchInfo> = {
-  parti_no: 'KCR-2026-0318-A', urun_no: 'IPE-200',
-  urun_tipi: 'IPE 200 Yapısal Çelik Profil',
-  ocak_no: 'EAF-03', uretim_tarihi: '2026-03-18', miktar_ton: '48.5',
-  production_route: 'EAF (Elektrik Ark Ocağı)',
-};
 
-export const ERP_MOCK_DPPDATA: Partial<DppData> = {
-  c_pct: '0.17', mn_pct: '1.48', si_pct: '0.32',
-  p_pct: '0.018', s_pct: '0.012', n_pct: '0.007',
-  yield_mpa: '385', tensile_mpa: '520', elongation_pct: '22',
-};
 
 export const EMPTY_DPP: DppData = {
   gtin: '', material_standard: '',

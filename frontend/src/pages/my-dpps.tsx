@@ -78,11 +78,11 @@ export default function MyDpps() {
       if (dpps && dpps.length > 0) {
         const mapped = dpps.map((d: any) => ({
           id: d.id,
-          name: d.product_type?.product_name || 'Bilinmeyen Ürün',
+          name: d.name || d.product_type?.product_name || 'Bilinmeyen Ürün',
           role_detail: role === 'SUPPLIER' ? 'Ham Madde Tedarikçisi' : role === 'CUSTOMER' ? 'Alıcı' : 'Denetleyici',
           date: d.production_date || '',
           status: mapStatus(d.dpp_status),
-          category: d.product_type?.product_category || 'Structural Steel',
+          category: d.category || d.product_type?.product_category || 'Structural Steel',
         }));
         setItems(mapped);
       } else {

@@ -42,7 +42,7 @@ export async function apiLogin(data: LoginRequest): Promise<TokenResponse> {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail ?? "Giriş başarısız");
+    throw new Error(typeof err.detail === 'string' ? err.detail : (err.detail ? JSON.stringify(err.detail) : "Giriş başarısız"));
   }
   return res.json();
 }
@@ -98,7 +98,7 @@ export async function apiCreateUser(data: {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail ?? "Kullanıcı oluşturulamadı");
+    throw new Error(typeof err.detail === 'string' ? err.detail : (err.detail ? JSON.stringify(err.detail) : "Kullanıcı oluşturulamadı"));
   }
   return res.json();
 }
@@ -233,7 +233,7 @@ export async function apiCreateDpp(data: {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail ?? "DPP oluşturulamadı");
+    throw new Error(typeof err.detail === 'string' ? err.detail : (err.detail ? JSON.stringify(err.detail) : "DPP oluşturulamadı"));
   }
   return res.json();
 }
@@ -351,7 +351,11 @@ export async function apiGetProducts() {
   const res = await authFetch(`${BASE_URL}/products/`, {
     headers: { ...getAuthHeader() },
   });
-  if (!res.ok) throw new Error("Ürünler alınamadı");
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    const msg = typeof err.detail === 'string' ? err.detail : (err.detail ? JSON.stringify(err.detail) : "Ürünler alınamadı");
+    throw new Error(msg);
+  }
   return res.json();
 }
 
@@ -367,6 +371,7 @@ export async function apiGetChemicalComposition(productId: string) {
   const res = await authFetch(`${BASE_URL}/products/${productId}/chemical`, {
     headers: { ...getAuthHeader() },
   });
+  if (res.status === 404) return null;
   if (!res.ok) throw new Error("Kimyasal veri alınamadı");
   return res.json();
 }
@@ -375,6 +380,7 @@ export async function apiGetMechanicalProperties(productId: string) {
   const res = await authFetch(`${BASE_URL}/products/${productId}/mechanical`, {
     headers: { ...getAuthHeader() },
   });
+  if (res.status === 404) return null;
   if (!res.ok) throw new Error("Mekanik veri alınamadı");
   return res.json();
 }
@@ -424,7 +430,7 @@ export async function apiChangePassword(currentPassword: string, newPassword: st
   });
   if (res.ok) return;
   const err = await res.json().catch(() => ({}));
-  throw new Error(err.detail ?? "Şifre değiştirme işlemi başarısız.");
+  throw new Error(typeof err.detail === 'string' ? err.detail : (err.detail ? JSON.stringify(err.detail) : "Şifre değiştirme işlemi başarısız."));
 }
 
 // ── INTEGRATIONS ─────────────────────────────────────────────────────────────
@@ -438,7 +444,7 @@ export async function apiSyncSap(batchNo: string): Promise<{
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail ?? "SAP senkronizasyonu başarısız");
+    throw new Error(typeof err.detail === 'string' ? err.detail : (err.detail ? JSON.stringify(err.detail) : "SAP senkronizasyonu başarısız"));
   }
   return res.json();
 }
@@ -461,7 +467,7 @@ export async function apiParseExcel(file: File): Promise<{
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail ?? "Excel ayrıştırma başarısız");
+    throw new Error(typeof err.detail === 'string' ? err.detail : (err.detail ? JSON.stringify(err.detail) : "Excel ayrıştırma başarısız"));
   }
   return res.json();
 }

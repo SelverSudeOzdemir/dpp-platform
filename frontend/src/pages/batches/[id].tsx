@@ -217,7 +217,7 @@ export default function BatchDetailPage() {
         id: String(d.id),
         parti_no: d.gs1_serial_number || d.public_identifier || 'Parti No Yok',
         tedarikci_parti_kodu: d._batch_number || 'Tedarikçi Kodu Yok',
-        urun_tipi: d.product_type?.product_name || 'IPE 200 Yapısal Çelik Profil',
+        urun_tipi: d.name || d.product_type?.product_name || 'IPE 200 Yapısal Çelik Profil',
         ocak_no: d.production_line || 'EAF-01',
         uretim_tarihi: d.production_date || '2026-03-12',
         miktar_ton: '45.0',

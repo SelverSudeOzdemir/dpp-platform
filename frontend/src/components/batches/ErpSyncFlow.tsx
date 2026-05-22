@@ -4,10 +4,8 @@ import {
   ERP_CONNECTIONS,
   ERP_SYNC_CATEGORIES,
   ERP_MISSING_FIELDS,
-  ERP_MOCK_BATCHINFO,
-  ERP_MOCK_DPPDATA,
 } from '../../constants/batchConstants';
-import type { ExcelImportData } from '../../types/batch';
+import type { ExcelImportData, BatchInfo, DppData } from '../../types/batch';
 import { apiSyncSap } from '../../lib/api';
 
 export default function ErpSyncFlow({ onSync, onCancel }: { onSync: (d: ExcelImportData) => void; onCancel?: () => void }) {
@@ -27,11 +25,11 @@ export default function ErpSyncFlow({ onSync, onCancel }: { onSync: (d: ExcelImp
         setFetchedData(res);
       })
       .catch(err => {
-        console.warn("Backend SAP sync failed, using static mock fallback:", err);
-        setFetchedData({
-          batchInfo: ERP_MOCK_BATCHINFO,
-          dppData: ERP_MOCK_DPPDATA,
-        });
+        console.error("Backend SAP sync failed:", err);
+        setError(err.message || 'SAP bağlantı hatası');
+        setSubStep('select');
+        setSyncedCount(0);
+        alert('SAP veri çekimi başarısız oldu: ' + (err.message || 'Bilinmeyen Hata'));
       });
   }, [subStep, batchRef]);
 
@@ -275,8 +273,8 @@ export default function ErpSyncFlow({ onSync, onCancel }: { onSync: (d: ExcelImp
         </div>
       )}
 
-      <button type="button" onClick={() => onSync(fetchedData || { batchInfo: ERP_MOCK_BATCHINFO, dppData: ERP_MOCK_DPPDATA })}
-        className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-xl transition-colors shadow-sm shadow-green-100">
+      <button type="button" onClick={() => fetchedData && onSync(fetchedData)} disabled={!fetchedData}
+        className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-xl transition-colors shadow-sm shadow-green-100 disabled:opacity-50">
         <CheckCircle2 size={15} /> Onayla ve Forma Geç
       </button>
     </div>

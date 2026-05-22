@@ -7,8 +7,6 @@ import {
   DURUM_CLASS,
   CATEGORIES,
   DPP_FIELDS,
-  USER_EXCEL_HEADERS,
-  EXCEL_MOCK_VALUES,
   AUTO_MAPPING,
   FIELD_TO_BATCHINFO,
   FIELD_TO_DPPDATA,
@@ -153,8 +151,8 @@ function ExcelUploadFlow({ onImport, selectedBatchId }: { onImport: (d: ExcelImp
   const [subStep, setSubStep]   = useState<0 | 1>(0);
   const [fileName, setFileName] = useState('');
   const [isParsing, setIsParsing] = useState(false);
-  const [excelHeaders, setExcelHeaders] = useState<string[]>(USER_EXCEL_HEADERS);
-  const [excelValues, setExcelValues] = useState<Record<string, string>>(EXCEL_MOCK_VALUES);
+  const [excelHeaders, setExcelHeaders] = useState<string[]>(['— Eşleştirme Yok —']);
+  const [excelValues, setExcelValues] = useState<Record<string, string>>({});
 
   // Hangi Excel sütunu hangi DPP alanına eşleşiyor
   const [mapping, setMapping] = useState<Record<string, string>>(() =>
@@ -202,13 +200,8 @@ function ExcelUploadFlow({ onImport, selectedBatchId }: { onImport: (d: ExcelImp
       setValues(newValues);
       setSubStep(1);
     } catch (err: any) {
-      console.warn("Backend parsing failed, falling back to mock data:", err);
-      setFileName(file.name);
-      setExcelHeaders(USER_EXCEL_HEADERS);
-      setExcelValues(EXCEL_MOCK_VALUES);
-      setMapping(Object.fromEntries(DPP_FIELDS.map(f => [f.key, AUTO_MAPPING[f.key] ?? '— Eşleştirme Yok —'])));
-      setValues(Object.fromEntries(DPP_FIELDS.map(f => [f.key, AUTO_MAPPING[f.key] ? (EXCEL_MOCK_VALUES[AUTO_MAPPING[f.key]] ?? '') : ''])));
-      setSubStep(1);
+      console.error("Backend parsing failed:", err);
+      alert("Excel ayrıştırma başarısız: " + (err.message || 'Bilinmeyen hata'));
     } finally {
       setIsParsing(false);
     }

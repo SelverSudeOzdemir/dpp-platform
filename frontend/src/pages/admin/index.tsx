@@ -47,8 +47,8 @@ export default function AdminPage() {
       if (dpps && dpps.length > 0) {
         const mappedProducts = dpps.map((d: any) => ({
           id: d.id,
-          product_name: d.product_type?.product_name || 'Bilinmeyen Ürün',
-          product_category: d.product_type?.product_category || 'Structural Steel',
+          product_name: d.name || d.product_type?.product_name || 'Bilinmeyen Ürün',
+          product_category: d.category || d.product_type?.product_category || 'Structural Steel',
           co2_cradle_to_gate_kg: d.carbon_footprint_total || 1.15,
           passport_status: d.dpp_status === 'published' ? 'Yayında' : d.dpp_status === 'draft' ? 'Taslak' : d.dpp_status === 'archived' ? 'Arşivlendi' : d.dpp_status === 'recalled' ? 'Geri Çağrıldı' : 'Taslak',
           version: d.current_version || '1.0',
@@ -62,7 +62,7 @@ export default function AdminPage() {
         const mappedPending = pending.map((d: any) => ({
           id: d.id,
           parti_no: d.gs1_serial_number || d.public_identifier || 'Parti No Yok',
-          urun_tipi: d.product_name || 'Bilinmeyen Ürün',
+          urun_tipi: d.name || d.product_name || 'Bilinmeyen Ürün',
           miktar_ton: 45.0,
           olusturan: 'Furkan Yıldız',
           gonderilme_tarihi: d.created_at ? new Date(d.created_at).toLocaleDateString() : '2026-03-15',
