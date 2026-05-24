@@ -45,7 +45,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",
       "font-src 'self'",
-      "connect-src 'self' http://localhost:5000 http://localhost:8000 https://api.kocaer.com",
+      "connect-src 'self' http://localhost:5000 http://localhost:8000 http://127.0.0.1:8000 https://api.kocaer.com",
       "frame-ancestors 'none'",
     ].join('; '),
 },

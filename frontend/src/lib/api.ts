@@ -254,6 +254,9 @@ export async function apiUpdateDpp(
     dpp_status?: string;
     is_active?: boolean;
     current_version?: string;
+    production_route?: string;
+    ocak_no?: string;
+    miktar_ton?: number;
   }
 ) {
   const res = await authFetch(`${BASE_URL}/dpps/${dppId}`, {
@@ -271,6 +274,9 @@ export async function apiCreateDpp(data: {
   gs1_serial_number: string;
   production_date: string;
   gtin?: string;
+  production_route?: string;
+  ocak_no?: string;
+  miktar_ton?: number;
 }) {
   const res = await authFetch(`${BASE_URL}/dpps/`, {
     method: "POST",
@@ -285,6 +291,31 @@ export async function apiCreateDpp(data: {
         : err.detail
         ? JSON.stringify(err.detail)
         : "DPP oluşturulamadı"
+    );
+  }
+  return res.json();
+}
+
+/** Mock SAP belgelerini parse edip DPP alanlarına dönüştür */
+export async function apiParseDocs(docIds: string[]): Promise<{
+  batchInfo: Record<string, string>;
+  dppData: Record<string, string>;
+  parsed_docs: string[];
+  skipped_docs: string[];
+}> {
+  const res = await authFetch(`${BASE_URL}/integrations/documents/parse`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeader() },
+    body: JSON.stringify({ doc_ids: docIds }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(
+      typeof err.detail === "string"
+        ? err.detail
+        : err.detail
+        ? JSON.stringify(err.detail)
+        : "Belgeler parse edilemedi"
     );
   }
   return res.json();
@@ -530,34 +561,6 @@ export async function apiSyncSap(batchNo: string): Promise<{
   return res.json();
 }
 
-export async function apiParseExcel(file: File): Promise<{
-  file_name: string;
-  headers: string[];
-  values: Record<string, string>;
-}> {
-  const formData = new FormData();
-  formData.append("file", file);
-
-  const res = await authFetch(`${BASE_URL}/integrations/excel/parse`, {
-    method: "POST",
-    headers: {
-      ...getAuthHeader(),
-    },
-    body: formData,
-  });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(
-      typeof err.detail === "string"
-        ? err.detail
-        : err.detail
-        ? JSON.stringify(err.detail)
-        : "Excel ayrıştırma başarısız"
-    );
-  }
-  return res.json();
-}
 
 // ── USERS MANAGEMENT ─────────────────────────────────────────────────────────
 

@@ -1,6 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
+from fastapi.responses import JSONResponse
+import logging
+import traceback
+
+logger = logging.getLogger("app")
 
 from app.api.v1.router import router
 
@@ -26,7 +31,7 @@ app = FastAPI(
 
 import os
 
-_cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001,http://localhost:5173").split(",")
+_cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:3001").split(",")
 
 app.add_middleware(
     CORSMiddleware,
@@ -37,6 +42,20 @@ app.add_middleware(
 )
 
 app.include_router(router, prefix="/api/v1")
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    """
+    Tüm yakalanmayan exception'ları JSON olarak döner.
+    Starlette'in text/plain yanıtı yerine CORS-uyumlu JSON sağlar.
+    """
+    tb = traceback.format_exc()
+    logger.error("Unhandled exception on %s %s:\n%s", request.method, request.url.path, tb)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Sunucu hatası: {type(exc).__name__}: {str(exc)}"},
+    )
 
 
 @app.get("/health")
@@ -74,3 +93,8 @@ def custom_openapi():
 
 
 app.openapi = custom_openapi
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)

@@ -1,10 +1,13 @@
 from datetime import date
 from io import BytesIO
 import csv
-from typing import Dict, List, Optional
+import re
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +18,155 @@ from app.models.product import ProductType, ChemicalComposition, MechanicalPrope
 from app.modules.audit.services import AuditService
 
 router = APIRouter(prefix="/integrations", tags=["Integrations"])
+
+# Statik mock-SAP belgelerinin dizini
+_STATIC_DIR = Path(__file__).resolve().parent.parent.parent / "static" / "mock-sap-docs"
+
+# doc_id → dosya adı eşlemesi
+_DOC_FILES: Dict[str, str] = {
+    "uretim":   "UretimRaporu_0312.xlsx",
+    "kimyasal": "KimyasalAnaliz_0312.xlsx",
+    "mekanik":  "MekanikTest_0312.xlsx",
+}
+
+
+class ParseDocsRequest(BaseModel):
+    doc_ids: List[str]
+
+
+def _extract_float(raw: Any) -> Optional[str]:
+    """'42.5 ton', '%92.4 (EAF)' gibi string'lerden ilk sayıyı çeker."""
+    if raw is None:
+        return None
+    m = re.search(r"[\d]+(?:[.,]\d+)?", str(raw))
+    if m:
+        return m.group(0).replace(",", ".")
+    return None
+
+
+def _parse_uretim(ws) -> Dict[str, Any]:
+    """UretimRaporu satırlarını batchInfo + dppData alanlarına dönüştürür."""
+    kv: Dict[str, str] = {}
+    for row in ws.iter_rows(values_only=True):
+        if row[0] is not None and row[1] is not None:
+            key = str(row[0]).strip()
+            val = str(row[1]).strip()
+            kv[key] = val
+
+    batch_info: Dict[str, Any] = {}
+    dpp_data: Dict[str, Any] = {}
+
+    if "Parti Numarasi (Kocaer)" in kv:
+        batch_info["parti_no"] = kv["Parti Numarasi (Kocaer)"]
+    if "Tedarikci Parti Kodu" in kv:
+        batch_info["tedarikci_parti_kodu"] = kv["Tedarikci Parti Kodu"]
+    if "Urun Kodu" in kv:
+        batch_info["urun_no"] = kv["Urun Kodu"]
+    if "Urun Tanimi" in kv:
+        batch_info["urun_tipi"] = kv["Urun Tanimi"]
+
+    # "EAF-03  (Elektrik Ark Ocagi)" → "EAF-03"
+    if "Ocak / Firin No" in kv:
+        raw = kv["Ocak / Firin No"]
+        batch_info["ocak_no"] = raw.split("(")[0].strip().split("  ")[0].strip()
+
+    # "12.03.2026" → "2026-03-12"
+    if "Uretim Tarihi" in kv:
+        raw = kv["Uretim Tarihi"]
+        parts = raw.split(".")
+        if len(parts) == 3:
+            batch_info["uretim_tarihi"] = f"{parts[2]}-{parts[1]}-{parts[0]}"
+        else:
+            batch_info["uretim_tarihi"] = raw
+
+    # "42.5 ton" → "42.5"
+    if "Parti Miktari" in kv:
+        batch_info["miktar_ton"] = _extract_float(kv["Parti Miktari"]) or ""
+
+    if "Uretim Rotasi (CBAM)" in kv:
+        batch_info["production_route"] = kv["Uretim Rotasi (CBAM)"]
+
+    # Çevre verileri → dppData
+    if "Spesifik CO2 Emisyonu" in kv:
+        dpp_data["co2_a1a3"] = _extract_float(kv["Spesifik CO2 Emisyonu"]) or ""
+    if "Hurda Orani" in kv:
+        dpp_data["recycled_content_pct"] = _extract_float(kv["Hurda Orani"]) or ""
+
+    return {"batchInfo": batch_info, "dppData": dpp_data}
+
+
+def _parse_kimyasal(ws) -> Dict[str, Any]:
+    """KimyasalAnaliz satırlarını dppData kimyasal alanlarına dönüştürür."""
+    # Element adı → (dppData anahtarı) eşlemesi
+    element_map = {
+        "Karbon (C)":              "c_pct",
+        "Manganez (Mn)":           "mn_pct",
+        "Silisyum (Si)":           "si_pct",
+        "Fosfor (P)":              "p_pct",
+        "Kukurt (S)":              "s_pct",
+        "Azot (N)":                "n_pct",
+        "Krom (Cr)":               "cr_pct",
+        "Nikel (Ni)":              "ni_pct",
+        "Molibden (Mo)":           "mo_pct",
+        "Vanadyum (V)":            "v_pct",
+        "Niyobyum (Nb)":           "nb_pct",
+        "Titanyum (Ti)":           "ti_pct",
+        "Bakir (Cu)":              "cu_pct",
+        "Aluminyum (Al - toplam)": "al_pct",
+        "Bor (B)":                 "b_pct",
+    }
+    dpp_data: Dict[str, Any] = {}
+    for row in ws.iter_rows(values_only=True):
+        if row[0] is None or row[1] is None:
+            continue
+        key = str(row[0]).strip()
+        val = str(row[1]).strip()
+        if key in element_map:
+            dpp_data[element_map[key]] = val
+        # Karbon eşdeğeri
+        if "Karbon Esde" in key and row[1] is not None:
+            dpp_data["ceq"] = _extract_float(val) or val
+
+    return {"batchInfo": {}, "dppData": dpp_data}
+
+
+def _parse_mekanik(ws) -> Dict[str, Any]:
+    """MekanikTest satırlarını dppData mekanik alanlarına dönüştürür."""
+    mech_map = {
+        "Akma Dayanimı (ReH)":    "yield_mpa",
+        "Cekme Dayanimı (Rm)":    "tensile_mpa",
+        "Uzama (A5)":             "elongation_pct",
+    }
+    dpp_data: Dict[str, Any] = {}
+    # Charpy ortalama değeri için basit tarama
+    in_charpy = False
+    for row in ws.iter_rows(values_only=True):
+        if row[0] is None:
+            continue
+        key = str(row[0]).strip()
+
+        # Mekanik özellik satırları
+        if key in mech_map:
+            raw = str(row[1]).strip() if row[1] is not None else None
+            if raw:
+                dpp_data[mech_map[key]] = raw
+
+        # Charpy başlık satırı
+        if "CHARPY" in key.upper():
+            in_charpy = True
+            continue
+        # Charpy tablo başlığı (Test Sicakligi, Numune…)
+        if in_charpy and key == "Test Sicakligi":
+            continue
+        # İlk Charpy test sıcaklığı satırı (ör. "0 C")
+        if in_charpy and re.match(r"^-?\d+\s*C$", key):
+            # Sütun 4 (index 3) = Ortalama değer; "48.3 J" şeklinde
+            avg_val = str(row[4]).strip() if row[4] is not None else ""
+            dpp_data["impact_energy_j"] = _extract_float(avg_val) or ""
+            dpp_data["impact_temp_c"] = _extract_float(key) or "0"
+            in_charpy = False  # sadece ilk sıcaklık satırını al
+
+    return {"batchInfo": {}, "dppData": dpp_data}
 
 
 @router.get("/sap/{batch_no}", summary="SAP/ERP Batch veri senkronizasyonu")
@@ -214,4 +366,67 @@ async def parse_excel_or_csv(
         "file_name": filename,
         "headers": headers,
         "values": values,
+    }
+
+
+@router.post("/documents/parse", summary="Mock SAP belgelerini parse ederek DPP alanlarına dönüştür")
+async def parse_sap_documents(
+    body: ParseDocsRequest,
+    token: TokenPayload = Depends(require_permission(Permission.DPP_CREATE)),
+):
+    """
+    Belirtilen doc_id'lere karşılık gelen mock SAP xlsx dosyalarını okur,
+    openpyxl ile parse eder ve DPP form alanlarına uygun batchInfo + dppData döner.
+
+    doc_ids: ["uretim", "kimyasal", "mekanik"] (her biri opsiyonel)
+    """
+    parsers = {
+        "uretim":   _parse_uretim,
+        "kimyasal": _parse_kimyasal,
+        "mekanik":  _parse_mekanik,
+    }
+
+    merged_batch: Dict[str, Any] = {}
+    merged_dpp: Dict[str, Any] = {}
+    parsed_docs: List[str] = []
+    skipped_docs: List[str] = []
+
+    for doc_id in body.doc_ids:
+        filename = _DOC_FILES.get(doc_id)
+        if not filename:
+            skipped_docs.append(doc_id)
+            continue
+
+        filepath = _STATIC_DIR / filename
+        if not filepath.exists():
+            skipped_docs.append(doc_id)
+            continue
+
+        parser = parsers.get(doc_id)
+        if not parser:
+            skipped_docs.append(doc_id)
+            continue
+
+        try:
+            wb = openpyxl.load_workbook(str(filepath), data_only=True)
+            ws = wb.active
+            result = parser(ws)
+            merged_batch.update(result.get("batchInfo", {}))
+            merged_dpp.update(result.get("dppData", {}))
+            parsed_docs.append(doc_id)
+        except Exception:
+            skipped_docs.append(doc_id)
+            continue
+
+    if not parsed_docs:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Hiçbir belge parse edilemedi. Dosyalar sunucuda mevcut değil.",
+        )
+
+    return {
+        "batchInfo": merged_batch,
+        "dppData": merged_dpp,
+        "parsed_docs": parsed_docs,
+        "skipped_docs": skipped_docs,
     }

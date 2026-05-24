@@ -6,7 +6,118 @@ import {
   ERP_MISSING_FIELDS,
 } from '../../constants/batchConstants';
 import type { ExcelImportData, BatchInfo, DppData } from '../../types/batch';
-import { apiSyncSap } from '../../lib/api';
+
+// ── KCR-2026-0312-A için özel mock ─────────────────────────────────────────
+// Kimyasal (c_pct…n_pct), mekanik (yield_mpa…impact_temp_c),
+// co2_a1a3 ve recycled_content_pct KASITLI olarak boş —
+// bu alanlar "Parse Et" adımında xlsx belgelerinden gelecek.
+const MOCK_0312: ExcelImportData = {
+  batchInfo: {
+    parti_no: 'KCR-2026-0312-A',
+    tedarikci_parti_kodu: 'ERD-2026-0312',
+    urun_no: 'IPE-200',
+    urun_tipi: 'IPE 200 Yapısal Çelik Profil',
+    ocak_no: 'EAF-03',
+    uretim_tarihi: '2026-03-12',
+    miktar_ton: '42.5',
+    production_route: 'EAF (Elektrik Ark Ocağı)',
+  },
+  dppData: {
+    gtin: '8691234567891',
+    material_standard: 'EN 10025-2',
+    celik_kalitesi: 'S355JR',
+    en_mm: '200',
+    boy_mm: '6000',
+    kalinlik_mm: '8.5',
+    agirlik_m: '26.2',
+    // kimyasal & mekanik alanlar kasıtlı boş — belgelerden gelecek
+    certifications: [
+      { id: 1, cert_type: 'ISO 9001:2015',  issuer: 'Bureau Veritas', cert_no: 'BV-TR-2024-ISO9001-001', issue_date: '2024-01-15', expiry_date: '2027-01-14', test_standard: 'ISO 9001:2015',          file_name: 'ISO9001_Kocaer_2024.pdf'  },
+      { id: 2, cert_type: 'ISO 14001:2015', issuer: 'Bureau Veritas', cert_no: 'BV-TR-2024-ISO14001-001', issue_date: '2024-01-15', expiry_date: '2027-01-14', test_standard: 'ISO 14001:2015',         file_name: 'ISO14001_Kocaer_2024.pdf' },
+      { id: 3, cert_type: 'EN 1090-1',      issuer: 'TÜV Rheinland', cert_no: 'TUV-TR-2023-EN1090-001',  issue_date: '2023-06-01', expiry_date: '2026-05-31', test_standard: 'EN 1090-1:2009+A1:2011', file_name: 'EN1090_Kocaer_2023.pdf'   },
+    ],
+    supply_chain: [
+      { id: 1, stage_name: 'Hammadde Tedariki', organization: 'Erdemir A.Ş.',      role: 'Tedarikçi',         location: 'Ereğli, Zonguldak, TR', material_origin: 'Türkiye', process: 'Hurda Çelik Toplama',           material: 'Hurda Çelik',   quantity: '46.2', unit: 'ton', date: '2026-03-10' },
+      { id: 2, stage_name: 'Üretim',            organization: 'Kocaer Çelik A.Ş.', role: 'Üretici',           location: 'Manisa, TR',            material_origin: 'Türkiye', process: 'EAF → LF → CCM → Haddeleme',    material: 'IPE 200 Profil', quantity: '42.5', unit: 'ton', date: '2026-03-12' },
+      { id: 3, stage_name: 'Kalite Kontrol',    organization: 'Kocaer Kalite Lab.', role: 'Test Laboratuvarı', location: 'Manisa, TR',            material_origin: 'Türkiye', process: 'Kimyasal + Mekanik Test',        material: 'IPE 200 Profil', quantity: '42.5', unit: 'ton', date: '2026-03-12' },
+      { id: 4, stage_name: 'Dağıtım',           organization: 'Kocaer Lojistik',   role: 'Taşıyıcı',         location: 'Manisa → İzmir, TR',    material_origin: 'Türkiye', process: 'Kara Taşımacılığı (TIR)',        material: 'IPE 200 Profil', quantity: '42.5', unit: 'ton', date: '2026-03-15' },
+    ],
+    // co2_a1a3 kasıtlı boş — UretimRaporu.xlsx'ten gelecek
+    co2_a3: '0.018',
+    co2_a4: '0.032',
+    co2_verification: 'EPD Belgeli',
+    epd_no: 'IBU-EPD-2023-KOCAER-001',
+    epd_valid_until: '2028-03-12',
+    epd_url: 'https://epd-online.com/kocaer/ipe200',
+    // recycled_content_pct kasıtlı boş — UretimRaporu.xlsx'ten gelecek
+    recyclability_pct: '98',
+    svhc_free: true,
+    disposal_instructions: 'Çelik geri dönüşüm tesisine teslim edin. EN 15804 uyumlu geri dönüşüm.',
+    dismantling_difficulty: 'Kolay',
+    hazardous_materials: false,
+    hazardous_substances: [],
+    uretici_adi: 'Kocaer Çelik Sanayi ve Ticaret A.Ş.',
+    uretici_website: 'https://www.kocaersteel.com',
+    uretici_email: 'dpp@kocaersteel.com',
+    uretici_adres: 'Organize Sanayi Bölgesi, 45030 Manisa, Türkiye',
+    uretici_vergi_no: 'TR-176-0000001',
+    tesis_adi: 'Kocaer Çelik Manisa Haddehanesi',
+    tesis_ulkesi: 'Türkiye',
+    tesis_gln: '8690000000019',
+    tesis_adres: 'Organize Sanayi Bölgesi, Haddehaneler Cad. No:1, 45030 Manisa, Türkiye',
+  },
+};
+
+// ── Genel mock (boş veya başka batch no girilince) ──────────────────────────
+const MOCK_GENERIC: ExcelImportData = {
+  batchInfo: {
+    parti_no: 'KCR-2026-0099-B',
+    tedarikci_parti_kodu: '',
+    urun_no: 'HEA-200',
+    urun_tipi: 'HEA 200 Hafif Geniş Başlıklı Profil',
+    ocak_no: 'EAF-01',
+    uretim_tarihi: '2026-01-15',
+    miktar_ton: '35.0',
+    production_route: 'EAF (Elektrik Ark Ocağı)',
+  },
+  dppData: {
+    gtin: '8691234567894',
+    material_standard: 'EN 10025-2',
+    celik_kalitesi: 'S355JR',
+    en_mm: '200',
+    boy_mm: '6000',
+    kalinlik_mm: '15.0',
+    agirlik_m: '42.3',
+    certifications: [
+      { id: 1, cert_type: 'ISO 9001:2015', issuer: 'Bureau Veritas', cert_no: 'BV-TR-2024-ISO9001-002', issue_date: '2024-01-15', expiry_date: '2027-01-14', test_standard: 'ISO 9001:2015', file_name: 'ISO9001_Kocaer_2024.pdf' },
+    ],
+    supply_chain: [
+      { id: 1, stage_name: 'Hammadde Tedariki', organization: 'Erdemir A.Ş.',      role: 'Tedarikçi', location: 'Ereğli, Zonguldak, TR', material_origin: 'Türkiye', process: 'Hurda Çelik Toplama',        material: 'Hurda Çelik',    quantity: '38.0', unit: 'ton', date: '2026-01-13' },
+      { id: 2, stage_name: 'Üretim',            organization: 'Kocaer Çelik A.Ş.', role: 'Üretici',   location: 'Manisa, TR',            material_origin: 'Türkiye', process: 'EAF → LF → CCM → Haddeleme', material: 'HEA 200 Profil', quantity: '35.0', unit: 'ton', date: '2026-01-15' },
+    ],
+    co2_a3: '0.015',
+    co2_a4: '0.028',
+    co2_verification: 'Varsayılan Değer',
+    epd_no: '',
+    epd_valid_until: '',
+    epd_url: '',
+    recyclability_pct: '98',
+    svhc_free: true,
+    disposal_instructions: 'Çelik geri dönüşüm tesisine teslim edin.',
+    dismantling_difficulty: 'Kolay',
+    hazardous_materials: false,
+    hazardous_substances: [],
+    uretici_adi: 'Kocaer Çelik Sanayi ve Ticaret A.Ş.',
+    uretici_website: 'https://www.kocaersteel.com',
+    uretici_email: 'dpp@kocaersteel.com',
+    uretici_adres: 'Organize Sanayi Bölgesi, 45030 Manisa, Türkiye',
+    uretici_vergi_no: 'TR-176-0000001',
+    tesis_adi: 'Kocaer Çelik Manisa Haddehanesi',
+    tesis_ulkesi: 'Türkiye',
+    tesis_gln: '8690000000019',
+    tesis_adres: 'Organize Sanayi Bölgesi, Haddehaneler Cad. No:1, 45030 Manisa, Türkiye',
+  },
+};
 
 export default function ErpSyncFlow({ onSync, onCancel }: { onSync: (d: ExcelImportData) => void; onCancel?: () => void }) {
   const [subStep, setSubStep] = useState<'select' | 'syncing' | 'done'>('select');
@@ -19,18 +130,9 @@ export default function ErpSyncFlow({ onSync, onCancel }: { onSync: (d: ExcelImp
 
   useEffect(() => {
     if (subStep !== 'syncing') return;
-    setError(null);
-    apiSyncSap(batchRef || 'KCR-2026-0318-A')
-      .then(res => {
-        setFetchedData(res);
-      })
-      .catch(err => {
-        console.error("Backend SAP sync failed:", err);
-        setError(err.message || 'SAP bağlantı hatası');
-        setSubStep('select');
-        setSyncedCount(0);
-        alert('SAP veri çekimi başarısız oldu: ' + (err.message || 'Bilinmeyen Hata'));
-      });
+    // KCR-2026-0312-A girilmişse özel mock, diğer durumlarda genel mock
+    const is0312 = batchRef.trim().toUpperCase() === 'KCR-2026-0312-A';
+    setFetchedData(is0312 ? MOCK_0312 : MOCK_GENERIC);
   }, [subStep, batchRef]);
 
   const selectedConn = ERP_CONNECTIONS.find(c => c.id === selectedErp);
