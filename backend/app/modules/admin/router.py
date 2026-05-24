@@ -1,12 +1,13 @@
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
-from uuid import UUID
 
 from app.core.deps import get_db, Permission, TokenPayload, require_permission
 from app.modules.admin.schemas import AdminDashboardStats, DppApprovalRequest, AdminDppListItem, AdminKpiSummary, UrgentAlert
 from app.modules.admin.services import AdminService
+from app.modules.audit.services import AuditActions, AuditService
 from app.models.dpp import DppStatusEnum
 
 router = APIRouter(prefix="/admin", tags=["Admin Dashboard & Approvals"])
@@ -68,6 +69,20 @@ async def approve_dpp(
 ):
     body = DppApprovalRequest(status=DppStatusEnum.PUBLISHED)
     d = await AdminService.update_dpp_status(db, dpp_id, body, token.sub)
+
+    try:
+        uid = UUID(token.sub)
+    except (ValueError, AttributeError):
+        uid = None
+    await AuditService.log(
+        AuditActions.DPP_APPROVED,
+        db=db,
+        user_id=uid,
+        resource_type="dpp",
+        resource_id=str(dpp_id),
+        details={"new_status": "published"},
+    )
+
     return AdminDppListItem(
         id=d.id,
         public_identifier=d.public_identifier,
@@ -76,6 +91,7 @@ async def approve_dpp(
         status=d.dpp_status,
         created_at=d.created_at
     )
+
 @router.post(
     "/reject/{dpp_id}",
     response_model=AdminDppListItem,
@@ -90,6 +106,24 @@ async def reject_dpp(
     # Statüyü zorla REJECTED yapalım
     body.status = DppStatusEnum.REJECTED
     d = await AdminService.update_dpp_status(db, dpp_id, body, token.sub)
+
+    try:
+        uid = UUID(token.sub)
+    except (ValueError, AttributeError):
+        uid = None
+    await AuditService.log(
+        AuditActions.DPP_REJECTED,
+        db=db,
+        user_id=uid,
+        resource_type="dpp",
+        resource_id=str(dpp_id),
+        details={
+            "new_status": "rejected",
+            "rejection_reason": body.rejection_reason,
+            "failed_fields": body.failed_fields,
+        },
+    )
+
     return AdminDppListItem(
         id=d.id,
         public_identifier=d.public_identifier,
@@ -131,4 +165,3 @@ async def get_incomplete_report(
     db: AsyncSession = Depends(get_db)
 ):
     return await AdminService.get_incomplete_report(db)
-

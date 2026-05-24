@@ -145,8 +145,18 @@ export async function apiDeleteUser(userId: string) {
 
 // ── AUDIT LOGS ───────────────────────────────────────────────────────────────
 
-export async function apiGetRecentAuditLogs(limit = 10) {
-  const res = await authFetch(`${BASE_URL}/audit-logs/recent?limit=${limit}`, {
+export async function apiGetRecentAuditLogs(params?: {
+  skip?: number;
+  limit?: number;
+  role?: string;
+  action?: string;
+}) {
+  const qs = new URLSearchParams();
+  if (params?.skip !== undefined) qs.set("skip", String(params.skip));
+  if (params?.limit !== undefined) qs.set("limit", String(params.limit));
+  if (params?.role) qs.set("role", params.role);
+  if (params?.action) qs.set("action", params.action);
+  const res = await authFetch(`${BASE_URL}/audit-logs/recent?${qs}`, {
     headers: { ...getAuthHeader() },
   });
   if (!res.ok) throw new Error("Audit loglar alınamadı");

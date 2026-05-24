@@ -22,6 +22,7 @@ class AuditLogRecentItem(BaseModel):
 
 class AuditLogRecentResponse(BaseModel):
     data: list[AuditLogRecentItem]
+    total: Optional[int] = None
 
 
 class AuditLogAccessCreate(BaseModel):

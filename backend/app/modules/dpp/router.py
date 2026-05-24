@@ -17,6 +17,7 @@ import hashlib
 from app.core.deps import get_db, require_permission, Permission, TokenPayload
 from app.middleware.rbac import require_admin
 from app.models.integration import DppChangelog
+from app.modules.audit.services import AuditActions, AuditService
 from app.modules.dpp.schemas import (
     DppCreateRequest, DppUpdateRequest,
     DppDetailResponse, DppListItem, SummaryStatsResponse,
@@ -25,6 +26,23 @@ from app.modules.dpp.schemas import (
 from app.modules.dpp.services import DppService
 
 router = APIRouter(prefix="/dpps", tags=["DPP"])
+
+
+_STATUS_ACTION_MAP = {
+    "published": AuditActions.DPP_APPROVED,
+    "draft": AuditActions.DPP_DRAFT,
+    "archived": AuditActions.DPP_ARCHIVED,
+    "recalled": AuditActions.DPP_RECALLED,
+    "pending_approval": AuditActions.DPP_SUBMITTED,
+    "rejected": AuditActions.DPP_REJECTED,
+}
+
+
+def _safe_uuid(sub: str) -> UUID | None:
+    try:
+        return UUID(sub) if sub else None
+    except (ValueError, AttributeError):
+        return None
 
 
 # ── Sabit path'ler önce gelmeli (/summary-stats, /admin/changelog) ──
@@ -107,7 +125,17 @@ async def create_dpp(
         user_uuid = UUID(token.sub) if token.sub else None
     except ValueError:
         user_uuid = None
-    return await DppService.create(db, body, current_user_id=user_uuid)
+    result = await DppService.create(db, body, current_user_id=user_uuid)
+
+    await AuditService.log(
+        AuditActions.DPP_CREATED,
+        db=db,
+        user_id=_safe_uuid(token.sub),
+        resource_type="dpp",
+        resource_id=str(result.id) if hasattr(result, "id") else None,
+        details={"gs1_serial_number": body.gs1_serial_number, "product_type_id": str(body.product_type_id)},
+    )
+    return result
 
 
 # ── UUID parametreli path'ler en sona ──
@@ -171,6 +199,15 @@ async def save_dpp_supply_chain_stages(
     success = await DppService.save_supply_chain_stages(db, dpp_id, body)
     if not success:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="DPP bulunamadı")
+
+    await AuditService.log(
+        AuditActions.DPP_SUPPLY_CHAIN_UPDATED,
+        db=db,
+        user_id=_safe_uuid(token.sub),
+        resource_type="dpp",
+        resource_id=str(dpp_id),
+        details={"stages_count": len(body)},
+    )
     return {"status": "success", "message": "Stages updated successfully"}
 
 
@@ -200,6 +237,16 @@ async def update_dpp(
     result = await DppService.update(db, dpp_id, body, current_user_id=user_uuid)
     if not result:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="DPP bulunamadı")
+
+    action = _STATUS_ACTION_MAP.get(body.dpp_status, AuditActions.DPP_UPDATED) if body.dpp_status else AuditActions.DPP_UPDATED
+    await AuditService.log(
+        action,
+        db=db,
+        user_id=_safe_uuid(token.sub),
+        resource_type="dpp",
+        resource_id=str(dpp_id),
+        details=body.dict(exclude_unset=True),
+    )
     return result
 
 
@@ -211,3 +258,11 @@ async def delete_dpp(
 ):
     if not await DppService.delete(db, dpp_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="DPP bulunamadı")
+
+    await AuditService.log(
+        AuditActions.DPP_DELETED,
+        db=db,
+        user_id=_safe_uuid(token.sub),
+        resource_type="dpp",
+        resource_id=str(dpp_id),
+    )

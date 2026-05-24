@@ -31,6 +31,10 @@ class AuditActions:
     DPP_APPROVED = "DPP onaylandı"
     DPP_REJECTED = "DPP reddedildi"
     DPP_DELETED = "DPP silindi"
+    DPP_ARCHIVED = "DPP arşivlendi"
+    DPP_RECALLED = "DPP geri çağrıldı"
+    DPP_DRAFT = "DPP taslağa alındı"
+    DPP_SUPPLY_CHAIN_UPDATED = "DPP tedarik zinciri güncellendi"
 
     DPP_PDF_DOWNLOADED = "DPP PDF indirildi"
     DPP_QR_SCANNED = "DPP QR tarandı"
@@ -39,6 +43,7 @@ class AuditActions:
 
     PASSWORD_CHANGED = "Şifre değiştirildi"
     PASSWORD_RESET = "Şifre sıfırlandı"
+    PWD_CHANGED = "Şifre değiştirildi"
 
 
 class AuditService:

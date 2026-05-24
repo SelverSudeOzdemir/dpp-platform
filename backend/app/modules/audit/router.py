@@ -3,9 +3,10 @@ Audit logs router — G-10 güncellemesi ile granüler DPP aksiyonları eklendi
 """
 from typing import Optional
 from uuid import UUID
+import uuid
 
 from fastapi import APIRouter, Depends, Query, Request
-from sqlalchemy import desc, select
+from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_db, Permission, TokenPayload, require_permission
@@ -52,6 +53,17 @@ async def get_recent_audit_logs(
     if action:
         stmt = stmt.where(AuditLog.action.ilike(f"%{action}%"))
 
+    # Total count for pagination
+    count_stmt = (
+        select(func.count(AuditLog.id))
+        .outerjoin(User, AuditLog.user_id == User.id)
+    )
+    if role:
+        count_stmt = count_stmt.where(User.role == role)
+    if action:
+        count_stmt = count_stmt.where(AuditLog.action.ilike(f"%{action}%"))
+    total = (await db.execute(count_stmt)).scalar() or 0
+
     stmt = stmt.order_by(desc(AuditLog.created_at)).offset(skip).limit(limit)
     result = await db.execute(stmt)
     rows = result.all()
@@ -68,7 +80,7 @@ async def get_recent_audit_logs(
             "ip_address": _mask_ip(log.ip_address),
         })
 
-    return {"data": data}
+    return {"data": data, "total": total}
 
 
 @router.get(
@@ -163,11 +175,11 @@ async def log_dpp_access(
     token: TokenPayload = Depends(require_permission(Permission.DPP_READ)),
     db: AsyncSession = Depends(get_db),
 ):
-    ip = body.ip_address or request.client.host
+    ip = body.ip_address or (request.client.host if request.client else None)
     await AuditService.log(
         body.action,
         db=db,
-        user_id=token.sub,
+        user_id=uuid.UUID(str(token.sub)) if token.sub else None,
         resource_type="dpp",
         resource_id=str(body.dpp_id),
         ip_address=ip,
