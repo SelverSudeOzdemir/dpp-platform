@@ -21,9 +21,13 @@ from app.modules.auth.schemas import (
     UserUpdate,
     UserPasswordChange,
     UserPasswordReset,
+    UserInvite,
 )
 from app.modules.audit.services import AuditActions, AuditService
 from app.modules.auth.services import PasswordService
+from app.core.email import send_invitation_email
+import string
+import secrets
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -93,6 +97,73 @@ async def create_user(
     return user
 
 
+def _generate_temp_password(length=8):
+    alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+    return ''.join(secrets.choice(alphabet) for i in range(length))
+
+
+@router.post("/invite", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def invite_user(
+    request: Request,
+    body: UserInvite,
+    token: TokenPayload = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    existing = await db.execute(select(User).where(User.email == body.email))
+
+    if existing.scalars().first():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Bu e-posta zaten kullanılıyor",
+        )
+
+    # Geçici şifre üret
+    temp_password = _generate_temp_password()
+
+    # Kullanıcıyı oluştur
+    user = User(
+        email=body.email,
+        full_name=body.full_name,
+        hashed_password=PasswordService.hash(temp_password),
+        role=body.role,
+        is_active=True,
+        is_superuser=body.role.value == "ADMIN",
+    )
+
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    
+    # İsteğe Bağlı: Eğer UserCompany tablosu varsa, burada ilişki kurulabilir.
+    # if body.company_id:
+    #     user_company = UserCompany(user_id=user.id, company_id=body.company_id)
+    #     db.add(user_company)
+    #     await db.commit()
+
+    # E-posta gönder (Arka planda da gönderilebilir, ancak basitlik için doğrudan await)
+    mail_sent = await send_invitation_email(
+        email_to=str(user.email),  # type: ignore
+        name=str(user.full_name) or "Değerli Kullanıcı",  # type: ignore
+        temporary_password=temp_password
+    )
+    
+    if not mail_sent:
+        # Eğer e-posta gitmezse, en azından kaydı tutuyoruz ancak UI'a bilgi dönülebilir
+        pass
+
+    await AuditService.log(
+        action="USER_INVITED",
+        db=db,
+        user_id=UUID(token.sub),
+        resource_type="user",
+        resource_id=str(user.id),
+        details={"email": user.email, "role": user.role.value, "company_name": body.company_name},
+        ip_address=request.client.host if request.client else None,
+    )
+
+    return user
+
+
 @router.get("/{user_id}", response_model=UserResponse)
 async def get_user(
     user_id: UUID,
@@ -153,7 +224,7 @@ async def delete_user(
 ):
     user = await _get_user_or_404(user_id, db)
 
-    user.is_active = False
+    user.is_active = False  # type: ignore
     await db.commit()
 
     await AuditService.log(
@@ -178,8 +249,8 @@ async def change_user_role(
     user = await _get_user_or_404(user_id, db)
 
     old_role = user.role.value if hasattr(user.role, "value") else user.role
-    user.role = body.role
-    user.is_superuser = body.role.value == "ADMIN"
+    user.role = body.role  # type: ignore
+    user.is_superuser = body.role.value == "ADMIN"  # type: ignore
 
     await db.commit()
     await db.refresh(user)
@@ -208,7 +279,7 @@ async def change_user_status(
     user = await _get_user_or_404(user_id, db)
 
     old_status = user.is_active
-    user.is_active = body.is_active
+    user.is_active = body.is_active  # type: ignore
 
     await db.commit()
     await db.refresh(user)
@@ -236,19 +307,19 @@ async def change_my_password(
     
     user = await _get_user_or_404(UUID(token.sub), db)
     
-    if not PasswordService.verify(body.current_password, user.hashed_password):
+    if not PasswordService.verify(body.current_password, str(user.hashed_password)):  # type: ignore
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Mevcut şifre hatalı",
         )
     
-    user.hashed_password = PasswordService.hash(body.new_password)
+    user.hashed_password = PasswordService.hash(body.new_password)  # type: ignore
     await db.commit()
     
     await AuditService.log(
         action=AuditActions.PWD_CHANGED,
         db=db,
-        user_id=user.id,
+        user_id=user.id,  # type: ignore
         resource_type="user",
         resource_id=str(user.id),
         ip_address=request.client.host if request.client else None,
@@ -265,7 +336,7 @@ async def reset_user_password(
 ):
     user = await _get_user_or_404(user_id, db)
     
-    user.hashed_password = PasswordService.hash(body.new_password)
+    user.hashed_password = PasswordService.hash(body.new_password)  # type: ignore
     await db.commit()
     
     await AuditService.log(

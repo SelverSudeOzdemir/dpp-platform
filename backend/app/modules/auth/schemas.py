@@ -19,6 +19,13 @@ class UserCreate(BaseModel):
     role: UserRole = UserRole.CUSTOMER
 
 
+class UserInvite(BaseModel):
+    email: EmailStr
+    full_name: str
+    role: UserRole = UserRole.CUSTOMER
+    company_name: Optional[str] = None
+
+
 class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     full_name: Optional[str] = None

@@ -4,7 +4,7 @@ import ProtectedRoute from '../../components/auth/ProtectedRoute';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import { Plus, X, UserCheck, Search, MoreVertical, RefreshCw, ShieldAlert, ShieldCheck, UserX, ChevronDown } from 'lucide-react';
-import { apiGetUsers, apiCreateUser, apiUpdateUserRole, apiUpdateUserStatus } from '../../lib/api';
+import { apiGetUsers, apiCreateUser, apiInviteUser, apiUpdateUserRole, apiUpdateUserStatus } from '../../lib/api';
 
 type UserStatus = 'PENDING' | 'ACTIVE' | 'SUSPENDED' | 'INACTIVE';
 
@@ -166,8 +166,12 @@ function UsersPage() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail]       = useState('');
   const [role, setRole]         = useState<Role>('SUPPLIER');
+  const [companyName, setCompanyName] = useState('');
+  
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [formError, setFormError]   = useState('');
-  const [formSuccess, setFormSuccess] = useState('');
+  const [toastMessage, setToastMessage] = useState('');
+  const [isInviting, setIsInviting] = useState(false);
 
   useEffect(() => {
     loadUsers();
@@ -191,24 +195,26 @@ function UsersPage() {
   };
 
   const resetForm = () => {
-    setFullName(''); setEmail(''); setRole('SUPPLIER');
-    setFormError(''); setFormSuccess('');
+    setFullName(''); setEmail(''); setRole('SUPPLIER'); setCompanyName('');
+    setFormError('');
   };
 
   const handleInvite = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
-    setFormError(''); setFormSuccess('');
+    if (isInviting) return;
+    setFormError('');
 
     if (!fullName || !email) { setFormError('Tüm alanları doldurun.'); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setFormError('Geçerli bir e-posta girin.'); return; }
     if (users.some(u => u.email === email)) { setFormError('Bu e-posta zaten kayıtlı.'); return; }
 
+    setIsInviting(true);
     try {
-      const newUser = await apiCreateUser({
+      const newUser = await apiInviteUser({
         email,
-        password: 'TemporaryPassword123!',
         full_name: fullName,
-        role: role
+        role: role,
+        ...(companyName.trim() ? { company_name: companyName.trim() } : {})
       });
       
       const newRow: UserRow = {
@@ -221,10 +227,14 @@ function UsersPage() {
       };
       
       setUsers(prev => [newRow, ...prev]);
-      setFormSuccess(`${fullName} adresine davet gönderildi.`);
-      setFullName(''); setEmail(''); setRole('SUPPLIER');
+      setToastMessage(`${fullName} adresine başarıyla davet gönderildi.`);
+      setTimeout(() => setToastMessage(''), 5000);
+      setIsInviteModalOpen(false);
+      resetForm();
     } catch (err: any) {
-      setFormError(err.message || 'Kullanıcı oluşturulurken hata oluştu.');
+      setFormError(err.message || 'Kullanıcı davet edilirken hata oluştu.');
+    } finally {
+      setIsInviting(false);
     }
   };
 
@@ -273,7 +283,7 @@ function UsersPage() {
           <h1 className="text-2xl font-black text-gray-900">Kullanıcılar</h1>
           <p className="text-sm text-gray-500 mt-1">Sisteme erişimi olan tüm kullanıcıları yönetin.</p>
         </div>
-        <Button variant="primary" size="sm" onClick={() => { resetForm(); setShowForm(true); }}>
+        <Button variant="primary" size="sm" onClick={() => { resetForm(); setIsInviteModalOpen(true); }}>
           <Plus size={15} className="mr-1.5" />
           Davet Gönder
         </Button>
@@ -292,73 +302,6 @@ function UsersPage() {
           </div>
         ))}
       </div>
-
-      {/* Davet Formu */}
-      {showForm && (
-        <div className="bg-white border border-blue-200 rounded-2xl p-6 mb-6 shadow-sm">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-sm font-black text-gray-700 uppercase tracking-widest">Yeni Kullanıcı Daveti</h2>
-            <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
-              <X size={18} />
-            </button>
-          </div>
-
-          <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-            Kullanıcıya davet maili gönderilecek. Kullanıcı linke tıklayarak kendi şifresini belirleyecek.
-            Admin şifreyi görmez.
-          </p>
-
-          <form onSubmit={handleInvite} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input
-                label="Ad Soyad"
-                value={fullName}
-                onChange={e => setFullName(e.target.value)}
-                placeholder="Ahmet Yılmaz"
-              />
-              <Input
-                label="E-posta Adresi"
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="ahmet@erdemir.com"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5 max-w-xs">
-              <label className="text-sm font-semibold text-gray-700">Rol</label>
-              <select
-                value={role}
-                onChange={e => setRole(e.target.value as Role)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-              >
-                {ROLE_OPTIONS.map(r => (
-                  <option key={r} value={r}>{ROLE_CFG[r].label}</option>
-                ))}
-              </select>
-              {role === 'ADMIN' && (
-                <p className="text-xs text-orange-600 font-semibold mt-1">
-                  ⚠ Yönetici rolü tam sisteme erişim sağlar.
-                </p>
-              )}
-            </div>
-
-            {formError && <p className="text-sm text-red-600 font-semibold">{formError}</p>}
-
-            {formSuccess && (
-              <div className="flex items-center gap-2 text-sm text-green-700 font-semibold bg-green-50 border border-green-200 rounded-xl px-4 py-3">
-                <UserCheck size={16} />
-                {formSuccess}
-              </div>
-            )}
-
-            <div className="flex gap-3 pt-1">
-              <Button type="submit" variant="primary" size="sm">Davet Gönder</Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)}>İptal</Button>
-            </div>
-          </form>
-        </div>
-      )}
 
       {/* Filtreler */}
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
@@ -456,6 +399,92 @@ function UsersPage() {
           </div>
         )}
       </div>
+
+      {/* Davet Gönder Modalı */}
+      {isInviteModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-lg shadow-2xl relative">
+            <button 
+              onClick={() => setIsInviteModalOpen(false)} 
+              className="absolute right-5 top-5 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X size={20} />
+            </button>
+            
+            <h2 className="text-lg font-black text-gray-900 mb-2">Yeni Kullanıcı Daveti</h2>
+            <p className="text-xs text-gray-500 mb-6 leading-relaxed">
+              Kullanıcıya geçici bir şifre içeren davet maili gönderilecektir.
+            </p>
+
+            <form onSubmit={handleInvite} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  label="Ad Soyad"
+                  value={fullName}
+                  onChange={e => setFullName(e.target.value)}
+                  placeholder="Ahmet Yılmaz"
+                />
+                <Input
+                  label="E-posta Adresi"
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="ahmet@sirket.com"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  label="Firma Adı (Opsiyonel)"
+                  value={companyName}
+                  onChange={e => setCompanyName(e.target.value)}
+                  placeholder="Örn: Erdemir A.Ş."
+                />
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-semibold text-gray-700">Rol</label>
+                  <select
+                    value={role}
+                    onChange={e => setRole(e.target.value as Role)}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all h-full"
+                  >
+                    {ROLE_OPTIONS.map(r => (
+                      <option key={r} value={r}>{ROLE_CFG[r].label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {role === 'ADMIN' && (
+                <p className="text-xs text-orange-600 font-semibold">
+                  ⚠ Yönetici rolü tam sisteme erişim sağlar.
+                </p>
+              )}
+
+              {formError && <p className="text-sm text-red-600 font-semibold">{formError}</p>}
+
+              <div className="flex gap-3 pt-4">
+                <Button type="submit" variant="primary" className="flex-1" disabled={isInviting}>
+                  {isInviting ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <RefreshCw size={16} className="animate-spin" /> Gönderiliyor...
+                    </span>
+                  ) : 'Davet Gönder'}
+                </Button>
+                <Button type="button" variant="outline" className="flex-1" disabled={isInviting} onClick={() => setIsInviteModalOpen(false)}>İptal</Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Toast */}
+      {toastMessage && (
+        <div className="fixed bottom-5 right-5 z-50 bg-gray-900 text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-bounce">
+          <UserCheck size={18} className="text-green-400" />
+          <span className="text-sm font-semibold">{toastMessage}</span>
+        </div>
+      )}
     </div>
   );
 }

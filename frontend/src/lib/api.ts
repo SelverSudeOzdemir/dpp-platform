@@ -115,6 +115,30 @@ export async function apiCreateUser(data: {
   return res.json();
 }
 
+export async function apiInviteUser(data: {
+  email: string;
+  full_name: string;
+  role: string;
+  company_name?: string;
+}) {
+  const res = await authFetch(`${BASE_URL}/users/invite`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeader() },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(
+      typeof err.detail === "string"
+        ? err.detail
+        : err.detail
+        ? JSON.stringify(err.detail)
+        : "Kullanıcı davet edilemedi"
+    );
+  }
+  return res.json();
+}
+
 export async function apiUpdateUserRole(userId: string, role: string) {
   const res = await authFetch(`${BASE_URL}/users/${userId}/role`, {
     method: "PATCH",
