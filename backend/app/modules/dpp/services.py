@@ -92,6 +92,8 @@ def _map_list_item(dpp: DigitalProductPassport) -> DppListItem:
 
     return DppListItem(
         id=str(dpp.id),
+        public_identifier=str(dpp.public_identifier) if dpp.public_identifier else None,
+        gs1_serial_number=str(dpp.gs1_serial_number) if dpp and dpp.gs1_serial_number else None,
         name=str(pt.product_name) if pt and pt.product_name else "Bilinmeyen Ürün",
         category=str(pt.product_category.value) if pt and pt.product_category else "",
         gtin=str(dpp.gtin) if dpp and dpp.gtin else None,
@@ -139,8 +141,6 @@ def _map_detail(dpp: DigitalProductPassport) -> DppDetailResponse:
     return DppDetailResponse(
         **base.model_dump(),
         product_type_id=str(dpp.product_type_id) if dpp.product_type_id else None,
-        public_identifier=str(dpp.public_identifier),
-        gs1_serial_number=str(dpp.gs1_serial_number) if dpp and dpp.gs1_serial_number else "",
         dpp_version=str(dpp.dpp_version) if dpp and dpp.dpp_version else "1.0.0",
         dpp_standard=str(dpp.dpp_standard) if dpp and dpp.dpp_standard else "CIRPASS-Compatible",
         data_carrier_type=str(dpp.data_carrier_type.value) if dpp and dpp.data_carrier_type else None,

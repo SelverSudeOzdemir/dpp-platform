@@ -104,8 +104,10 @@ export default function ComplianceTab({ products }: Props) {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     {isOver ? <Flag size={14} className="text-red-600" /> : isWarn ? <AlertTriangle size={14} className="text-yellow-600" /> : <CheckCircle2 size={14} className="text-green-600" />}
-                    <span className="text-sm font-black text-gray-900">{p.product_name}</span>
-                    <span className="text-[10px] font-mono text-gray-400">{p.id}</span>
+                    <div>
+                      <p className="text-sm font-bold text-gray-900">{p.product_name}</p>
+                      <span className="text-[10px] font-mono text-gray-400">{p.display_id || p.id}</span>
+                    </div>
                   </div>
                   <span className={`text-sm font-black ${isOver ? 'text-red-700' : isWarn ? 'text-yellow-700' : 'text-green-700'}`}>
                     {co2} kg CO₂e/kg

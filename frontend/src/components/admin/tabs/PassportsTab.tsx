@@ -112,7 +112,7 @@ export default function PassportsTab({
                 >
                   <td className="px-5 py-4">
                     <span className="text-[10px] font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded block w-max mb-1">
-                      {p.id}
+                      {p.display_id || p.id}
                     </span>
                     <span className="text-sm font-bold text-gray-900">
                       {p.product_name}

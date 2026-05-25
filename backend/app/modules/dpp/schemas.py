@@ -102,6 +102,8 @@ class LifecycleEventInfo(BaseModel):
 class DppListItem(BaseModel):
     """GET /dpps listesi — frontend BackendProduct interface ile uyumlu."""
     id: str
+    public_identifier: Optional[str] = None
+    gs1_serial_number: Optional[str] = None
     name: str
     category: str
     gtin: Optional[str] = None
@@ -156,8 +158,6 @@ class DppListItem(BaseModel):
 class DppDetailResponse(DppListItem):
     """GET /dpps/{id} detay — liste ile aynı + ekstra alanlar."""
     product_type_id: Optional[str] = None
-    public_identifier: Optional[str] = None
-    gs1_serial_number: Optional[str] = None
     dpp_version: Optional[str] = None
     dpp_standard: Optional[str] = None
     data_carrier_type: Optional[str] = None

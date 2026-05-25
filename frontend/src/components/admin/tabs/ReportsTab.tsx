@@ -9,7 +9,7 @@ interface Props {
 
 export default function ReportsTab({ products }: Props) {
   const [exportDateFrom, setExportDateFrom] = useState('2026-01-01');
-  const [exportDateTo, setExportDateTo] = useState('2026-03-27');
+  const [exportDateTo, setExportDateTo] = useState(new Date().toISOString().split('T')[0]);
   const [exportProduct, setExportProduct] = useState('all');
   const [showCbamInfo, setShowCbamInfo] = useState(false);
   const [showExcelInfo, setShowExcelInfo] = useState(false);
@@ -51,7 +51,7 @@ export default function ReportsTab({ products }: Props) {
         <div className="bg-white rounded-3xl border border-gray-200 shadow-sm p-6">
           <h2 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-5 flex items-center gap-2">
             <Download size={16} className="text-blue-600" />
-            Toplu Veri Dışa Aktarma (Bulk Export)
+            Toplu Veri Dışa Aktarma
           </h2>
 
           {/* Filtreler */}
@@ -83,7 +83,7 @@ export default function ReportsTab({ products }: Props) {
               >
                 <option value="all">Tüm Ürünler</option>
                 {products.map(p => (
-                  <option key={p.id} value={p.id}>{p.id} — {p.product_name}</option>
+                  <option key={p.id} value={p.id}>{p.display_id || p.id} — {p.product_name}</option>
                 ))}
               </select>
             </div>
@@ -100,14 +100,14 @@ export default function ReportsTab({ products }: Props) {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              { label: 'AB CBAM Portalı',  desc: 'Tüm emisyon verileri XML formatında',      icon: Globe,     color: 'blue',   format: 'XML', cbam: true  },
-              { label: 'Excel Raporu',      desc: 'Tüm pasaport verileri .xlsx formatında',   icon: FileText,  color: 'green',  format: 'XLSX', excel: true },
-              { label: 'JSON Export',       desc: 'Makine okunabilir ham veri',               icon: Database,  color: 'purple', format: 'JSON' },
+              { label: 'AB CBAM Portalı', desc: 'Tüm emisyon verileri XML formatında', icon: Globe, color: 'blue', format: 'XML', cbam: true },
+              { label: 'Excel Raporu', desc: 'Tüm pasaport verileri .xlsx formatında', icon: FileText, color: 'green', format: 'XLSX', excel: true },
+              { label: 'JSON Export', desc: 'Makine okunabilir ham veri', icon: Database, color: 'purple', format: 'JSON' },
             ].map((exp, i) => {
               const Icon = exp.icon;
               const colorMap = {
-                blue:   { bg: 'bg-blue-100',   icon: 'text-blue-600'   },
-                green:  { bg: 'bg-green-100',  icon: 'text-green-600'  },
+                blue: { bg: 'bg-blue-100', icon: 'text-blue-600' },
+                green: { bg: 'bg-green-100', icon: 'text-green-600' },
                 purple: { bg: 'bg-purple-100', icon: 'text-purple-600' },
               }[exp.color as 'blue' | 'green' | 'purple'];
               return (
@@ -137,20 +137,18 @@ export default function ReportsTab({ products }: Props) {
             </h2>
             <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1">
               {([
-                { key: 'taslak',        label: 'Taslak',        count: incompleteList.filter(p => p.status === 'Taslak').length },
+                { key: 'taslak', label: 'Taslak', count: incompleteList.filter(p => p.status === 'Taslak').length },
                 { key: 'geri-cagrildi', label: 'Geri Çağrıldı', count: incompleteList.filter(p => p.status === 'Geri Çağrıldı').length },
               ] as { key: 'taslak' | 'geri-cagrildi'; label: string; count: number }[]).map(f => (
                 <button
                   key={f.key}
                   onClick={() => setIncompleteFilter(f.key)}
-                  className={`flex items-center gap-1.5 text-[10px] font-black px-3 py-1.5 rounded-lg transition-colors ${
-                    incompleteFilter === f.key ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                  }`}
+                  className={`flex items-center gap-1.5 text-[10px] font-black px-3 py-1.5 rounded-lg transition-colors ${incompleteFilter === f.key ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+                    }`}
                 >
                   {f.label}
-                  <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-black ${
-                    incompleteFilter === f.key ? 'bg-gray-100 text-gray-700' : 'bg-gray-200 text-gray-500'
-                  }`}>{f.count}</span>
+                  <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-black ${incompleteFilter === f.key ? 'bg-gray-100 text-gray-700' : 'bg-gray-200 text-gray-500'
+                    }`}>{f.count}</span>
                 </button>
               ))}
             </div>
@@ -200,9 +198,8 @@ export default function ReportsTab({ products }: Props) {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-[10px] font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{selectedIncomplete.id}</span>
-                    <span className={`text-[10px] font-black px-2 py-0.5 rounded ${
-                      selectedIncomplete.status === 'Taslak' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
-                    }`}>{selectedIncomplete.status}</span>
+                    <span className={`text-[10px] font-black px-2 py-0.5 rounded ${selectedIncomplete.status === 'Taslak' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
+                      }`}>{selectedIncomplete.status}</span>
                   </div>
                   <p className="text-sm font-black text-gray-900">{selectedIncomplete.product}</p>
                   <div className="flex items-center gap-3 mt-1">
@@ -260,7 +257,7 @@ export default function ReportsTab({ products }: Props) {
                   Aşağıdaki alanlar <span className="font-black">zorunlu (Z)</span> veya <span className="font-black">koşullu (K)</span> olarak işaretlenmiştir.
                 </p>
                 <a
-                  href={`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api/v1'}/export/cbam-xml`}
+                  href={`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api/v1'}/export/cbam-xml?date_from=${exportDateFrom}&date_to=${exportDateTo}${exportProduct !== 'all' ? `&product_id=${exportProduct}` : ''}`}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-xl shadow-md shadow-blue-100 shrink-0 transition-all active:scale-95"
@@ -273,55 +270,55 @@ export default function ReportsTab({ products }: Props) {
                 {
                   title: '1. Beyan Bilgileri (Declarant)',
                   fields: [
-                    { name: 'declarantEORI',      label: 'EORI Numarası',          z: true,  note: 'Kocaer YYS belgesiyle eşleşmeli' },
-                    { name: 'declarantName',       label: 'Firma Adı',              z: true,  note: '' },
-                    { name: 'declarantAddress',    label: 'Firma Adresi',           z: true,  note: '' },
-                    { name: 'reportingPeriod',     label: 'Raporlama Dönemi',       z: true,  note: 'Q1/Q2/Q3/Q4 + yıl' },
+                    { name: 'declarantEORI', label: 'EORI Numarası', z: true, note: 'Kocaer YYS belgesiyle eşleşmeli' },
+                    { name: 'declarantName', label: 'Firma Adı', z: true, note: '' },
+                    { name: 'declarantAddress', label: 'Firma Adresi', z: true, note: '' },
+                    { name: 'reportingPeriod', label: 'Raporlama Dönemi', z: true, note: 'Q1/Q2/Q3/Q4 + yıl' },
                   ]
                 },
                 {
                   title: '2. İthal Mal Bilgileri (ImportedGoods)',
                   fields: [
-                    { name: 'cnCode',             label: 'CN / GTİP Kodu',         z: true,  note: 'Örn: 7216.32 (IPE profiller)' },
-                    { name: 'goodsDescription',   label: 'Mal Tanımı',             z: true,  note: '' },
-                    { name: 'countryOfOrigin',    label: 'Menşe Ülke',             z: true,  note: 'TR (Türkiye)' },
-                    { name: 'netMass',            label: 'Net Ağırlık (tonne)',     z: true,  note: '' },
-                    { name: 'customsProcedure',   label: 'Gümrük Rejimi',          z: true,  note: '4000 (serbest dolaşıma giriş)' },
+                    { name: 'cnCode', label: 'CN / GTİP Kodu', z: true, note: 'Örn: 7216.32 (IPE profiller)' },
+                    { name: 'goodsDescription', label: 'Mal Tanımı', z: true, note: '' },
+                    { name: 'countryOfOrigin', label: 'Menşe Ülke', z: true, note: 'TR (Türkiye)' },
+                    { name: 'netMass', label: 'Net Ağırlık (tonne)', z: true, note: '' },
+                    { name: 'customsProcedure', label: 'Gümrük Rejimi', z: true, note: '4000 (serbest dolaşıma giriş)' },
                   ]
                 },
                 {
                   title: '3. Üretim Tesisi (ProductionInstallation)',
                   fields: [
-                    { name: 'installationName',   label: 'Tesis Adı',              z: true,  note: 'Kocaer Aliağa Tesisi' },
-                    { name: 'installationId',     label: 'CBAM Tesis ID',          z: false, note: 'Tesis CBAM portala kayıtlıysa' },
-                    { name: 'unlocode',           label: 'UN/LOCODE',              z: true,  note: 'TR IZM (İzmir/Aliağa)' },
-                    { name: 'productionRoute',    label: 'Üretim Rotası',          z: true,  note: 'EAF (Elektrik Ark Fırını)' },
+                    { name: 'installationName', label: 'Tesis Adı', z: true, note: 'Kocaer Aliağa Tesisi' },
+                    { name: 'installationId', label: 'CBAM Tesis ID', z: false, note: 'Tesis CBAM portala kayıtlıysa' },
+                    { name: 'unlocode', label: 'UN/LOCODE', z: true, note: 'TR IZM (İzmir/Aliağa)' },
+                    { name: 'productionRoute', label: 'Üretim Rotası', z: true, note: 'EAF (Elektrik Ark Fırını)' },
                   ]
                 },
                 {
                   title: '4. Gömülü Emisyon (EmbeddedEmissions)',
                   fields: [
-                    { name: 'specificEmbeddedEmissions', label: 'Özgül Gömülü Emisyon', z: true,  note: 'tCO₂e/tonne — A1-A3 kapsamı' },
-                    { name: 'directEmissions',    label: 'Doğrudan Emisyon',       z: true,  note: 'tCO₂e/tonne — üretim süreci' },
-                    { name: 'indirectEmissions',  label: 'Dolaylı Emisyon',        z: true,  note: 'tCO₂e/tonne — elektrik kaynaklı' },
-                    { name: 'emissionFactor',     label: 'Emisyon Faktörü',        z: false, note: 'Kullanılan elektrik şebekesine göre' },
+                    { name: 'specificEmbeddedEmissions', label: 'Özgül Gömülü Emisyon', z: true, note: 'tCO₂e/tonne — A1-A3 kapsamı' },
+                    { name: 'directEmissions', label: 'Doğrudan Emisyon', z: true, note: 'tCO₂e/tonne — üretim süreci' },
+                    { name: 'indirectEmissions', label: 'Dolaylı Emisyon', z: true, note: 'tCO₂e/tonne — elektrik kaynaklı' },
+                    { name: 'emissionFactor', label: 'Emisyon Faktörü', z: false, note: 'Kullanılan elektrik şebekesine göre' },
                   ]
                 },
                 {
                   title: '5. Karbon Fiyatı (CarbonPrice)',
                   fields: [
-                    { name: 'carbonPricePaid',    label: 'Ödenen Karbon Fiyatı',   z: false, note: 'Türkiye ETS henüz CBAM kapsamında değil → 0' },
-                    { name: 'carbonPriceCurrency',label: 'Para Birimi',             z: false, note: 'TRY' },
+                    { name: 'carbonPricePaid', label: 'Ödenen Karbon Fiyatı', z: false, note: 'Türkiye ETS henüz CBAM kapsamında değil → 0' },
+                    { name: 'carbonPriceCurrency', label: 'Para Birimi', z: false, note: 'TRY' },
                     { name: 'carbonPriceInstrument', label: 'Fiyatlandırma Aracı', z: false, note: 'ETS / Karbon Vergisi' },
-                    { name: 'freeAllocation',     label: 'Ücretsiz Tahsisat',      z: false, note: 'Tonne cinsinden' },
+                    { name: 'freeAllocation', label: 'Ücretsiz Tahsisat', z: false, note: 'Tonne cinsinden' },
                   ]
                 },
                 {
                   title: '6. Doğrulama (Verification)',
                   fields: [
-                    { name: 'verifierName',       label: 'Doğrulayıcı Kuruluş',   z: false, note: 'Akredite bağımsız kuruluş' },
-                    { name: 'verifierAccreditation', label: 'Akreditasyon No',     z: false, note: '' },
-                    { name: 'verificationDate',   label: 'Doğrulama Tarihi',       z: false, note: '' },
+                    { name: 'verifierName', label: 'Doğrulayıcı Kuruluş', z: false, note: 'Akredite bağımsız kuruluş' },
+                    { name: 'verifierAccreditation', label: 'Akreditasyon No', z: false, note: '' },
+                    { name: 'verificationDate', label: 'Doğrulama Tarihi', z: false, note: '' },
                   ]
                 },
               ].map((section, si) => (
@@ -376,7 +373,7 @@ export default function ReportsTab({ products }: Props) {
                   Her sheet ayrı bir veri grubunu temsil eder. Tarih aralığı ve ürün/batch filtresi tüm sheet&apos;lere uygulanır.
                 </p>
                 <a
-                  href={`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api/v1'}/export/excel`}
+                  href={`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api/v1'}/export/excel?date_from=${exportDateFrom}&date_to=${exportDateTo}${exportProduct !== 'all' ? `&product_id=${exportProduct}` : ''}`}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-xs font-black rounded-xl shadow-md shadow-green-100 shrink-0 transition-all active:scale-95"
@@ -390,54 +387,54 @@ export default function ReportsTab({ products }: Props) {
                   sheet: 'Sheet 1',
                   title: 'Pasaport Özeti',
                   columns: [
-                    { name: 'Batch ID',              example: 'KCR-742' },
-                    { name: 'Ürün Adı',              example: 'IPE 200 Yapısal Çelik Profil' },
-                    { name: 'Kategori',              example: 'Structural Steel' },
-                    { name: 'Pasaport Durumu',       example: 'Yayında' },
-                    { name: 'Versiyon',              example: 'v1.2' },
-                    { name: 'Veri Kaynağı',          example: 'SAP/ERP' },
-                    { name: 'CO₂ (kg CO₂e/kg)',      example: '1.15' },
+                    { name: 'Batch ID', example: 'KCR-742' },
+                    { name: 'Ürün Adı', example: 'IPE 200 Yapısal Çelik Profil' },
+                    { name: 'Kategori', example: 'Structural Steel' },
+                    { name: 'Pasaport Durumu', example: 'Yayında' },
+                    { name: 'Versiyon', example: 'v1.2' },
+                    { name: 'Veri Kaynağı', example: 'SAP/ERP' },
+                    { name: 'CO₂ (kg CO₂e/kg)', example: '1.15' },
                     { name: 'CBAM Limiti Aşıldı mı', example: 'Hayır' },
-                    { name: 'Blokzincir Mühürü',     example: '2026-03-10' },
+                    { name: 'Blokzincir Mühürü', example: '2026-03-10' },
                   ]
                 },
                 {
                   sheet: 'Sheet 2',
                   title: 'Onay Bekleyen Batch\'ler',
                   columns: [
-                    { name: 'Batch ID',              example: 'PB-001' },
-                    { name: 'Parti No',              example: 'KCR-2026-0315-B' },
-                    { name: 'Ürün Tipi',             example: 'HEB 300 Geniş Başlıklı Profil' },
-                    { name: 'Miktar (ton)',           example: '68.0' },
-                    { name: 'Veri Kaynağı',          example: 'Manuel' },
-                    { name: 'Oluşturan',             example: 'Furkan Yıldız' },
-                    { name: 'Gönderilme Tarihi',     example: '2026-03-15 14:22' },
-                    { name: 'CO₂ A1-A3',             example: '1.92' },
-                    { name: 'CO₂ Doğrulama',         example: 'Dahili Hesaplama' },
+                    { name: 'Batch ID', example: 'PB-001' },
+                    { name: 'Parti No', example: 'KCR-2026-0315-B' },
+                    { name: 'Ürün Tipi', example: 'HEB 300 Geniş Başlıklı Profil' },
+                    { name: 'Miktar (ton)', example: '68.0' },
+                    { name: 'Veri Kaynağı', example: 'Manuel' },
+                    { name: 'Oluşturan', example: 'Furkan Yıldız' },
+                    { name: 'Gönderilme Tarihi', example: '2026-03-15 14:22' },
+                    { name: 'CO₂ A1-A3', example: '1.92' },
+                    { name: 'CO₂ Doğrulama', example: 'Dahili Hesaplama' },
                   ]
                 },
                 {
                   sheet: 'Sheet 3',
                   title: 'Sertifikalar',
                   columns: [
-                    { name: 'Sertifika Adı',         example: 'ISO 9001 KYS' },
-                    { name: 'Tipi',                  example: 'Firma Geneli' },
-                    { name: 'Ürün / Kapsam',         example: 'Firma Geneli' },
-                    { name: 'Veren Kuruluş',         example: 'TÜV NORD' },
-                    { name: 'Son Geçerlilik',        example: '2026-04-15' },
-                    { name: 'Kalan Gün',             example: '19' },
-                    { name: 'Durum',                 example: 'Uyarı' },
+                    { name: 'Sertifika Adı', example: 'ISO 9001 KYS' },
+                    { name: 'Tipi', example: 'Firma Geneli' },
+                    { name: 'Ürün / Kapsam', example: 'Firma Geneli' },
+                    { name: 'Veren Kuruluş', example: 'TÜV NORD' },
+                    { name: 'Son Geçerlilik', example: '2026-04-15' },
+                    { name: 'Kalan Gün', example: '19' },
+                    { name: 'Durum', example: 'Uyarı' },
                   ]
                 },
                 {
                   sheet: 'Sheet 4',
                   title: 'REACH / SVHC',
                   columns: [
-                    { name: 'Madde Adı',             example: 'Lead (Pb)' },
-                    { name: 'CAS No',                example: '7439-92-1' },
-                    { name: 'Eşik (%)',              example: '0.1' },
-                    { name: 'Tespit Edilen (%)',     example: '0.003' },
-                    { name: 'Eşik Aşıldı mı',       example: 'Hayır' },
+                    { name: 'Madde Adı', example: 'Lead (Pb)' },
+                    { name: 'CAS No', example: '7439-92-1' },
+                    { name: 'Eşik (%)', example: '0.1' },
+                    { name: 'Tespit Edilen (%)', example: '0.003' },
+                    { name: 'Eşik Aşıldı mı', example: 'Hayır' },
                     { name: 'SCIP Beyanı Gerekli mi', example: 'Hayır' },
                   ]
                 },
@@ -445,49 +442,49 @@ export default function ReportsTab({ products }: Props) {
                   sheet: 'Sheet 5',
                   title: 'Tedarik Zinciri',
                   columns: [
-                    { name: 'Tedarikçi Adı',        example: 'Erdemir A.Ş.' },
-                    { name: 'Rolü',                  example: 'Ham Madde Tedarikçisi' },
-                    { name: 'Doğrulanmış mı',        example: 'Evet' },
+                    { name: 'Tedarikçi Adı', example: 'Erdemir A.Ş.' },
+                    { name: 'Rolü', example: 'Ham Madde Tedarikçisi' },
+                    { name: 'Doğrulanmış mı', example: 'Evet' },
                     { name: 'Veri Güvenilirliği (%)', example: '97' },
-                    { name: 'Doğrulama Yöntemi',     example: 'EPD Belgeli' },
-                    { name: 'Son Güncelleme',        example: '2026-03-01' },
-                    { name: 'Risk Seviyesi',         example: 'Düşük' },
+                    { name: 'Doğrulama Yöntemi', example: 'EPD Belgeli' },
+                    { name: 'Son Güncelleme', example: '2026-03-01' },
+                    { name: 'Risk Seviyesi', example: 'Düşük' },
                   ]
                 },
                 {
                   sheet: 'Sheet 6',
                   title: 'Lojistik Emisyon',
                   columns: [
-                    { name: 'Rota No',               example: '1' },
-                    { name: 'Kalkış',                example: 'Ereğli, Zonguldak' },
-                    { name: 'Varış',                 example: 'Aliağa, İzmir' },
-                    { name: 'Taşıma Yöntemi',        example: 'Karayolu' },
-                    { name: 'Mesafe',                example: '850 km' },
-                    { name: 'CO₂ (kg CO₂e/kg)',      example: '0.045' },
+                    { name: 'Rota No', example: '1' },
+                    { name: 'Kalkış', example: 'Ereğli, Zonguldak' },
+                    { name: 'Varış', example: 'Aliağa, İzmir' },
+                    { name: 'Taşıma Yöntemi', example: 'Karayolu' },
+                    { name: 'Mesafe', example: '850 km' },
+                    { name: 'CO₂ (kg CO₂e/kg)', example: '0.045' },
                   ]
                 },
                 {
                   sheet: 'Sheet 7',
                   title: 'Erişim Logları',
                   columns: [
-                    { name: 'Kullanıcı',             example: 'inspector.mehmet@gtb.gov.tr' },
-                    { name: 'Rol',                   example: 'AUTHORITY' },
-                    { name: 'Aksiyon',               example: 'Pasaport PDF indirildi' },
-                    { name: 'Pasaport',              example: 'KCR-742' },
-                    { name: 'Zaman',                 example: '2026-03-15 14:32' },
-                    { name: 'IP Adresi',             example: '195.142.x.x' },
+                    { name: 'Kullanıcı', example: 'inspector.mehmet@gtb.gov.tr' },
+                    { name: 'Rol', example: 'AUTHORITY' },
+                    { name: 'Aksiyon', example: 'Pasaport PDF indirildi' },
+                    { name: 'Pasaport', example: 'KCR-742' },
+                    { name: 'Zaman', example: '2026-03-15 14:32' },
+                    { name: 'IP Adresi', example: '195.142.x.x' },
                   ]
                 },
                 {
                   sheet: 'Sheet 8',
                   title: 'Versiyon Geçmişi (Audit Trail)',
                   columns: [
-                    { name: 'Batch ID',              example: 'KCR-742' },
-                    { name: 'Ürün',                  example: 'IPE 200' },
-                    { name: 'Versiyon',              example: 'v1.2' },
-                    { name: 'İşlemi Yapan',          example: 'mehmet.yilmaz@kocaer.com' },
-                    { name: 'Tarih',                 example: '2026-03-10 08:42' },
-                    { name: 'Değişiklik',            example: 'CO₂ değeri SAP entegrasyonu ile güncellendi' },
+                    { name: 'Batch ID', example: 'KCR-742' },
+                    { name: 'Ürün', example: 'IPE 200' },
+                    { name: 'Versiyon', example: 'v1.2' },
+                    { name: 'İşlemi Yapan', example: 'mehmet.yilmaz@kocaer.com' },
+                    { name: 'Tarih', example: '2026-03-10 08:42' },
+                    { name: 'Değişiklik', example: 'CO₂ değeri SAP entegrasyonu ile güncellendi' },
                   ]
                 },
               ].map((s, si) => (

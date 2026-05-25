@@ -47,6 +47,7 @@ export default function AdminPage() {
       if (dpps && dpps.length > 0) {
         const mappedProducts = dpps.map((d: any) => ({
           id: d.id,
+          display_id: d.gs1_serial_number || d.public_identifier || d.id,
           product_name: d.name || d.product_type?.product_name || 'Bilinmeyen Ürün',
           product_category: d.category || d.product_type?.product_category || 'Structural Steel',
           co2_cradle_to_gate_kg: d.carbon_footprint_total || 1.15,
@@ -280,7 +281,7 @@ export default function AdminPage() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 mb-0.5">
                         <span className="text-[11px] font-mono font-bold text-gray-500 bg-gray-50 px-2 py-0.5 rounded border border-gray-200">
-                          {p.id}
+                          {p.display_id || p.id}
                         </span>
                         <span className={`text-[11px] font-black px-2 py-0.5 rounded-full ${cfg.bg} ${cfg.text}`}>
                           {p.passport_status}

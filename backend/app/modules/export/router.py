@@ -23,9 +23,12 @@ async def export_json(
 
 @router.get("/cbam-xml")
 async def export_cbam_xml(
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    product_id: Optional[UUID] = None,
     db: AsyncSession = Depends(get_db)
 ):
-    dpps = await ExportService.get_dpp_data_for_export(db)
+    dpps = await ExportService.get_dpp_data_for_export(db, date_from, date_to, product_id)
     content = ExportService.to_cbam_xml(dpps)
     return Response(content=content, media_type="application/xml", headers={
         "Content-Disposition": "attachment; filename=cbam_report.xml"
@@ -33,9 +36,12 @@ async def export_cbam_xml(
 
 @router.get("/excel")
 async def export_excel(
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    product_id: Optional[UUID] = None,
     db: AsyncSession = Depends(get_db)
 ):
-    dpps = await ExportService.get_dpp_data_for_export(db)
+    dpps = await ExportService.get_dpp_data_for_export(db, date_from, date_to, product_id)
     content = ExportService.to_excel(dpps)
     return Response(content=content, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers={
         "Content-Disposition": "attachment; filename=dpp_report.xlsx"

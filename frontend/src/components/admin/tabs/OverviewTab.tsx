@@ -450,7 +450,7 @@ export default function OverviewTab({
                 />
                 <div>
                   <p className="text-sm font-black text-yellow-800">
-                    {p.product} ({p.id})
+                    {p.product} ({p.display_id || p.id})
                   </p>
                   <p className="text-xs text-yellow-600 font-medium">
                     Eksik: {p.missing.map((m) => m.field).join(", ")}
