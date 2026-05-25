@@ -58,6 +58,14 @@ const Navbar = () => {
                   >
                     Kullanıcılar
                   </button>
+                  <button
+                    onClick={() => router.push('/supply-chain')}
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      router.pathname.startsWith('/supply-chain') ? 'bg-emerald-50 text-emerald-700' : 'text-gray-600 hover:text-emerald-600'
+                    }`}
+                  >
+                    Tedarik Zinciri
+                  </button>
                 </>
               )}
 
@@ -79,6 +87,14 @@ const Navbar = () => {
                     }`}
                   >
                     Yeni Batch
+                  </button>
+                  <button
+                    onClick={() => router.push('/supply-chain')}
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      router.pathname.startsWith('/supply-chain') ? 'bg-emerald-50 text-emerald-700' : 'text-gray-600 hover:text-emerald-600'
+                    }`}
+                  >
+                    Tedarik Zinciri
                   </button>
                 </>
               )}
