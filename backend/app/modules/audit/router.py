@@ -90,9 +90,10 @@ async def get_recent_audit_logs(
 )
 async def get_access_logs(
     skip: int = Query(0, ge=0),
-    limit: int = Query(20, ge=1, le=200),
+    limit: int = Query(50, ge=1, le=200),
     role: Optional[str] = Query(None),
     dpp_id: Optional[str] = Query(None),
+    action: Optional[str] = Query(None),
     token: TokenPayload = Depends(require_permission(Permission.AUDIT_READ)),
     db: AsyncSession = Depends(get_db),
 ):
@@ -101,17 +102,51 @@ async def get_access_logs(
         "DPP QR tarandı",
         "DPP kimyasal kompozisyon görüntülendi",
         "DPP tedarik zinciri görüntülendi",
+        "DPP oluşturuldu",
+        "DPP güncellendi",
+        "DPP onaya gönderildi",
+        "DPP onaylandı",
+        "DPP reddedildi",
+        "DPP silindi",
+        "DPP arşivlendi",
+        "DPP geri çağrıldı",
+        "DPP taslağa alındı",
+        "DPP tedarik zinciri güncellendi",
+        "Kullanıcı giriş yaptı",
+        "Kullanıcı çıkış yaptı",
+        "Başarısız giriş denemesi",
+        "Kullanıcı oluşturuldu",
+        "Kullanıcı güncellendi",
+        "Kullanıcı pasifleştirildi",
+        "Kullanıcı aktifleştirildi",
+        "Rol değiştirildi",
+        "Şifre değiştirildi",
+        "Şifre sıfırlandı",
     ]
 
     stmt = (
         select(AuditLog, User)
         .outerjoin(User, AuditLog.user_id == User.id)
-        .where(AuditLog.action.in_(access_actions))
     )
     if role:
         stmt = stmt.where(User.role == role)
     if dpp_id:
         stmt = stmt.where(AuditLog.resource_id == dpp_id)
+    if action:
+        stmt = stmt.where(AuditLog.action.ilike(f"%{action}%"))
+
+    # Total count
+    count_stmt = (
+        select(func.count(AuditLog.id))
+        .outerjoin(User, AuditLog.user_id == User.id)
+    )
+    if role:
+        count_stmt = count_stmt.where(User.role == role)
+    if dpp_id:
+        count_stmt = count_stmt.where(AuditLog.resource_id == dpp_id)
+    if action:
+        count_stmt = count_stmt.where(AuditLog.action.ilike(f"%{action}%"))
+    total = (await db.execute(count_stmt)).scalar() or 0
 
     stmt = stmt.order_by(desc(AuditLog.created_at)).offset(skip).limit(limit)
     result = await db.execute(stmt)
@@ -129,7 +164,7 @@ async def get_access_logs(
             "ip_address": _mask_ip(log.ip_address),
         })
 
-    return {"data": data}
+    return {"data": data, "total": total}
 
 
 @router.get(

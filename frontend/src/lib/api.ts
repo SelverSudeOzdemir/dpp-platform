@@ -494,10 +494,16 @@ export async function apiGetDppChangelog(dppId: string) {
 export async function apiGetAccessLogs(params?: {
   dpp_id?: string;
   role?: string;
+  action?: string;
+  skip?: number;
+  limit?: number;
 }) {
   const qs = new URLSearchParams();
   if (params?.dpp_id) qs.set("dpp_id", params.dpp_id);
   if (params?.role) qs.set("role", params.role);
+  if (params?.action) qs.set("action", params.action);
+  if (params?.skip !== undefined) qs.set("skip", String(params.skip));
+  if (params?.limit !== undefined) qs.set("limit", String(params.limit));
   const res = await authFetch(`${BASE_URL}/audit-logs/access-logs?${qs}`, {
     headers: { ...getAuthHeader() },
   });
@@ -561,7 +567,6 @@ export async function apiSyncSap(batchNo: string): Promise<{
   return res.json();
 }
 
-
 // ── USERS MANAGEMENT ─────────────────────────────────────────────────────────
 
 // ── DPP MANAGEMENT ───────────────────────────────────────────────────────────
@@ -582,5 +587,11 @@ export async function apiGetGlobalChangelog(skip = 0, limit = 50) {
     }
   );
   if (!res.ok) throw new Error("Global changelog alınamadı");
-  return res.json();
+  const json = await res.json();
+  // Backend { data: [...], total } dönüyor — items olarak da map'le
+  return {
+    items: json.data || [],
+    data: json.data || [],
+    total: json.total || 0,
+  };
 }

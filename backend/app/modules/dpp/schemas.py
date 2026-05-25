@@ -24,6 +24,7 @@ class DppCreateRequest(BaseModel):
     production_route: Optional[str] = Field(None, max_length=100)
     ocak_no: Optional[str] = Field(None, max_length=50)
     miktar_ton: Optional[float] = None
+    creation_source: Optional[str] = Field(None, max_length=50)  # Manuel / SAP/Excel
 
 
 class DppUpdateRequest(BaseModel):

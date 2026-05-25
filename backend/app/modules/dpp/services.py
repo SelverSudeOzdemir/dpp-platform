@@ -98,43 +98,37 @@ def _map_list_item(dpp: DigitalProductPassport) -> DppListItem:
         batch_number=str(dpp._batch_number) if dpp and dpp._batch_number else None,
         material_standard=str(pt.material_standard) if pt and pt.material_standard else None,
         steel_grade=pt.steel_grade.value if pt and pt.steel_grade else None,
-        weight_per_meter=float(pt.weight_per_meter_kg) if pt and pt.weight_per_meter_kg else None,  # type: ignore
+        weight_per_meter=float(pt.weight_per_meter_kg) if pt and pt.weight_per_meter_kg else None,
         production_date=str(dpp.production_date) if dpp.production_date else None,
         version=str(dpp.current_version) if dpp and dpp.current_version else None,
-        carbon_footprint=float(pt.co2_cradle_to_gate_kg) if pt and pt.co2_cradle_to_gate_kg else None,  # type: ignore
-        recycled_content=float(pt.recycled_content_pct) if pt and pt.recycled_content_pct else None,  # type: ignore
-        water_consumption_l_kg=float(pt.water_consumption_l_kg) if pt and pt.water_consumption_l_kg is not None else None,  # type: ignore
+        carbon_footprint=float(pt.co2_cradle_to_gate_kg) if pt and pt.co2_cradle_to_gate_kg else None,
+        recycled_content=float(pt.recycled_content_pct) if pt and pt.recycled_content_pct else None,
+        water_consumption_l_kg=float(pt.water_consumption_l_kg) if pt and pt.water_consumption_l_kg is not None else None,
         svhc_free=(not pt.hazardous_materials) if pt and pt.hazardous_materials is not None else None,
         dismantling_difficulty=str(pt.dismantling_difficulty) if pt and pt.dismantling_difficulty else None,
         issued_at=dpp.created_at.isoformat() if dpp.created_at else None,
         valid_until=str(pt.epd_valid_until) if pt and pt.epd_valid_until else None,
-        # Chemical fields
         c_pct=float(chem.carbon_pct) if chem and chem.carbon_pct is not None else None,
         mn_pct=float(chem.manganese_pct) if chem and chem.manganese_pct is not None else None,
         si_pct=float(chem.silicon_pct) if chem and chem.silicon_pct is not None else None,
         p_pct=float(chem.phosphorus_pct) if chem and chem.phosphorus_pct is not None else None,
         s_pct=float(chem.sulfur_pct) if chem and chem.sulfur_pct is not None else None,
         n_pct=float(chem.nitrogen_pct) if chem and chem.nitrogen_pct is not None else None,
-        # Mechanical fields
         yield_mpa=float(mech.yield_strength_mpa) if mech and mech.yield_strength_mpa is not None else None,
         tensile_mpa=float(mech.tensile_strength_mpa) if mech and mech.tensile_strength_mpa is not None else None,
         elongation_pct=float(mech.elongation_pct) if mech and mech.elongation_pct is not None else None,
-        # Sizes/ebat
         en_mm=float(pt.dim_height_mm) if pt and pt.dim_height_mm is not None else (float(pt.dim_width_mm) if pt and pt.dim_width_mm is not None else None),
         kalinlik_mm=float(pt.dim_flange_thickness_mm) if pt and pt.dim_flange_thickness_mm is not None and pt.dim_flange_thickness_mm != 0 else (float(pt.dim_web_thickness_mm) if pt and pt.dim_web_thickness_mm is not None and pt.dim_web_thickness_mm != 0 else None),
-        boy_mm=float(pt.boy_mm) if pt and pt.boy_mm is not None else None,  # type: ignore
+        boy_mm=float(pt.boy_mm) if pt and pt.boy_mm is not None else None,
         hs_code=str(pt.hs_code) if pt and pt.hs_code else None,
-        # CBAM fields
         production_route=str(dpp.production_route) if dpp and dpp.production_route else None,
         ocak_no=str(dpp.ocak_no) if dpp and dpp.ocak_no else None,
-        miktar_ton=float(dpp.miktar_ton) if dpp and dpp.miktar_ton is not None else None,  # type: ignore
-        # Rejection fields
+        miktar_ton=float(dpp.miktar_ton) if dpp and dpp.miktar_ton is not None else None,
         dpp_status=dpp.dpp_status.value if hasattr(dpp.dpp_status, 'value') else str(dpp.dpp_status),
         rejection_reason=str(dpp.rejection_reason) if dpp and dpp.rejection_reason else None,
-        rejection_fields=list(dpp.rejection_fields) if dpp and dpp.rejection_fields else None,  # type: ignore
+        rejection_fields=list(dpp.rejection_fields) if dpp and dpp.rejection_fields else None,
         rejected_by=str(dpp.rejected_by) if dpp and dpp.rejected_by else None,
         rejected_at=dpp.rejected_at.isoformat() if dpp.rejected_at else None,
-        # Nested structures
         manufacturer=mfr_info, facility=fac_info,
         certifications=certs, supply_chain=stages, lifecycle_events=events,
     )
@@ -236,7 +230,7 @@ class DppService:
         )
         db.add(dpp)
         await db.flush()
-        
+
         changelog = DppChangelog(
             dpp_id=dpp.id,
             changed_by_user_id=current_user_id,
@@ -244,12 +238,13 @@ class DppService:
             previous_state=None,
             new_state={
                 "status": "DRAFT",
-                "current_version": dpp.current_version
+                "current_version": dpp.current_version,
+                "creation_source": body.creation_source or "Manuel",
             }
         )
         db.add(changelog)
         await db.commit()
-        res = await DppService.get_by_id(db, dpp.id)  # type: ignore
+        res = await DppService.get_by_id(db, dpp.id)
         if res is None:
             raise Exception("Failed to retrieve created DPP")
         return res
@@ -263,43 +258,67 @@ class DppService:
         dpp = result.scalars().first()
         if not dpp:
             return None
-        
+
         old_status = dpp.dpp_status
         old_version = dpp.current_version or "1.0.0"
-        
+
         status_changed = False
         other_changed = False
-        
+        changed_fields: dict[str, dict] = {}
+
         update_data = body.model_dump(exclude_none=True)
         for field, value in update_data.items():
+            old_val = getattr(dpp, field, None)
+            old_val_str = old_val.value if hasattr(old_val, 'value') else old_val
+            new_val_str = value.value if hasattr(value, 'value') else value
             if field == "dpp_status":
-                if value != old_status:
+                if str(new_val_str) != str(old_val_str):
                     status_changed = True
+                    changed_fields[field] = {"old": old_val_str, "new": new_val_str}
             else:
-                if getattr(dpp, field) != value:
+                if str(old_val_str) != str(new_val_str):
                     other_changed = True
+                    changed_fields[field] = {
+                        "old": str(old_val_str) if old_val_str is not None else None,
+                        "new": str(new_val_str) if new_val_str is not None else None,
+                    }
             setattr(dpp, field, value)
-            
+
         if status_changed:
             new_version = _bump_version(str(old_version), minor=True)
-            dpp.current_version = new_version  # type: ignore
+            dpp.current_version = new_version
         elif other_changed:
             new_version = _bump_version(str(old_version), minor=False)
-            dpp.current_version = new_version  # type: ignore
+            dpp.current_version = new_version
         else:
             new_version = old_version
-            
+
+        change_type = "UPDATE"
+        if status_changed:
+            new_status_val = str(dpp.dpp_status.value if hasattr(dpp.dpp_status, 'value') else dpp.dpp_status)
+            status_label_map = {
+                "published": "APPROVE",
+                "rejected": "REJECT",
+                "archived": "ARCHIVE",
+                "recalled": "RECALL",
+                "draft": "DRAFT",
+                "pending_approval": "SUBMIT",
+            }
+            change_type = status_label_map.get(new_status_val, "STATUS_UPDATE")
+
         changelog = DppChangelog(
             dpp_id=dpp.id,
             changed_by_user_id=current_user_id,
-            change_type="UPDATE",
+            change_type=change_type,
             previous_state={
                 "status": str(old_status.value if hasattr(old_status, 'value') else old_status),
-                "current_version": old_version
+                "current_version": old_version,
+                "changed_fields": {k: v["old"] for k, v in changed_fields.items()},
             },
             new_state={
                 "status": str(dpp.dpp_status.value if hasattr(dpp.dpp_status, 'value') else dpp.dpp_status),
-                "current_version": new_version
+                "current_version": new_version,
+                "changed_fields": {k: v["new"] for k, v in changed_fields.items()},
             }
         )
         db.add(changelog)
@@ -352,13 +371,11 @@ class DppService:
         if not dpp:
             return False
 
-        # Delete existing supply chain stages
         existing_stages_stmt = select(SupplyChainStage).where(SupplyChainStage.dpp_id == dpp_id)
         existing_stages = (await db.execute(existing_stages_stmt)).scalars().all()
         for stage in existing_stages:
             await db.delete(stage)
 
-        # Create new stages
         for idx, req in enumerate(stages_list):
             org_stmt = select(SupplyChainOrganization).where(
                 SupplyChainOrganization.name == req.organization,
