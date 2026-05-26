@@ -23,6 +23,7 @@ export interface BackendProduct {
   en_mm?: number;
   kalinlik_mm?: number;
   boy_mm?: number;
+  hs_code?: string;
   rejection_reason?: string;
   rejection_fields?: string[];
   rejected_by?: string;
@@ -36,6 +37,21 @@ export interface BackendProduct {
   dismantling_difficulty?: string;
   issued_at?: string;
   valid_until?: string;
+  // Kimyasal kompozisyon (backend c_pct, mn_pct vb. olarak dönüyor)
+  c_pct?: number;
+  mn_pct?: number;
+  si_pct?: number;
+  p_pct?: number;
+  s_pct?: number;
+  n_pct?: number;
+  // Mekanik özellikler
+  yield_mpa?: number;
+  tensile_mpa?: number;
+  elongation_pct?: number;
+  // CBAM & üretim
+  production_route?: string;
+  ocak_no?: string;
+  miktar_ton?: number;
   manufacturer?: {
     name?: string; tax_id?: string; contact_email?: string;
     website?: string; country?: string; city?: string; address?: string;
@@ -114,6 +130,21 @@ export function mapBackendProduct(raw: BackendProduct): Product {
     dismantling_difficulty: raw.dismantling_difficulty,
     issued_at: raw.issued_at,
     valid_until: raw.valid_until,
+    // Kimyasal kompozisyon
+    c_pct: raw.c_pct,
+    mn_pct: raw.mn_pct,
+    si_pct: raw.si_pct,
+    p_pct: raw.p_pct,
+    s_pct: raw.s_pct,
+    n_pct: raw.n_pct,
+    // Mekanik özellikler
+    yield_mpa: raw.yield_mpa,
+    tensile_mpa: raw.tensile_mpa,
+    elongation_pct: raw.elongation_pct,
+    // CBAM & üretim
+    production_route: raw.production_route,
+    ocak_no: raw.ocak_no,
+    miktar_ton: raw.miktar_ton,
     manufacturer: raw.manufacturer ? {
       name: raw.manufacturer.name,
       tax_id: raw.manufacturer.tax_id,
@@ -208,6 +239,21 @@ export interface Product {
   hazardous_materials?: boolean;
   disposal_instructions?: string;
   dismantling_difficulty?: string;
+  // Kimyasal kompozisyon
+  c_pct?: number;
+  mn_pct?: number;
+  si_pct?: number;
+  p_pct?: number;
+  s_pct?: number;
+  n_pct?: number;
+  // Mekanik özellikler (düz alanlar — MechanicalProperties nested nesnesinden ayrı)
+  yield_mpa?: number;
+  tensile_mpa?: number;
+  elongation_pct?: number;
+  // CBAM & üretim
+  production_route?: string;
+  ocak_no?: string;
+  miktar_ton?: number;
   manufacturer?: {
     name?: string; tax_id?: string; dpp_support_email?: string;
     website?: string; country?: string; city?: string; address?: string;

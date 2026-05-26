@@ -1,5 +1,5 @@
 // src/pages/product/[id].tsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ElementType } from "react";
 import { useRouter } from "next/router";
 import { productService } from "../../Services/productService";
 import Spinner from "../../components/ui/spinner";
@@ -35,6 +35,8 @@ import {
   Activity,
   GitBranch,
   XCircle,
+  Clock,
+  Archive,
 } from "lucide-react";
 import {
   PieChart,
@@ -72,6 +74,45 @@ const SOURCE_CFG: Record<string, { bg: string; text: string; border: string }> =
       border: "border-blue-100",
     },
   };
+
+// Status badge: dpp_status (raw backend değeri) → renk + ikon + etiket
+const STATUS_BADGE: Record<
+  string,
+  { bg: string; text: string; border: string; icon: ElementType; label: string }
+> = {
+  published: {
+    bg: "bg-green-50", text: "text-green-700", border: "border-green-200",
+    icon: CheckCircle2, label: "AKTİF",
+  },
+  active: {
+    bg: "bg-green-50", text: "text-green-700", border: "border-green-200",
+    icon: CheckCircle2, label: "AKTİF",
+  },
+  draft: {
+    bg: "bg-gray-100", text: "text-gray-600", border: "border-gray-200",
+    icon: Clock, label: "TASLAK",
+  },
+  pending_approval: {
+    bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200",
+    icon: Clock, label: "ONAY BEKLİYOR",
+  },
+  submitted: {
+    bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200",
+    icon: Clock, label: "ONAY BEKLİYOR",
+  },
+  pending: {
+    bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200",
+    icon: Clock, label: "ONAY BEKLİYOR",
+  },
+  rejected: {
+    bg: "bg-red-50", text: "text-red-700", border: "border-red-200",
+    icon: XCircle, label: "REDDEDİLDİ",
+  },
+  archived: {
+    bg: "bg-gray-100", text: "text-gray-500", border: "border-gray-200",
+    icon: Archive, label: "ARŞİV",
+  },
+};
 
 export default function ProductPassportDetail() {
   const router = useRouter();
@@ -343,14 +384,22 @@ export default function ProductPassportDetail() {
           <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full blur-3xl opacity-60 -mr-20 -mt-20 pointer-events-none"></div>
           <div className="flex justify-between items-start mb-6 relative z-10">
             <div className="flex flex-col gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 text-green-700 text-[11px] font-black tracking-widest border border-green-200 w-max">
-                <CheckCircle2 size={14} className="text-green-600" />
-                {product.status?.toUpperCase() || "AKTİF"}
-              </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-[11px] font-black tracking-widest border border-blue-200 w-max">
-                <ShieldCheck size={14} className="text-blue-600" />
-                CIRPASS ONAYLI
-              </span>
+              {(() => {
+                const s = STATUS_BADGE[product.dpp_status?.toLowerCase() ?? ""] ?? STATUS_BADGE["draft"];
+                const Icon = s.icon;
+                return (
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black tracking-widest border w-max ${s.bg} ${s.text} ${s.border}`}>
+                    <Icon size={14} />
+                    {s.label}
+                  </span>
+                );
+              })()}
+              {product.dpp_status?.toLowerCase() === "published" && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-[11px] font-black tracking-widest border border-blue-200 w-max">
+                  <ShieldCheck size={14} className="text-blue-600" />
+                  CIRPASS ONAYLI
+                </span>
+              )}
             </div>
             {isPublic ? (
               <button
@@ -1026,18 +1075,18 @@ export default function ProductPassportDetail() {
                                 <MapPin size={12} /> Organizasyon
                               </p>
                               <p className="text-base font-black text-gray-900">
-                                {stage.organization_name}
+                                {stage.organization?.name}
                               </p>
                               <p className="text-xs font-bold text-blue-600 mt-0.5">
-                                {stage.organization_role}
+                                {stage.organization?.role}
                               </p>
-                              {(stage.location || stage.country_code) && (
+                              {(stage.organization?.location_text || stage.organization?.country_code) && (
                                 <div className="flex items-center gap-2 mt-2 text-xs text-gray-500 font-medium">
                                   <Globe2 size={12} />
-                                  {stage.location}
-                                  {stage.location && stage.country_code
-                                    ? ` (${stage.country_code})`
-                                    : stage.country_code}
+                                  {stage.organization?.location_text}
+                                  {stage.organization?.location_text && stage.organization?.country_code
+                                    ? ` (${stage.organization.country_code})`
+                                    : stage.organization?.country_code}
                                 </div>
                               )}
                             </div>
@@ -1046,30 +1095,20 @@ export default function ProductPassportDetail() {
                                 <Box size={12} /> Malzeme & İşlem
                               </p>
                               <p className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                                {stage.process_name}
-                                {stage.process_name && stage.material_name && (
+                                {stage.process?.name}
+                                {stage.process?.name && stage.material?.name && (
                                   <span className="text-gray-300">→</span>
                                 )}
-                                {stage.material_name}
+                                {stage.material?.name}
                               </p>
                               <div className="flex gap-3 mt-2 flex-wrap">
-                                {stage.quantity && (
+                                {stage.material?.quantity && (
                                   <div className="bg-gray-50 px-3 py-1.5 rounded border border-gray-100">
                                     <span className="block text-[10px] text-gray-500 font-bold uppercase">
                                       Miktar
                                     </span>
                                     <span className="text-xs font-black text-gray-900">
-                                      {stage.quantity} {stage.unit}
-                                    </span>
-                                  </div>
-                                )}
-                                {stage.origin_country && (
-                                  <div className="bg-gray-50 px-3 py-1.5 rounded border border-gray-100">
-                                    <span className="block text-[10px] text-gray-500 font-bold uppercase">
-                                      Menşei
-                                    </span>
-                                    <span className="text-xs font-black text-gray-900">
-                                      {stage.origin_country}
+                                      {stage.material.quantity} {stage.material?.unit}
                                     </span>
                                   </div>
                                 )}
