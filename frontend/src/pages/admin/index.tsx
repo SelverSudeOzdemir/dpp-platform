@@ -29,6 +29,7 @@ import AccessTab from "../../components/admin/tabs/AccessTab";
 import SupplyChainTab from "../../components/admin/tabs/SupplyChainTab";
 import ReportsTab from "../../components/admin/tabs/ReportsTab";
 import PassportsTab from "../../components/admin/tabs/PassportsTab";
+import DppReviewDrawer from "../../components/admin/DppReviewDrawer";
 import type {
   AdminProduct,
   PendingBatch,
@@ -56,6 +57,7 @@ export default function AdminPage() {
   const [modalRejectId, setModalRejectId] = useState<string | null>(null);
   const [modalRejectReason, setModalRejectReason] = useState("");
   const [modalRejectFields, setModalRejectFields] = useState<string[]>([]);
+  const [reviewBatch, setReviewBatch] = useState<PendingBatch | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -581,7 +583,7 @@ export default function AdminPage() {
                         <button
                           onClick={() => {
                             setPendingModalOpen(false);
-                            router.push(`/batches/${batch.id}`);
+                            setReviewBatch(batch);
                           }}
                           className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 border border-gray-200 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-100 transition-colors"
                         >
@@ -622,6 +624,21 @@ export default function AdminPage() {
             )}
           </div>
         </div>
+      )}
+      {/* ── DPP İNCELEME DRAWER ── */}
+      {reviewBatch && (
+        <DppReviewDrawer
+          batch={reviewBatch}
+          onClose={() => setReviewBatch(null)}
+          onApprove={async (id) => {
+            await handleApproveBatch(id);
+            setReviewBatch(null);
+          }}
+          onReject={async (id, reason, fields) => {
+            await handleRejectBatch(id, reason, fields);
+            setReviewBatch(null);
+          }}
+        />
       )}
     </ProtectedRoute>
   );
