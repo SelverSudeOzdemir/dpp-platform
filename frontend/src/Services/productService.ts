@@ -11,6 +11,7 @@ export interface BackendProduct {
   name: string;
   category: string;
   gtin?: string;
+  gs1_serial_number?: string;
   batch_number?: string;
   material_standard?: string;
   steel_grade?: string;
@@ -89,7 +90,7 @@ export function mapBackendProduct(raw: BackendProduct): Product {
     product_name: raw.name,
     product_category: raw.category as Product["product_category"],
     gtin: raw.gtin,
-    batch_number: raw.batch_number,
+    batch_number: raw.batch_number || raw.gs1_serial_number,
     material_standard: raw.material_standard,
     steel_grade: raw.steel_grade as Product["steel_grade"],
     weight_per_meter_kg: raw.weight_per_meter,
