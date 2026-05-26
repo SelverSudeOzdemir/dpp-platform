@@ -13,6 +13,7 @@ import {
   User,
   Eye,
   XCircle,
+  X,
   Loader2,
   ChevronDown,
   ChevronUp,
@@ -34,6 +35,8 @@ interface Props {
   onApprove: (id: string) => void;
   onRejectConfirm: (id: string, reason: string, fields: string[]) => void;
   setActiveTab: (tab: string) => void;
+  pendingModalOpen: boolean;
+  setPendingModalOpen: (open: boolean) => void;
 }
 
 interface ActivityLog {
@@ -56,6 +59,8 @@ export default function OverviewTab({
   onApprove,
   onRejectConfirm,
   setActiveTab,
+  pendingModalOpen,
+  setPendingModalOpen,
 }: Props) {
   const router = useRouter();
   const [rejectId, setRejectId] = useState<string | null>(null);
@@ -198,7 +203,7 @@ export default function OverviewTab({
           {
             label: "Onay Bekleyen",
             value: pendingBatches.length,
-            tab: "passports",
+            tab: "__pending_modal__",
             icon: Zap,
             border: "border-amber-500",
             text: "text-amber-700",
@@ -227,7 +232,11 @@ export default function OverviewTab({
           return (
             <button
               key={i}
-              onClick={() => setActiveTab(k.tab)}
+              onClick={() =>
+                k.tab === "__pending_modal__"
+                  ? setPendingModalOpen(true)
+                  : setActiveTab(k.tab)
+              }
               className={`bg-white rounded-2xl border-l-4 p-4 shadow-sm text-left transition-shadow hover:shadow-md cursor-pointer w-full ${k.border}`}
             >
               <div className="flex items-center justify-between mb-2">
@@ -243,157 +252,6 @@ export default function OverviewTab({
           );
         })}
       </div>
-
-      {/* ── ONAY BEKLİYEN BATCH'LER ── */}
-      {pendingBatches.length > 0 && (
-        <div className="bg-white rounded-3xl border-2 border-amber-200 shadow-sm p-6">
-          <h2 className="text-sm font-black text-gray-900 uppercase tracking-widest mb-5 flex items-center gap-2">
-            <Clock size={16} className="text-amber-500" />
-            Onay Bekleyen DPP&apos;ler
-            <span className="ml-auto bg-amber-100 text-amber-700 text-xs font-black px-2.5 py-0.5 rounded-full">
-              {pendingBatches.length} bekliyor
-            </span>
-          </h2>
-          <div className="space-y-4">
-            {pendingBatches.map((batch) => (
-              <div
-                key={batch.id}
-                className="border border-gray-100 rounded-2xl p-4 bg-gray-50"
-              >
-                <div
-                  className="flex items-start justify-between gap-4 cursor-pointer hover:opacity-80 transition-opacity"
-                  onClick={() =>
-                    rejectId !== batch.id && router.push(`/batches/${batch.id}`)
-                  }
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="text-[11px] font-mono font-bold text-gray-500 bg-white px-2 py-0.5 rounded border border-gray-200">
-                        {batch.parti_no}
-                      </span>
-                      {batch.co2_a1a3 > CBAM_LIMIT && (
-                        <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-red-100 text-red-700 flex items-center gap-1">
-                          <Flag size={10} /> CBAM Uyarısı
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm font-black text-gray-900">
-                      {batch.urun_tipi}
-                    </p>
-                    <div className="flex items-center gap-3 mt-1 flex-wrap">
-                      <span className="text-xs text-gray-500 font-medium">
-                        {batch.miktar_ton} ton
-                      </span>
-                      <span className="text-gray-300">•</span>
-                      <span className="text-xs text-gray-500 font-medium">
-                        CO₂ A1–A3: {batch.co2_a1a3} kg CO₂e/kg
-                      </span>
-                      <span className="text-gray-300">•</span>
-                      <span
-                        className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                          batch.co2_verification === "Dahili Hesaplama"
-                            ? "bg-yellow-50 text-yellow-700"
-                            : "bg-green-50 text-green-700"
-                        }`}
-                      >
-                        {batch.co2_verification}
-                      </span>
-                      <span className="text-gray-300">•</span>
-                      <span className="text-xs text-gray-500 font-medium">
-                        {batch.olusturan} • {batch.gonderilme_tarihi}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {rejectId === batch.id ? (
-                  <div className="mt-3 space-y-3 bg-red-50 border border-red-100 rounded-xl p-4">
-                    <p className="text-xs font-black text-red-700 uppercase tracking-wider">
-                      Hatalı Alanları İşaretle
-                    </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {REJECTABLE_FIELDS.map((f) => (
-                        <label
-                          key={f.key}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer text-xs font-bold transition-colors ${
-                            rejectFields.includes(f.key)
-                              ? "bg-red-100 border-red-400 text-red-800"
-                              : "bg-white border-gray-200 text-gray-600 hover:border-red-300"
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={rejectFields.includes(f.key)}
-                            onChange={() => toggleRejectField(f.key)}
-                            className="accent-red-600"
-                          />
-                          {f.label}
-                        </label>
-                      ))}
-                    </div>
-                    <textarea
-                      value={rejectReason}
-                      onChange={(e) => setRejectReason(e.target.value)}
-                      placeholder="Red gerekçesini yazın... (zorunlu)"
-                      rows={2}
-                      className="w-full px-3 py-2 border border-red-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-400 bg-white resize-none"
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleRejectBatch(batch.id)}
-                        className="px-4 py-1.5 bg-red-600 text-white text-xs font-bold rounded-lg hover:bg-red-700 transition-colors disabled:opacity-40"
-                        disabled={!rejectReason.trim()}
-                      >
-                        Reddet
-                      </button>
-                      <button
-                        onClick={() => {
-                          setRejectId(null);
-                          setRejectReason("");
-                          setRejectFields([]);
-                        }}
-                        className="px-4 py-1.5 border border-gray-200 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-100 transition-colors"
-                      >
-                        İptal
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex gap-2 mt-3">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        router.push(`/batches/${batch.id}`);
-                      }}
-                      className="inline-flex items-center gap-1.5 px-4 py-1.5 border border-gray-200 text-gray-600 text-xs font-bold rounded-lg hover:bg-gray-100 transition-colors"
-                    >
-                      <Eye size={13} /> İçeriği Gör
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onApprove(batch.id);
-                      }}
-                      className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition-colors"
-                    >
-                      <CheckCircle2 size={13} /> Onayla & Yayınla
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setRejectId(batch.id);
-                      }}
-                      className="inline-flex items-center gap-1.5 px-4 py-1.5 border border-red-200 text-red-600 text-xs font-bold rounded-lg hover:bg-red-50 transition-colors"
-                    >
-                      <XCircle size={13} /> Reddet
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Kritik Uyarılar */}

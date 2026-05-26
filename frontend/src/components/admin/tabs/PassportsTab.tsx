@@ -12,6 +12,7 @@ interface Props {
   pendingBatches: PendingBatch[];
   onStatusChange: (id: string, status: PassportStatus) => void;
   setActiveTab: (tab: string) => void;
+  onOpenPendingModal?: () => void;
 }
 
 export default function PassportsTab({
@@ -19,6 +20,7 @@ export default function PassportsTab({
   pendingBatches,
   onStatusChange,
   setActiveTab,
+  onOpenPendingModal,
 }: Props) {
   const [search, setSearch] = useState("");
   const [pendingStatusChange, setPendingStatusChange] = useState<{
@@ -56,10 +58,10 @@ export default function PassportsTab({
             </span>
           </div>
           <button
-            onClick={() => setActiveTab("overview")}
+            onClick={() => onOpenPendingModal?.()}
             className="text-xs font-black text-amber-700 hover:text-amber-900 transition-colors"
           >
-            Genel Bakış&apos;ta İncele →
+            Onay Bekleyen DPP&apos;leri Gör →
           </button>
         </div>
       )}
