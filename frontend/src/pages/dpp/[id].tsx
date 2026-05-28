@@ -122,6 +122,7 @@ export default function ProductPassportDetail() {
   const [isTechnicalOpen, setIsTechnicalOpen] = useState(false);
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
   const [versionHistory, setVersionHistory] = useState<any[]>([]);
+  const [selectedVersionEntry, setSelectedVersionEntry] = useState<any | null>(null);
 
   // 1. ÖNCE ROLÜ (KİMLİĞİ) SİSTEMDEN ÇEKİYORUZ
   const { role } = useAuth();
@@ -324,6 +325,7 @@ export default function ProductPassportDetail() {
   ];
 
   return (
+    <>
     <div className="min-h-screen bg-gray-50/50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto">
         {!isPublic && (
@@ -1657,6 +1659,12 @@ export default function ProductPassportDetail() {
                           <span className="text-[10px] text-gray-500 font-medium">
                             {entry.operator}
                           </span>
+                          <button
+                            onClick={() => setSelectedVersionEntry(entry)}
+                            className="ml-auto text-[10px] font-black text-purple-600 hover:text-purple-800 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-2 py-0.5 rounded-full transition-colors"
+                          >
+                            Detay →
+                          </button>
                         </div>
                         {/* Blockchain damgası */}
                         <div
@@ -1755,5 +1763,108 @@ export default function ProductPassportDetail() {
         )}
       </div>
     </div>
+
+    {/* ── Versiyon Detay Popup ── */}
+
+    {selectedVersionEntry && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+        {/* Overlay */}
+        <div
+          className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+          onClick={() => setSelectedVersionEntry(null)}
+        />
+
+        {/* Kart */}
+        <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+
+          {/* Başlık */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <div className="flex items-center gap-2.5">
+              <div className={`p-1.5 rounded-lg ${selectedVersionEntry.type === "creation" ? "bg-purple-50" : "bg-blue-50"}`}>
+                <GitBranch size={14} className={selectedVersionEntry.type === "creation" ? "text-purple-600" : "text-blue-600"} />
+              </div>
+              <div>
+                <p className="text-sm font-black text-gray-900">
+                  {selectedVersionEntry.type === "creation" ? "DPP Oluşturuldu" : "DPP Güncellendi"}
+                </p>
+                <p className="text-[10px] text-gray-400 font-medium mt-0.5">
+                  {selectedVersionEntry.version && `v${selectedVersionEntry.version} · `}
+                  {selectedVersionEntry.timestamp.replace("T", " ").slice(0, 16)}
+                  {" · "}{selectedVersionEntry.operator}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setSelectedVersionEntry(null)}
+              className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 transition-colors"
+            >
+              <XCircle size={16} />
+            </button>
+          </div>
+
+          {/* Blockchain hash */}
+          <div className="px-5 py-3 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
+            {selectedVersionEntry.blockchain_hash ? (
+              <>
+                <ShieldCheck size={13} className="text-green-600 shrink-0" />
+                <span className="text-[10px] font-black text-gray-500 uppercase tracking-wider">Blockchain:</span>
+                <span className="text-[10px] font-mono text-gray-600 truncate">{selectedVersionEntry.blockchain_hash}</span>
+              </>
+            ) : (
+              <>
+                <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse shrink-0" />
+                <span className="text-[10px] font-bold text-yellow-600">Blockchain damgası bekleniyor</span>
+              </>
+            )}
+          </div>
+
+          {/* Alan & Kaynak listesi */}
+          <div className="px-5 py-4 max-h-80 overflow-y-auto space-y-4">
+            {selectedVersionEntry.groups.length === 0 ? (
+              <p className="text-xs text-gray-400 text-center py-4">Bu versiyonda alan değişikliği kaydedilmemiş.</p>
+            ) : (
+              selectedVersionEntry.groups.map((group: any, gi: number) => (
+                <div key={gi}>
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">
+                    {group.section}
+                  </p>
+                  <div className="space-y-1.5">
+                    {group.fields.map((f: any, fi: number) => {
+                      const fieldLabel = f.field.includes(":") ? f.field.split(":")[0].trim() : f.field;
+                      const fieldDetail = f.field.includes(":") ? f.field.split(":").slice(1).join(":").trim() : null;
+                      const cfg = SOURCE_CFG[f.source] ?? SOURCE_CFG["Manuel"];
+                      return (
+                        <div key={fi} className="flex items-center justify-between gap-3 py-1.5 border-b border-gray-50 last:border-0">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-gray-800 truncate">{fieldLabel}</p>
+                            {fieldDetail && (
+                              <p className="text-[10px] text-gray-400 font-mono truncate">{fieldDetail}</p>
+                            )}
+                          </div>
+                          <span className={`shrink-0 text-[10px] font-black px-2 py-0.5 rounded-full border ${cfg.bg} ${cfg.text} ${cfg.border}`}>
+                            {f.source}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="px-5 py-3 border-t border-gray-100 flex justify-end">
+            <button
+              onClick={() => setSelectedVersionEntry(null)}
+              className="text-xs font-bold text-gray-500 hover:text-gray-700 px-4 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              Kapat
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

@@ -65,8 +65,9 @@ export interface BackendProduct {
     sequence_number: number; stage_name: string;
     organization_name?: string; organization_role?: string;
     location?: string; country_code?: string;
-    material_name?: string; quantity?: number; unit?: string;
+    material_name?: string; quantity?: number; unit?: string; origin_country?: string;
     process_name?: string; stage_date?: string; traceability_id?: string;
+    transport_method?: string; distance_km?: number; co2_kg_per_km?: number;
   }>;
   certifications?: Array<{
     cert_type: string; issuer?: string; cert_number?: string;
@@ -172,6 +173,10 @@ export function mapBackendProduct(raw: BackendProduct): Product {
         name: s.organization_name, role: s.organization_role,
         location_text: s.location, country_code: s.country_code,
       },
+      origin_country: s.origin_country,
+      transport_method: s.transport_method,
+      distance_km: s.distance_km,
+      co2_kg_per_km: s.co2_kg_per_km,
       material: { name: s.material_name, quantity: String(s.quantity ?? ""), unit: s.unit },
       process: { name: s.process_name },
     })),
@@ -266,6 +271,7 @@ export interface Product {
   };
   supply_chain?: Array<{
     sequence_number: number; stage_name: string; stage_date?: string; traceability_id?: string;
+    origin_country?: string; transport_method?: string; distance_km?: number; co2_kg_per_km?: number;
     organization: { name?: string; role?: string; location_text?: string; country_code?: string };
     material: { name?: string; quantity?: string; unit?: string };
     process: { name?: string };

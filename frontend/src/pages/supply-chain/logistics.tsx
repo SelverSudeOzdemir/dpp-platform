@@ -1,6 +1,12 @@
 // src/pages/supply-chain/logistics.tsx
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/router';
+
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api/v1';
+function getAuthHeader(): Record<string, string> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 import ProtectedRoute from '../../components/auth/ProtectedRoute';
 import {
   logisticsRoutes,
@@ -16,7 +22,8 @@ import {
   Truck, Ship, TrainFront, ArrowLeftRight, MapPin, ArrowLeft,
   Search, ChevronDown, CheckCircle2, Clock, XCircle,
   Route, Fuel, Weight, Timer, Calendar, Building2, Eye, Package,
-  Leaf, TrendingDown, Shield, BarChart3, Navigation,
+  Leaf, TrendingDown, Shield, BarChart3, Navigation, Activity,
+  Loader2, Globe2, Hash,
 } from 'lucide-react';
 
 /* ── Yardımcı ─────────────────────────────────────────────────────────────── */
@@ -260,6 +267,19 @@ export default function LogisticsEmissionRoutes() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
 
+  // ── Canlı backend verisi: tedarik zinciri organizasyonları ──────────────
+  const [liveOrgs, setLiveOrgs] = useState<any[]>([]);
+  const [liveLoading, setLiveLoading] = useState(true);
+  const [liveError, setLiveError] = useState(false);
+
+  useEffect(() => {
+    fetch(`${BASE_URL}/supply-chain/organizations`, { headers: getAuthHeader() })
+      .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+      .then(data => setLiveOrgs(Array.isArray(data) ? data : []))
+      .catch(() => setLiveError(true))
+      .finally(() => setLiveLoading(false));
+  }, []);
+
   const kpi = supplyChainKPIs;
 
   const filtered = useMemo(() => {
@@ -448,6 +468,120 @@ export default function LogisticsEmissionRoutes() {
                 </AreaChart>
               </ResponsiveContainer>
             </div>
+          </div>
+
+          {/* ── Canlı DPP Tedarik Ağı ───────────────────────────────── */}
+          <div className="bg-white rounded-2xl border border-blue-100 shadow-sm overflow-hidden mb-8">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-blue-50 bg-gradient-to-r from-blue-50/60 to-indigo-50/30 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-1.5 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg shadow-sm shadow-blue-200">
+                  <Activity size={14} className="text-white" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-gray-900">Canlı DPP Tedarik Ağı</h3>
+                  <p className="text-[10px] text-gray-400 font-medium">
+                    Backend'den çekilen gerçek tedarik zinciri organizasyonları
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {!liveLoading && !liveError && (
+                  <span className="text-[10px] font-black text-gray-400 bg-gray-100 px-2 py-1 rounded-full">
+                    {liveOrgs.length} kayıt
+                  </span>
+                )}
+                <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 px-2.5 py-1 rounded-full">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-[10px] font-black text-green-700 uppercase tracking-wider">Canlı</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Body */}
+            {liveLoading ? (
+              <div className="px-6 py-8 flex items-center justify-center gap-2 text-xs text-blue-600 font-bold">
+                <Loader2 size={15} className="animate-spin" />
+                Tedarik ağı verileri yükleniyor...
+              </div>
+            ) : liveError ? (
+              <div className="px-6 py-8 text-center">
+                <p className="text-xs text-red-400 font-medium">Backend bağlantısı kurulamadı — veriler gösterilemiyor.</p>
+              </div>
+            ) : liveOrgs.length === 0 ? (
+              <div className="px-6 py-8 text-center">
+                <Globe2 size={28} className="text-gray-200 mx-auto mb-2" />
+                <p className="text-xs text-gray-400 font-medium">Kayıtlı tedarik zinciri organizasyonu bulunamadı.</p>
+                <p className="text-[10px] text-gray-300 mt-1">DPP'lere tedarik zinciri aşaması eklendiğinde burada görünecek.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-gray-50/80">
+                      <th className="px-5 py-3 text-[11px] font-black text-gray-500 uppercase tracking-wider">Organizasyon</th>
+                      <th className="px-4 py-3 text-[11px] font-black text-gray-500 uppercase tracking-wider">Rol</th>
+                      <th className="px-4 py-3 text-[11px] font-black text-gray-500 uppercase tracking-wider">Konum</th>
+                      <th className="px-4 py-3 text-[11px] font-black text-gray-500 uppercase tracking-wider text-center">Ülke</th>
+                      <th className="px-4 py-3 text-[11px] font-black text-gray-500 uppercase tracking-wider text-center">Doğrulama</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {liveOrgs.map((org: any, i: number) => (
+                      <tr key={i} className="hover:bg-blue-50/30 transition-colors">
+                        <td className="px-5 py-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center shrink-0">
+                              <Building2 size={12} className="text-blue-600" />
+                            </div>
+                            <p className="text-xs font-bold text-gray-900">{org.name || '—'}</p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full">
+                            {org.role || 'Tedarikçi'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
+                            <MapPin size={11} className="text-gray-300 shrink-0" />
+                            {org.location_text || org.city || '—'}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {org.country_code ? (
+                            <span className="text-[11px] font-black text-gray-600 bg-gray-100 px-2 py-0.5 rounded font-mono">
+                              {org.country_code}
+                            </span>
+                          ) : (
+                            <span className="text-gray-300 text-xs">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {org.is_verified ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                              <CheckCircle2 size={10} /> Doğrulanmış
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-black text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                              <Clock size={10} /> Doğrulanmamış
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/50">
+                  <p className="text-[10px] text-gray-400 font-medium flex items-center gap-1.5">
+                    <Hash size={10} />
+                    {liveOrgs.filter((o: any) => o.is_verified).length} doğrulanmış ·{' '}
+                    {liveOrgs.filter((o: any) => !o.is_verified).length} doğrulanmamış ·{' '}
+                    Toplam {liveOrgs.length} organizasyon
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* ── Filters ─────────────────────────────────────────────── */}
