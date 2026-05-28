@@ -57,6 +57,7 @@ export default function AdminPage() {
   const [modalRejectReason, setModalRejectReason] = useState("");
   const [modalRejectFields, setModalRejectFields] = useState<string[]>([]);
   const [reviewBatch, setReviewBatch] = useState<PendingBatch | null>(null);
+  const [urgentAlerts, setUrgentAlerts] = useState<any[]>([]);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -93,6 +94,13 @@ export default function AdminPage() {
           blockchain_timestamp: d.created_at || "",
         }));
         setProducts(mappedProducts);
+      }
+
+      try {
+        const alerts = await apiGetUrgentAlerts();
+        if (Array.isArray(alerts)) setUrgentAlerts(alerts);
+      } catch {
+        // Backend uyarıları alınamadı, mock devreye girer
       }
 
       const pending = await apiGetPendingDpps();
@@ -312,6 +320,7 @@ export default function AdminPage() {
               products={products}
               pendingBatches={pendingBatches}
               cbamWarnings={cbamWarnings}
+              urgentAlerts={urgentAlerts}
               onApprove={handleApproveBatch}
               onRejectConfirm={handleRejectBatch}
               setActiveTab={setActiveTab}

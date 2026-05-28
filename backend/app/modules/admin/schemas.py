@@ -31,10 +31,13 @@ class AdminDashboardStats(BaseModel):
 
 class UrgentAlert(BaseModel):
     id: str
-    type: str  # "CBAM", "CERTIFICATE"
+    type: str  # "CBAM", "CERTIFICATE", "CERT_EXPIRING", "REJECTED", "LONG_PENDING"
     message: str
-    dpp_id: UUID
-    severity: str # "CRITICAL", "WARNING"
+    dpp_id: Optional[UUID] = None
+    severity: str  # "CRITICAL", "WARNING"
+    product_name: Optional[str] = None
+    cert_name: Optional[str] = None
+    days_left: Optional[int] = None
 
 class AdminKpiSummary(AdminDashboardStats):
     cert_alerts: int = 0

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ClipboardList, Zap, GitBranch, Shield, Eye, X } from "lucide-react";
+import { ClipboardList, Zap, GitBranch, Shield, Eye, X, ChevronDown } from "lucide-react";
 import type {
   AdminProduct,
   PendingBatch,
@@ -29,6 +29,9 @@ export default function PassportsTab({
   } | null>(null);
   const [inspectPopup, setInspectPopup] = useState(false);
   const [changelog, setChangelog] = useState<any[]>([]);
+  const [passportsPage, setPassportsPage] = useState(0);
+  const [changelogPage, setChangelogPage] = useState(0);
+  const PAGE_SIZE = 6;
 
   useEffect(() => {
     apiGetGlobalChangelog()
@@ -46,23 +49,88 @@ export default function PassportsTab({
       )
     : products;
 
+  const pagedProducts  = filteredProducts.slice(passportsPage * PAGE_SIZE, (passportsPage + 1) * PAGE_SIZE);
+  const pagedChangelog = changelog.slice(changelogPage * PAGE_SIZE, (changelogPage + 1) * PAGE_SIZE);
+
   return (
     <div className="space-y-8">
-      {/* Onay Bekleyen Banner */}
+      {/* Onay Bekleyen DPP'ler Kartı */}
       {pendingBatches.length > 0 && (
-        <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-2xl px-5 py-3">
-          <div className="flex items-center gap-3">
-            <Zap size={15} className="text-amber-600 shrink-0" />
-            <span className="text-sm font-black text-amber-800">
-              {pendingBatches.length} batch onay bekliyor
-            </span>
+        <div className="bg-white rounded-3xl border border-amber-200 shadow-sm overflow-hidden">
+          {/* Başlık */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-amber-100 bg-amber-50/60">
+            <div className="flex items-center gap-2">
+              <Zap size={15} className="text-amber-600" />
+              <h2 className="text-sm font-black text-amber-900 uppercase tracking-widest">
+                Onay Bekleyen DPP'ler
+              </h2>
+              <span className="bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+                {pendingBatches.length}
+              </span>
+            </div>
           </div>
-          <button
-            onClick={() => onOpenPendingModal?.()}
-            className="text-xs font-black text-amber-700 hover:text-amber-900 transition-colors"
-          >
-            Onay Bekleyen DPP&apos;leri Gör →
-          </button>
+
+          {/* Liste */}
+          <div className="relative">
+            {/* İlk 3 — tam görünür */}
+            <div className="divide-y divide-gray-50">
+              {pendingBatches.slice(0, 3).map((b) => (
+                <div key={b.id} className="flex items-center gap-4 px-6 py-4">
+                  <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
+                    <Zap size={14} className="text-amber-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-black text-gray-900 truncate">{b.urun_tipi}</p>
+                    <p className="text-[11px] text-gray-400 font-medium">
+                      {b.parti_no} • {b.gonderilme_tarihi}
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xs font-black text-gray-700">{b.co2_a1a3} <span className="font-medium text-gray-400">kg CO₂</span></p>
+                    <p className="text-[10px] text-gray-400">{b.miktar_ton} ton</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Kalanlar — bulanık */}
+            {pendingBatches.length > 3 && (
+              <div className="relative">
+                <div className="divide-y divide-gray-50 blur-sm pointer-events-none select-none">
+                  {pendingBatches.slice(3, 6).map((b) => (
+                    <div key={b.id} className="flex items-center gap-4 px-6 py-4">
+                      <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
+                        <Zap size={14} className="text-amber-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-black text-gray-900 truncate">{b.urun_tipi}</p>
+                        <p className="text-[11px] text-gray-400 font-medium">
+                          {b.parti_no} • {b.gonderilme_tarihi}
+                        </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-xs font-black text-gray-700">{b.co2_a1a3} <span className="font-medium text-gray-400">kg CO₂</span></p>
+                        <p className="text-[10px] text-gray-400">{b.miktar_ton} ton</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Beyaza gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/70 to-white pointer-events-none" />
+              </div>
+            )}
+
+            {/* Hepsini Gör butonu */}
+            <div className="flex justify-center pb-5 pt-2">
+              <button
+                onClick={() => onOpenPendingModal?.()}
+                className="flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-black rounded-xl shadow-md shadow-amber-200 transition-all hover:shadow-lg hover:shadow-amber-300"
+              >
+                <Zap size={13} />
+                Hepsini Gör ({pendingBatches.length} DPP)
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -84,6 +152,7 @@ export default function PassportsTab({
             <span className="text-xs text-gray-400 font-bold whitespace-nowrap">
               {filteredProducts.length} kayıt
             </span>
+
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -107,7 +176,7 @@ export default function PassportsTab({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filteredProducts.map((p) => (
+              {pagedProducts.map((p) => (
                 <tr
                   key={p.id}
                   className="hover:bg-gray-50/50 transition-colors"
@@ -212,6 +281,29 @@ export default function PassportsTab({
             </tbody>
           </table>
         </div>
+        {/* Pasaport Pagination */}
+        {filteredProducts.length > PAGE_SIZE && (
+          <div className="flex items-center justify-between px-6 py-3 border-t border-gray-100 bg-gray-50/50">
+            <button
+              onClick={() => setPassportsPage((p) => p - 1)}
+              disabled={passportsPage === 0}
+              className="flex items-center gap-1 text-xs font-bold text-gray-500 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed px-2.5 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
+            >
+              <ChevronDown size={13} className="rotate-90" /> Önceki
+            </button>
+            <span className="text-[11px] text-gray-400 font-medium">
+              {passportsPage + 1} / {Math.ceil(filteredProducts.length / PAGE_SIZE)}
+              <span className="ml-2 text-gray-300">({filteredProducts.length} kayıt)</span>
+            </span>
+            <button
+              onClick={() => setPassportsPage((p) => p + 1)}
+              disabled={(passportsPage + 1) * PAGE_SIZE >= filteredProducts.length}
+              className="flex items-center gap-1 text-xs font-bold text-gray-500 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed px-2.5 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
+            >
+              Sonraki <ChevronDown size={13} className="-rotate-90" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Versiyon Geçmişi */}
@@ -222,7 +314,7 @@ export default function PassportsTab({
         </h2>
         <div className="relative border-l-2 border-gray-100 ml-3 space-y-5">
           {changelog.length > 0 ? (
-            changelog.map((v, i) => {
+            pagedChangelog.map((v, i) => {
               const changeTypeLabels: Record<string, string> = {
                 CREATE: "DPP Oluşturuldu",
                 UPDATE: "DPP Güncellendi",
@@ -360,6 +452,29 @@ export default function PassportsTab({
             <p className="text-xs text-gray-400">Henüz aktivite bulunmuyor.</p>
           )}
         </div>
+        {/* Changelog Pagination */}
+        {changelog.length > PAGE_SIZE && (
+          <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
+            <button
+              onClick={() => setChangelogPage((p) => p - 1)}
+              disabled={changelogPage === 0}
+              className="flex items-center gap-1 text-xs font-bold text-gray-500 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed px-2.5 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
+            >
+              <ChevronDown size={13} className="rotate-90" /> Önceki
+            </button>
+            <span className="text-[11px] text-gray-400 font-medium">
+              {changelogPage + 1} / {Math.ceil(changelog.length / PAGE_SIZE)}
+              <span className="ml-2 text-gray-300">({changelog.length} kayıt)</span>
+            </span>
+            <button
+              onClick={() => setChangelogPage((p) => p + 1)}
+              disabled={(changelogPage + 1) * PAGE_SIZE >= changelog.length}
+              className="flex items-center gap-1 text-xs font-bold text-gray-500 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed px-2.5 py-1.5 rounded-lg hover:bg-blue-50 transition-colors"
+            >
+              Sonraki <ChevronDown size={13} className="-rotate-90" />
+            </button>
+          </div>
+        )}
       </div>
       {inspectPopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">

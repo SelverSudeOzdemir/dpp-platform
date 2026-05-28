@@ -132,39 +132,116 @@ class AdminService:
     @staticmethod
     async def get_urgent_alerts(db: AsyncSession) -> List[dict]:
         alerts = []
+        now_date = datetime.now().date()
+        thirty_days_later = now_date + timedelta(days=30)
 
+        # ── CBAM: CO₂ limitini aşan ürünler (CRITICAL) ──────────────────────
         stmt = (
             select(DigitalProductPassport)
             .options(joinedload(DigitalProductPassport.product_type))
             .join(DigitalProductPassport.product_type)
-            .where(ProductType.co2_cradle_to_gate_kg > 2.0)
+            .where(
+                ProductType.co2_cradle_to_gate_kg.isnot(None),
+                ProductType.co2_cradle_to_gate_kg > 2.0
+            )
         )
         res = await db.execute(stmt)
         for dpp in res.scalars().all():
+            pt = dpp.product_type
+            co2_val = pt.co2_cradle_to_gate_kg if pt else "?"
             alerts.append({
                 "id": f"CO2-{dpp.id}",
                 "type": "CBAM",
-                "message": f"Kritik CO2 emisyonu: {dpp.product_type.co2_cradle_to_gate_kg} kg",
+                "message": f"CO₂ emisyonu CBAM limitini ({co2_val} kg/kg) aşıyor",
                 "dpp_id": str(dpp.id),
-                "severity": "CRITICAL"
+                "severity": "CRITICAL",
+                "product_name": pt.product_name if pt else None,
             })
 
-        now_date = datetime.now().date()
+        # ── Reddedilen DPP'ler (CRITICAL) ────────────────────────────────────
         stmt = (
             select(DigitalProductPassport)
             .options(joinedload(DigitalProductPassport.product_type))
             .join(DigitalProductPassport.product_type)
-            .join(ProductType.certifications)
-            .where(Certification.expiry_date < now_date)
+            .where(DigitalProductPassport.dpp_status == DppStatusEnum.REJECTED)
         )
         res = await db.execute(stmt)
         for dpp in res.scalars().all():
+            pt = dpp.product_type
             alerts.append({
-                "id": f"CERT-{dpp.id}",
-                "type": "CERTIFICATE",
-                "message": "Suresi dolmus sertifika tespit edildi.",
+                "id": f"REJ-{dpp.id}",
+                "type": "REJECTED",
+                "message": "DPP inceleme sonucunda reddedildi — düzeltme gerekiyor",
                 "dpp_id": str(dpp.id),
-                "severity": "WARNING"
+                "severity": "CRITICAL",
+                "product_name": pt.product_name if pt else None,
+            })
+
+        # ── Süresi dolmuş sertifikalar (WARNING) ──────────────────────────────
+        stmt = (
+            select(Certification)
+            .where(
+                Certification.expiry_date.isnot(None),
+                Certification.expiry_date < now_date,
+            )
+        )
+        res = await db.execute(stmt)
+        for cert in res.scalars().all():
+            ref_id = str(cert.dpp_id or cert.product_type_id or cert.id)
+            alerts.append({
+                "id": f"CERT-EXP-{cert.id}",
+                "type": "CERTIFICATE",
+                "message": "Sertifika süresi dolmuş — yenileme gerekiyor",
+                "dpp_id": str(cert.dpp_id) if cert.dpp_id else None,
+                "severity": "WARNING",
+                "cert_name": cert.cert_type,
+                "days_left": 0,
+            })
+
+        # ── 30 gün içinde dolacak sertifikalar (WARNING) ──────────────────────
+        stmt = (
+            select(Certification)
+            .where(
+                Certification.expiry_date.isnot(None),
+                Certification.expiry_date >= now_date,
+                Certification.expiry_date <= thirty_days_later,
+            )
+        )
+        res = await db.execute(stmt)
+        for cert in res.scalars().all():
+            days_left = (cert.expiry_date - now_date).days
+            alerts.append({
+                "id": f"CERT-EXP-SOON-{cert.id}",
+                "type": "CERT_EXPIRING",
+                "message": f"Sertifika {days_left} gün içinde geçerliliğini yitirecek",
+                "dpp_id": str(cert.dpp_id) if cert.dpp_id else None,
+                "severity": "WARNING",
+                "cert_name": cert.cert_type,
+                "days_left": days_left,
+            })
+
+        # ── 30+ gündür onay bekleyen DPP'ler (WARNING) ────────────────────────
+        cutoff = datetime.now() - timedelta(days=30)
+        stmt = (
+            select(DigitalProductPassport)
+            .options(joinedload(DigitalProductPassport.product_type))
+            .join(DigitalProductPassport.product_type)
+            .where(
+                DigitalProductPassport.dpp_status == DppStatusEnum.PENDING_APPROVAL,
+                DigitalProductPassport.created_at < cutoff,
+            )
+        )
+        res = await db.execute(stmt)
+        for dpp in res.scalars().all():
+            pt = dpp.product_type
+            days_waiting = (datetime.now() - dpp.created_at).days
+            alerts.append({
+                "id": f"PENDING-{dpp.id}",
+                "type": "LONG_PENDING",
+                "message": f"{days_waiting} gündür onay bekliyor",
+                "dpp_id": str(dpp.id),
+                "severity": "WARNING",
+                "product_name": pt.product_name if pt else None,
             })
 
         return alerts
