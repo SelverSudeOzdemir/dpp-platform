@@ -147,6 +147,7 @@ class DppListItem(BaseModel):
     rejection_fields: Optional[List[str]] = None
     rejected_by: Optional[str] = None
     rejected_at: Optional[str] = None
+    created_by_email: Optional[str] = None
 
     manufacturer: Optional[ManufacturerInfo] = None
     facility: Optional[FacilityInfo] = None

@@ -28,6 +28,7 @@ export interface BackendProduct {
   rejection_fields?: string[];
   rejected_by?: string;
   rejected_at?: string;
+  created_by_email?: string;
   carbon_footprint?: number;
   recycled_content?: number;
   recyclability?: number;
@@ -119,6 +120,7 @@ export function mapBackendProduct(raw: BackendProduct): Product {
     rejection_fields: raw.rejection_fields,
     rejected_by: raw.rejected_by,
     rejected_at: raw.rejected_at,
+    created_by_email: raw.created_by_email,
     production_date: raw.production_date,
     version: raw.version,
     co2_cradle_to_gate_kg: raw.carbon_footprint,
@@ -217,6 +219,7 @@ export interface Product {
   rejection_fields?: string[];
   rejected_by?: string;
   rejected_at?: string;
+  created_by_email?: string;
   manufacturer_part_number?: string;
   dimensional_standard?: string;
   material_standard?: string;

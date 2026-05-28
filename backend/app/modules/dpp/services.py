@@ -90,6 +90,12 @@ def _map_list_item(dpp: DigitalProductPassport) -> DppListItem:
     chem = pt.chemical_composition if pt else None
     mech = pt.mechanical_properties if pt else None
 
+    create_entry = next(
+        (c for c in (dpp.changelog_entries or []) if c.change_type == "CREATE"),
+        None
+    )
+    created_by_email = create_entry.user.email if create_entry and create_entry.user else None
+
     return DppListItem(
         id=str(dpp.id),
         public_identifier=str(dpp.public_identifier) if dpp.public_identifier else None,
@@ -131,6 +137,7 @@ def _map_list_item(dpp: DigitalProductPassport) -> DppListItem:
         rejection_fields=list(dpp.rejection_fields) if dpp and dpp.rejection_fields else None,
         rejected_by=str(dpp.rejected_by) if dpp and dpp.rejected_by else None,
         rejected_at=dpp.rejected_at.isoformat() if dpp.rejected_at else None,
+        created_by_email=created_by_email,
         manufacturer=mfr_info, facility=fac_info,
         certifications=certs, supply_chain=stages, lifecycle_events=events,
     )
@@ -164,6 +171,7 @@ def _base_q():
             selectinload(DigitalProductPassport.supply_chain_stages).selectinload(SupplyChainStage.materials),
             selectinload(DigitalProductPassport.supply_chain_stages).selectinload(SupplyChainStage.processes),
             selectinload(DigitalProductPassport.lifecycle_events),
+            selectinload(DigitalProductPassport.changelog_entries).joinedload(DppChangelog.user),
         )
     )
 

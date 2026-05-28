@@ -1,6 +1,27 @@
 import { useRouter } from 'next/router';
 import { useAuth } from '../../contexts/AuthContext';
-import Button from '../ui/Button';
+import { LogOut } from 'lucide-react';
+
+const ROLE_META: Record<string, { label: string; cls: string }> = {
+  ADMIN:     { label: 'Admin',      cls: 'bg-rose-50   text-rose-600   ring-1 ring-rose-200'   },
+  ENGINEER:  { label: 'Mühendis',   cls: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200' },
+  SUPPLIER:  { label: 'Tedarikçi',  cls: 'bg-orange-50 text-orange-600  ring-1 ring-orange-200' },
+  CUSTOMER:  { label: 'Müşteri',    cls: 'bg-blue-50   text-blue-600    ring-1 ring-blue-200'   },
+  AUTHORITY: { label: 'Otorite',    cls: 'bg-purple-50 text-purple-600  ring-1 ring-purple-200' },
+};
+
+const KocaerLogo = () => (
+  <div className="flex items-center gap-2.5 select-none">
+    <div className="flex items-center gap-[4px]">
+      <div className="w-[5px] h-[26px] bg-[#E31E24]" />
+      <div className="w-[5px] h-[26px] bg-[#E31E24]" />
+      <div className="w-[5px] h-[26px] bg-[#E31E24]" />
+    </div>
+    <span className="text-[20px] font-black text-slate-900 tracking-[0.06em] leading-none">
+      KOCAER
+    </span>
+  </div>
+);
 
 const Navbar = () => {
   const { user, logout, role } = useAuth();
@@ -11,146 +32,126 @@ const Navbar = () => {
     router.push('/login');
   };
 
-  const isAdmin = role === 'ADMIN';
-  const isEngineer = role === 'ENGINEER';
+  const isAdmin     = role === 'ADMIN';
+  const isEngineer  = role === 'ENGINEER';
   const isLimitedRole = ['SUPPLIER', 'CUSTOMER', 'AUTHORITY'].includes(role);
 
-  return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16 items-center">
+  const meta    = ROLE_META[role] ?? { label: role, cls: 'bg-gray-50 text-gray-500' };
+  const initials = user?.full_name
+    ? user.full_name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
+    : 'U';
 
-          {/* SOL: Logo + Role'e göre menü */}
-          <div className="flex items-center gap-8">
+  const NavLink = ({ path, label, exact = true }: { path: string; label: string; exact?: boolean }) => {
+    const isActive = exact ? router.pathname === path : router.pathname.startsWith(path);
+    return (
+      <button
+        onClick={() => router.push(path)}
+        className={`relative px-3.5 py-2 text-sm font-bold rounded-lg transition-all duration-200 ${
+          isActive
+            ? 'text-blue-700 bg-blue-50/80'
+            : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+        }`}
+      >
+        {label}
+        {isActive && (
+          <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-blue-600 rounded-full" />
+        )}
+      </button>
+    );
+  };
+
+  return (
+    <nav className="bg-white sticky top-0 z-50 shadow-[0_2px_16px_rgba(0,0,0,0.06)]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-[68px] items-center">
+
+          {/* SOL: Logo + ayraç + menü */}
+          <div className="flex items-center gap-5">
+
+            {/* Logo */}
             <div
-              className="flex-shrink-0 flex items-center cursor-pointer"
+              className="flex-shrink-0 flex items-center gap-3 cursor-pointer"
               onClick={() => router.push(isAdmin ? '/' : isEngineer ? '/batches' : '/my-dpps')}
             >
-              <span className="text-2xl font-black text-blue-700 tracking-tighter">KOCAER</span>
-              <span className="ml-2 text-sm font-semibold text-gray-500 mt-1">DPP Portal</span>
+              <KocaerLogo />
+              <span className="hidden lg:block text-[11px] font-bold text-gray-400 border-l border-gray-200 pl-3 tracking-wide">
+                DPP Portal
+              </span>
             </div>
 
-            <div className="hidden md:flex space-x-1">
-              {/* ADMIN menüsü */}
+            {/* Dikey ayraç */}
+            <div className="hidden md:block h-7 w-px bg-gray-150" style={{ backgroundColor: '#e5e7eb' }} />
+
+            {/* Nav linkleri */}
+            <div className="hidden md:flex items-center gap-0.5">
               {isAdmin && (
                 <>
-                  <button
-                    onClick={() => router.push('/')}
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      router.pathname === '/' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:text-blue-600'
-                    }`}
-                  >
-                    Dashboard
-                  </button>
-                  <button
-                    onClick={() => router.push('/admin')}
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      router.pathname === '/admin' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:text-blue-600'
-                    }`}
-                  >
-                    Admin Paneli
-                  </button>
-                  <button
-                    onClick={() => router.push('/admin/users')}
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      router.pathname === '/admin/users' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:text-blue-600'
-                    }`}
-                  >
-                    Kullanıcılar
-                  </button>
-                  <button
-                    onClick={() => router.push('/supply-chain')}
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      router.pathname.startsWith('/supply-chain') ? 'bg-emerald-50 text-emerald-700' : 'text-gray-600 hover:text-emerald-600'
-                    }`}
-                  >
-                    Tedarik Zinciri
-                  </button>
+                  <NavLink path="/"             label="Dashboard" />
+                  <NavLink path="/admin"         label="Admin Paneli" />
+                  <NavLink path="/supply-chain"  label="Tedarik Zinciri" exact={false} />
+                  <NavLink path="/admin/users"   label="Kullanıcılar" />
                 </>
               )}
-
-              {/* ENGINEER menüsü */}
               {isEngineer && (
                 <>
-                  <button
-                    onClick={() => router.push('/batches')}
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      router.pathname.startsWith('/batches') ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:text-blue-600'
-                    }`}
-                  >
-                    Batch'lerim
-                  </button>
-                  <button
-                    onClick={() => router.push('/batches/new')}
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      router.pathname === '/batches/new' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:text-blue-600'
-                    }`}
-                  >
-                    Yeni Batch
-                  </button>
-                  <button
-                    onClick={() => router.push('/supply-chain')}
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      router.pathname.startsWith('/supply-chain') ? 'bg-emerald-50 text-emerald-700' : 'text-gray-600 hover:text-emerald-600'
-                    }`}
-                  >
-                    Tedarik Zinciri
-                  </button>
+                  <NavLink path="/batches"      label="Batch'lerim"     exact={false} />
+                  <NavLink path="/batches/new"  label="Yeni Batch" />
+                  <NavLink path="/supply-chain" label="Tedarik Zinciri" exact={false} />
                 </>
               )}
-
-              {/* SUPPLIER / CUSTOMER / AUTHORITY menüsü */}
               {isLimitedRole && (
-                <button
-                  onClick={() => router.push('/my-dpps')}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    router.pathname === '/my-dpps' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:text-blue-600'
-                  }`}
-                >
-                  Sizi İlgilendiren DPP'ler
-                </button>
+                <NavLink path="/my-dpps" label="Sizi İlgilendiren DPP'ler" />
               )}
             </div>
           </div>
 
-          {/* SAĞ: Demo rol seçici + Profil + Çıkış */}
-          <div className="flex items-center gap-4">
+          {/* SAĞ: profil + çıkış */}
+          <div className="flex items-center gap-2">
 
-            <div className="hidden sm:block h-6 w-px bg-gray-200 mx-1" />
-
+            {/* Profil butonu */}
             <button
               onClick={() => router.push('/profile')}
-              className="hidden sm:flex flex-col items-end hover:opacity-75 transition-opacity"
+              className="hidden sm:flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-gray-50 transition-all duration-200 group"
             >
-              <span className="text-sm font-bold text-gray-900">{user?.full_name || 'Kullanıcı'}</span>
-              <span className={`text-xs font-bold px-2 py-0.5 rounded-full mt-0.5 ${
-                isAdmin              ? 'bg-red-50 text-red-600'       :
-                isEngineer           ? 'bg-green-50 text-green-700'   :
-                role === 'SUPPLIER'  ? 'bg-orange-50 text-orange-600' :
-                role === 'CUSTOMER'  ? 'bg-blue-50 text-blue-600'     :
-                role === 'AUTHORITY' ? 'bg-purple-50 text-purple-600' :
-                                       'bg-gray-50 text-gray-500'
-              }`}>
-                {role}
-              </span>
+              {/* İsim + rol */}
+              <div className="text-right">
+                <p className="text-sm font-bold text-gray-800 leading-tight group-hover:text-blue-700 transition-colors">
+                  {user?.full_name || 'Kullanıcı'}
+                </p>
+                <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full mt-0.5 ${meta.cls}`}>
+                  {meta.label}
+                </span>
+              </div>
+              {/* Avatar */}
+              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 text-white flex items-center justify-center font-black text-sm shadow-md shadow-blue-200 group-hover:shadow-lg group-hover:shadow-blue-300 transition-all flex-shrink-0">
+                {initials}
+              </div>
             </button>
 
+            {/* Mobil avatar */}
             <button
               onClick={() => router.push('/profile')}
-              className="h-8 w-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shadow-inner hover:bg-blue-700 transition-colors"
+              className="sm:hidden h-9 w-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 text-white flex items-center justify-center font-black text-sm shadow-md"
             >
-              {user?.full_name?.charAt(0) || 'U'}
+              {initials}
             </button>
 
-            <div className="h-6 w-px bg-gray-200 mx-2" />
+            <div className="h-6 w-px bg-gray-100 mx-1" />
 
-            <Button variant="outline" size="sm" onClick={handleLogout} className="text-red-600 border-red-200 hover:bg-red-50">
-              Çıkış Yap
-            </Button>
+            {/* Çıkış */}
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+              title="Çıkış Yap"
+            >
+              <LogOut size={15} />
+              <span className="hidden sm:inline">Çıkış</span>
+            </button>
           </div>
 
         </div>
       </div>
+      <div className="h-[2px] bg-gradient-to-r from-blue-600 via-blue-400 to-blue-100" />
     </nav>
   );
 };

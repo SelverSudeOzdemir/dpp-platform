@@ -96,37 +96,30 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col md:flex-row relative font-sans overflow-hidden bg-slate-900">
-      {/* Background Image Container */}
+    <div className="min-h-screen w-full flex flex-col md:flex-row relative font-sans overflow-hidden bg-gradient-to-br from-white via-blue-100 to-slate-900">
+      {/* Subtle overlay for depth */}
       <div className="absolute inset-0 z-0">
-        <img
-          src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=2070&auto=format&fit=crop"
-          alt="Industrial Steel Plant"
-          className="w-full h-full object-cover opacity-60"
-        />
-        {/* Gradient Overlay for Text Readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0d1522] via-[#0d1522]/80 to-transparent"></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0d1522] via-transparent to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/20 via-transparent to-transparent"></div>
       </div>
 
       {/* Left Content Area (Text & Logos) */}
-      <div className="relative z-10 w-full md:w-1/2 lg:w-[55%] flex flex-col justify-between p-8 md:p-16 lg:p-24 min-h-screen text-white">
+      <div className="relative z-10 w-full md:w-1/2 lg:w-[55%] flex flex-col justify-between p-8 md:p-16 lg:p-24 min-h-screen text-white before:absolute before:inset-0 before:bg-gradient-to-r before:from-slate-900/70 before:via-slate-900/50 before:to-transparent before:z-0">
+        <div className="relative z-10">
         
         {/* Header / Logo */}
         <div>
-          <div className="flex items-center gap-3">
-            {/* Kocaer Logo Icon Replica */}
-            <div className="grid grid-cols-2 gap-[2px] w-8 h-8">
-              <div className="bg-red-600 rounded-sm"></div>
-              <div className="bg-red-600 rounded-sm"></div>
-              <div className="bg-red-600 rounded-sm"></div>
-              <div className="bg-white rounded-sm"></div>
-            </div>
-            <div>
-              <div className="text-2xl md:text-3xl font-black tracking-widest leading-none">KOCAER</div>
-              <div className="text-[0.65rem] md:text-xs tracking-[0.15em] text-gray-300 mt-1 uppercase font-medium">Mükemmelliğin Ötesinde Çelik</div>
-            </div>
-          </div>
+          <svg className="h-14 md:h-16" viewBox="0 0 800 150" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMid meet">
+            {/* Bar 1 */}
+            <rect x="30" y="20" width="35" height="110" fill="#E31E24" rx="0"/>
+            {/* Bar 2 */}
+            <rect x="90" y="20" width="35" height="110" fill="#E31E24" rx="0"/>
+            {/* Bar 3 */}
+            <rect x="150" y="20" width="35" height="110" fill="#E31E24" rx="0"/>
+            {/* KOCAER Text */}
+            <text x="220" y="115" fontFamily="Arial, Helvetica, sans-serif" fontSize="100" fontWeight="900" fill="#000000" letterSpacing="4">KOCAER</text>
+            {/* Go beyond excellence */}
+            <text x="220" y="145" fontFamily="Arial, Helvetica, sans-serif" fontSize="28" fontWeight="400" fill="#000000" letterSpacing="1">Go beyond excellence</text>
+          </svg>
         </div>
 
         {/* Main Value Proposition */}
@@ -136,8 +129,8 @@ export default function Login() {
             Dijital Ürün<br />
             Pasaportu Platformu
           </h1>
-          <p className="text-blue-400 font-bold tracking-[0.2em] mb-6 text-sm lg:text-base">İZLE. DOĞRULA. SÜRDÜR.</p>
-          <p className="text-gray-300 text-lg lg:text-xl font-light">
+          <p className="text-orange-400 font-bold tracking-[0.2em] mb-6 text-sm lg:text-base">İZLE. DOĞRULA. SÜRDÜR.</p>
+          <p className="text-gray-100 text-lg lg:text-xl font-light">
             Çeliği, insanı ve sürdürülebilir bir<br/>geleceği dijital olarak birbirine bağlıyoruz.
           </p>
 
@@ -176,12 +169,13 @@ export default function Login() {
 
         {/* Empty div to balance justify-between */}
         <div className="h-10"></div>
+        </div>
       </div>
 
       {/* Footer Info (Absolute Bottom) */}
-      <div className="absolute bottom-6 left-8 right-8 z-20 hidden md:flex justify-between items-center text-xs text-gray-400 font-medium pointer-events-none">
+      <div className="absolute bottom-6 left-8 right-8 z-20 hidden md:flex justify-between items-center text-xs text-white font-medium pointer-events-none">
         <div className="flex items-center gap-2">
-          <svg className="w-4 h-4 text-green-500/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+          <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
           Sürdürülebilirlik, ürettiğimiz her şeyin merkezinde yer alır.
         </div>
         <div>© {new Date().getFullYear()} Kocaer Çelik. Tüm hakları saklıdır.</div>
@@ -193,18 +187,21 @@ export default function Login() {
           
           {/* Card Header */}
           <div className="text-center mb-10">
-            <div className="flex justify-center items-center gap-3 mb-6 text-gray-900">
-              <div className="grid grid-cols-2 gap-[2px] w-8 h-8">
-                <div className="bg-red-600 rounded-sm"></div>
-                <div className="bg-red-600 rounded-sm"></div>
-                <div className="bg-red-600 rounded-sm"></div>
-                <div className="bg-black rounded-sm"></div>
-              </div>
-              <div className="text-3xl font-black tracking-widest leading-none">KOCAER</div>
-            </div>
-            
-            <h2 className="text-xl font-bold text-blue-600 tracking-wider">DPP PLATFORMU</h2>
-            <p className="text-sm text-gray-500 mt-2 font-medium">Güvenli Kurumsal Erişim</p>
+            <svg className="h-12 mx-auto mb-2" viewBox="0 0 800 150" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+              {/* Bar 1 */}
+              <rect x="30" y="20" width="35" height="110" fill="#E31E24" rx="0"/>
+              {/* Bar 2 */}
+              <rect x="90" y="20" width="35" height="110" fill="#E31E24" rx="0"/>
+              {/* Bar 3 */}
+              <rect x="150" y="20" width="35" height="110" fill="#E31E24" rx="0"/>
+              {/* KOCAER Text */}
+              <text x="220" y="115" fontFamily="Arial, Helvetica, sans-serif" fontSize="100" fontWeight="900" fill="#000000" letterSpacing="4">KOCAER</text>
+              {/* Go beyond excellence */}
+              <text x="220" y="145" fontFamily="Arial, Helvetica, sans-serif" fontSize="28" fontWeight="400" fill="#000000" letterSpacing="1">Go beyond excellence</text>
+            </svg>
+
+            <h2 className="text-lg font-bold text-gray-800 tracking-wide mt-4">Dijital Ürün Pasaportu</h2>
+            <p className="text-sm text-gray-500 mt-2 font-medium">Kurum Giriş Portalı</p>
           </div>
 
           {/* Messages */}

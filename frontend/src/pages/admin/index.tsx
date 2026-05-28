@@ -26,7 +26,6 @@ import {
 import OverviewTab from "../../components/admin/tabs/OverviewTab";
 import ComplianceTab from "../../components/admin/tabs/ComplianceTab";
 import AccessTab from "../../components/admin/tabs/AccessTab";
-import SupplyChainTab from "../../components/admin/tabs/SupplyChainTab";
 import ReportsTab from "../../components/admin/tabs/ReportsTab";
 import PassportsTab from "../../components/admin/tabs/PassportsTab";
 import DppReviewDrawer from "../../components/admin/DppReviewDrawer";
@@ -331,7 +330,6 @@ export default function AdminPage() {
           )}
           {activeTab === "compliance" && <ComplianceTab products={products} />}
           {activeTab === "access" && <AccessTab />}
-          {activeTab === "supplychain" && <SupplyChainTab />}
           {activeTab === "reports" && <ReportsTab products={products} />}
         </div>
       </div>

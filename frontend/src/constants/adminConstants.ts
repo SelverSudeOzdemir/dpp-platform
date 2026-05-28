@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, ClipboardList, ShieldAlert, Users,
-  GitBranch, Download,
+  Download,
 } from 'lucide-react';
 import type { AdminProduct, CertType, PendingBatch, IncompleteProduct, PassportStatus } from '../types/admin';
 
@@ -155,7 +155,6 @@ export const TABS = [
   { id: 'passports',    label: 'Pasaport Yönetimi',     icon: ClipboardList   },
   { id: 'compliance',   label: 'Compliance & Alarmlar', icon: ShieldAlert     },
   { id: 'access',       label: 'Kullanıcı & Erişim',    icon: Users           },
-  { id: 'supplychain',  label: 'Tedarik Zinciri',       icon: GitBranch       },
   { id: 'reports',      label: 'Raporlama',              icon: Download        },
 ];
 
