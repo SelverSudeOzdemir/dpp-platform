@@ -1,4 +1,6 @@
 // src/pages/supply-chain/logistics.tsx
+import dynamic from 'next/dynamic';
+
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/router';
 
@@ -29,6 +31,33 @@ import {
 import SupplierEvaluationModal from '../../components/supply-chain/SupplierEvaluationModal';
 import SupplierScoreModal from '../../components/supply-chain/SupplierScoreModal';
 import SupplierScoreHistoryModal from '../../components/supply-chain/SupplierScoreHistoryModal';
+const LogisticsMap = dynamic(
+  () => import('../../components/supply-chain/LogisticsMap'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-8 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 bg-slate-50">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gray-200 animate-pulse" />
+            <div className="space-y-1.5">
+              <div className="w-40 h-3 bg-gray-200 rounded animate-pulse" />
+              <div className="w-60 h-2.5 bg-gray-100 rounded animate-pulse" />
+            </div>
+          </div>
+        </div>
+        <div className="h-[460px] bg-gray-50 flex items-center justify-center">
+          <div className="flex items-center gap-2 text-sm text-gray-400 font-medium">
+            <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            Harita yükleniyor...
+          </div>
+        </div>
+        <div className="px-6 py-3 border-t border-gray-100 bg-gray-50/40 h-10 animate-pulse" />
+      </div>
+    ),
+  }
+);
+
 
 /* ── Yardımcı ─────────────────────────────────────────────────────────────── */
 
@@ -406,6 +435,10 @@ export default function LogisticsEmissionRoutes() {
               </div>
             ))}
           </div>
+
+
+          {/* ── Lojistik Rota Haritası ─────────────────────────────── */}
+          <LogisticsMap />
 
           {/* ── Charts Row ──────────────────────────────────────────── */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">

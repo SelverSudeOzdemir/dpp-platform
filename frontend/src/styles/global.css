@@ -14,11 +14,29 @@
 }
 
 @keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes scale-in {
   from {
     opacity: 0;
+    transform: scale(0.96) translateY(6px);
   }
   to {
     opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -28,4 +46,12 @@
 
 .slide-in-from-bottom {
   animation: slide-in-from-bottom 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-in-scale {
+  animation: scale-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.animate-in-toast {
+  animation: toast-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
