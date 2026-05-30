@@ -220,6 +220,42 @@ export default function ProductPassportDetail() {
             const oldFields = c.previous_state?.changed_fields || {};
             const fieldKeys = Object.keys(changedFields);
 
+            const formatStatus = (val: any) => {
+              if (!val) return "";
+              const valStr = String(val).toLowerCase();
+              const statusLabels: Record<string, string> = {
+                draft: "Taslak",
+                pending_approval: "Onay Bekliyor",
+                published: "Yayında",
+                rejected: "Reddedildi",
+                archived: "Arşivlendi",
+                active: "Aktif",
+                deactivated: "Deaktive Edildi",
+                registered: "Kayıtlı",
+                recalled: "Geri Çağrıldı",
+              };
+              return statusLabels[valStr] || val;
+            };
+
+            const fieldLabels: Record<string, string> = {
+              dpp_status: "Durum",
+              production_line: "Üretim Hattı",
+              shift: "Vardiya",
+              production_route: "Üretim Rotası",
+              ocak_no: "Ocak No",
+              miktar_ton: "Miktar (ton)",
+              is_active: "Aktif",
+            };
+
+            const formatValue = (key: string, val: any) => {
+              if (val === null || val === undefined) return "";
+              if (key === "dpp_status") return formatStatus(val);
+              if (key === "is_active") {
+                return val === true || String(val).toLowerCase() === "true" ? "Aktif" : "Pasif";
+              }
+              return String(val);
+            };
+
             // Eğer changed_fields boşsa ve status değiştiyse onu göster
             const groups: any[] = [];
             if (fieldKeys.length > 0) {
@@ -227,12 +263,19 @@ export default function ProductPassportDetail() {
                 section: isCreation
                   ? "Oluşturulan Alanlar"
                   : "Güncellenen Değerler",
-                fields: fieldKeys.map((k: string) => ({
-                  field: oldFields[k]
-                    ? `${k}: ${oldFields[k]} → ${changedFields[k]}`
-                    : `${k}: ${changedFields[k]}`,
-                  source: creationSource,
-                })),
+                fields: fieldKeys.map((k: string) => {
+                  const label = fieldLabels[k] || k;
+                  const oldVal = oldFields[k];
+                  const newVal = changedFields[k];
+                  const displayOld = formatValue(k, oldVal);
+                  const displayNew = formatValue(k, newVal);
+                  return {
+                    field: oldVal !== undefined && oldVal !== null
+                      ? `${label}: ${displayOld} → ${displayNew}`
+                      : `${label}: ${displayNew}`,
+                    source: creationSource,
+                  };
+                }),
               });
             } else if (
               c.previous_state?.status &&
@@ -243,7 +286,7 @@ export default function ProductPassportDetail() {
                 section: changeTypeLabels[typeStr] || "Durum Değişikliği",
                 fields: [
                   {
-                    field: `Durum: ${c.previous_state.status} → ${c.new_state.status}`,
+                    field: `Durum: ${formatStatus(c.previous_state.status)} → ${formatStatus(c.new_state.status)}`,
                     source: creationSource,
                   },
                 ],

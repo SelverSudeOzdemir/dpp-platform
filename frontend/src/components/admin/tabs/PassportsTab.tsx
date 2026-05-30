@@ -332,9 +332,23 @@ export default function PassportsTab({
                 "Değişiklik";
 
               // Build detail string from changed_fields
-              let detailParts: string[] = [];
-              const oldFields = v.previous_state?.changed_fields || {};
-              const newFields = v.new_state?.changed_fields || {};
+              const formatStatus = (val: any) => {
+                if (!val) return "";
+                const valStr = String(val).toLowerCase();
+                const statusLabels: Record<string, string> = {
+                  draft: "Taslak",
+                  pending_approval: "Onay Bekliyor",
+                  published: "Yayında",
+                  rejected: "Reddedildi",
+                  archived: "Arşivlendi",
+                  active: "Aktif",
+                  deactivated: "Deaktive Edildi",
+                  registered: "Kayıtlı",
+                  recalled: "Geri Çağrıldı",
+                };
+                return statusLabels[valStr] || val;
+              };
+
               const fieldLabels: Record<string, string> = {
                 dpp_status: "Durum",
                 production_line: "Üretim Hattı",
@@ -344,13 +358,29 @@ export default function PassportsTab({
                 miktar_ton: "Miktar (ton)",
                 is_active: "Aktif",
               };
+
+              const formatValue = (key: string, val: any) => {
+                if (val === null || val === undefined) return "";
+                if (key === "dpp_status") return formatStatus(val);
+                if (key === "is_active") {
+                  return val === true || String(val).toLowerCase() === "true" ? "Aktif" : "Pasif";
+                }
+                return String(val);
+              };
+
+              let detailParts: string[] = [];
+              const oldFields = v.previous_state?.changed_fields || {};
+              const newFields = v.new_state?.changed_fields || {};
+
               for (const [key, newVal] of Object.entries(newFields)) {
                 const label = fieldLabels[key] || key;
                 const oldVal = oldFields[key];
+                const displayOldVal = formatValue(key, oldVal);
+                const displayNewVal = formatValue(key, newVal);
                 if (oldVal !== undefined && oldVal !== null) {
-                  detailParts.push(`${label}: ${oldVal} → ${newVal}`);
+                  detailParts.push(`${label}: ${displayOldVal} → ${displayNewVal}`);
                 } else {
-                  detailParts.push(`${label}: ${newVal}`);
+                  detailParts.push(`${label}: ${displayNewVal}`);
                 }
               }
               // If no changed_fields, show status transition
@@ -361,7 +391,7 @@ export default function PassportsTab({
               ) {
                 if (v.previous_state.status !== v.new_state.status) {
                   detailParts.push(
-                    `Durum: ${v.previous_state.status} → ${v.new_state.status}`
+                    `Durum: ${formatStatus(v.previous_state.status)} → ${formatStatus(v.new_state.status)}`
                   );
                 }
               }
