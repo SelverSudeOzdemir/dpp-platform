@@ -23,8 +23,12 @@ import {
   Search, ChevronDown, CheckCircle2, Clock, XCircle,
   Route, Fuel, Weight, Timer, Calendar, Building2, Eye, Package,
   Leaf, TrendingDown, Shield, BarChart3, Navigation, Activity,
-  Loader2, Globe2, Hash,
+  Loader2, Globe2, Hash, Edit3, Sparkles, History
 } from 'lucide-react';
+
+import SupplierEvaluationModal from '../../components/supply-chain/SupplierEvaluationModal';
+import SupplierScoreModal from '../../components/supply-chain/SupplierScoreModal';
+import SupplierScoreHistoryModal from '../../components/supply-chain/SupplierScoreHistoryModal';
 
 /* ── Yardımcı ─────────────────────────────────────────────────────────────── */
 
@@ -272,12 +276,30 @@ export default function LogisticsEmissionRoutes() {
   const [liveLoading, setLiveLoading] = useState(true);
   const [liveError, setLiveError] = useState(false);
 
-  useEffect(() => {
+  const [evaluateOrg, setEvaluateOrg] = useState<any>(null);
+  const [scoreOrg, setScoreOrg] = useState<any>(null);
+  const [historyOrg, setHistoryOrg] = useState<any>(null);
+
+  const fetchLiveOrgs = () => {
+    setLiveLoading(true);
     fetch(`${BASE_URL}/supply-chain/organizations`, { headers: getAuthHeader() })
       .then(r => { if (!r.ok) throw new Error(); return r.json(); })
-      .then(data => setLiveOrgs(Array.isArray(data) ? data : []))
+      .then(data => {
+        let orgs = Array.isArray(data) ? data : [];
+        // Skora göre sırala (Büyükten küçüğe, skoru olmayanlar en alta)
+        orgs.sort((a, b) => {
+          const scoreA = a.latest_trust_score !== null && a.latest_trust_score !== undefined ? Number(a.latest_trust_score) : -1;
+          const scoreB = b.latest_trust_score !== null && b.latest_trust_score !== undefined ? Number(b.latest_trust_score) : -1;
+          return scoreB - scoreA;
+        });
+        setLiveOrgs(orgs);
+      })
       .catch(() => setLiveError(true))
       .finally(() => setLiveLoading(false));
+  };
+
+  useEffect(() => {
+    fetchLiveOrgs();
   }, []);
 
   const kpi = supplyChainKPIs;
@@ -515,15 +537,16 @@ export default function LogisticsEmissionRoutes() {
                 <p className="text-[10px] text-gray-300 mt-1">DPP'lere tedarik zinciri aşaması eklendiğinde burada görünecek.</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto max-h-[420px] overflow-y-auto">
                 <table className="w-full text-left">
-                  <thead>
-                    <tr className="bg-gray-50/80">
+                  <thead className="sticky top-0 z-10">
+                    <tr className="bg-gray-50">
                       <th className="px-5 py-3 text-[11px] font-black text-gray-500 uppercase tracking-wider">Organizasyon</th>
                       <th className="px-4 py-3 text-[11px] font-black text-gray-500 uppercase tracking-wider">Rol</th>
                       <th className="px-4 py-3 text-[11px] font-black text-gray-500 uppercase tracking-wider">Konum</th>
                       <th className="px-4 py-3 text-[11px] font-black text-gray-500 uppercase tracking-wider text-center">Ülke</th>
                       <th className="px-4 py-3 text-[11px] font-black text-gray-500 uppercase tracking-wider text-center">Doğrulama</th>
+                      <th className="px-4 py-3 text-[11px] font-black text-gray-500 uppercase tracking-wider text-center">Değerlendirme</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -567,6 +590,43 @@ export default function LogisticsEmissionRoutes() {
                               <Clock size={10} /> Doğrulanmamış
                             </span>
                           )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-center gap-2 flex-wrap">
+                            {org.latest_trust_score !== null && org.latest_trust_score !== undefined && (
+                              <div className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border font-black text-xs shadow-sm ${
+                                org.latest_risk_level === 'DÜŞÜK' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                org.latest_risk_level === 'ORTA' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                'bg-red-50 text-red-700 border-red-200'
+                              }`}>
+                                {org.latest_trust_score}<span className="text-[9px] font-bold opacity-60">/100</span>
+                              </div>
+                            )}
+                            <button
+                              onClick={() => setEvaluateOrg(org)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-[10px] font-bold rounded-lg transition-colors"
+                              title="Anket Doldur"
+                            >
+                              <Edit3 size={12} />
+                              Anket
+                            </button>
+                            <button
+                              onClick={() => setScoreOrg(org)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-[10px] font-bold rounded-lg transition-all shadow-sm"
+                              title="Güven Skoru ve AI Raporu"
+                            >
+                              <Sparkles size={12} />
+                              AI Skor
+                            </button>
+                            <button
+                              onClick={() => setHistoryOrg(org)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-lg transition-colors"
+                              title="Geçmiş AI Raporları"
+                            >
+                              <History size={12} />
+                              Geçmiş
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -727,6 +787,35 @@ export default function LogisticsEmissionRoutes() {
 
         </div>
       </div>
+      
+      {evaluateOrg && (
+        <SupplierEvaluationModal 
+          organizationId={evaluateOrg.id}
+          organizationName={evaluateOrg.name}
+          onClose={() => setEvaluateOrg(null)}
+          onSuccess={() => {
+            setEvaluateOrg(null);
+            fetchLiveOrgs();
+          }}
+        />
+      )}
+
+      {scoreOrg && (
+        <SupplierScoreModal 
+          organizationId={scoreOrg.id}
+          organizationName={scoreOrg.name}
+          onClose={() => setScoreOrg(null)}
+          onOpenHistory={() => setHistoryOrg(scoreOrg)}
+        />
+      )}
+
+      {historyOrg && (
+        <SupplierScoreHistoryModal 
+          organizationId={historyOrg.id}
+          organizationName={historyOrg.name}
+          onClose={() => setHistoryOrg(null)}
+        />
+      )}
     </ProtectedRoute>
   );
 }

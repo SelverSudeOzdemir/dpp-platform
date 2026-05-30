@@ -37,7 +37,14 @@ import {
   XCircle,
   Clock,
   Archive,
+  Sparkles,
+  Edit3,
+  History,
 } from "lucide-react";
+
+import AiAnalysisModal from "../../components/ai/AiAnalysisModal";
+import AiAnalysisHistoryModal from "../../components/ai/AiAnalysisHistoryModal";
+import SupplierEvaluationModal from "../../components/supply-chain/SupplierEvaluationModal";
 import {
   PieChart,
   Pie,
@@ -121,6 +128,9 @@ export default function ProductPassportDetail() {
   const [loading, setLoading] = useState(true);
   const [isTechnicalOpen, setIsTechnicalOpen] = useState(false);
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [isAiHistoryModalOpen, setIsAiHistoryModalOpen] = useState(false);
+  const [evaluateOrg, setEvaluateOrg] = useState<{id: string, name: string} | null>(null);
   const [versionHistory, setVersionHistory] = useState<any[]>([]);
   const [selectedVersionEntry, setSelectedVersionEntry] = useState<any | null>(null);
 
@@ -462,13 +472,34 @@ export default function ProductPassportDetail() {
                 </div>
               </button>
             ) : (
-              <div className="text-right bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100">
-                <span className="block text-[10px] text-blue-500 font-bold uppercase tracking-wider">
-                  Yetki
-                </span>
-                <span className="block text-sm font-black text-blue-800">
-                  {role}
-                </span>
+              <div className="flex items-center gap-3">
+                {(role === "ADMIN" || role === "ENGINEER") && (
+                  <>
+                    <button 
+                      onClick={() => setIsAiModalOpen(true)}
+                      className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-4 py-2 rounded-xl font-bold text-xs shadow-md shadow-indigo-200 transition-all hover:scale-105"
+                    >
+                      <Sparkles size={14} />
+                      AI Uyumluluk Analizi
+                    </button>
+                    <button 
+                      onClick={() => setIsAiHistoryModalOpen(true)}
+                      className="flex items-center gap-2 bg-white hover:bg-gray-50 text-indigo-700 border border-indigo-100 px-4 py-2 rounded-xl font-bold text-xs shadow-sm transition-all hover:scale-105"
+                      title="Geçmiş Analiz Raporları"
+                    >
+                      <History size={14} />
+                      Geçmiş
+                    </button>
+                  </>
+                )}
+                <div className="text-right bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100">
+                  <span className="block text-[10px] text-blue-500 font-bold uppercase tracking-wider">
+                    Yetki
+                  </span>
+                  <span className="block text-sm font-black text-blue-800">
+                    {role}
+                  </span>
+                </div>
               </div>
             )}
           </div>
@@ -1133,6 +1164,16 @@ export default function ProductPassportDetail() {
                                     ? ` (${stage.organization.country_code})`
                                     : stage.organization?.country_code}
                                 </div>
+                              )}
+                              
+                              {(role === "ADMIN" || role === "ENGINEER") && stage.organization?.id && (
+                                <button
+                                  onClick={() => setEvaluateOrg({ id: stage.organization.id, name: stage.organization.name })}
+                                  className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-[10px] font-bold rounded-lg transition-colors"
+                                >
+                                  <Edit3 size={12} />
+                                  Teslimatı Değerlendir
+                                </button>
                               )}
                             </div>
                             <div>
@@ -1907,6 +1948,19 @@ export default function ProductPassportDetail() {
           </div>
         </div>
       </div>
+    )}
+    
+    {isAiModalOpen && <AiAnalysisModal dppId={id as string} onClose={() => setIsAiModalOpen(false)} />}
+    {isAiHistoryModalOpen && <AiAnalysisHistoryModal dppId={id as string} onClose={() => setIsAiHistoryModalOpen(false)} />}
+    
+    {evaluateOrg && (
+      <SupplierEvaluationModal 
+        organizationId={evaluateOrg.id}
+        organizationName={evaluateOrg.name}
+        dppId={id as string}
+        onClose={() => setEvaluateOrg(null)}
+        onSuccess={() => setEvaluateOrg(null)}
+      />
     )}
     </>
   );

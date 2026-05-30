@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { ClipboardList, Zap, GitBranch, Shield, Eye, X, ChevronDown } from "lucide-react";
+import { ClipboardList, Zap, GitBranch, Shield, Eye, X, ChevronDown, Clock, Sparkles } from "lucide-react";
+import AiAnalysisModal from "../../../components/ai/AiAnalysisModal";
 import type {
   AdminProduct,
   PendingBatch,
@@ -29,6 +30,8 @@ export default function PassportsTab({
   } | null>(null);
   const [inspectPopup, setInspectPopup] = useState(false);
   const [changelog, setChangelog] = useState<any[]>([]);
+  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
+  const [selectedAiDppId, setSelectedAiDppId] = useState<string | null>(null);
   const [passportsPage, setPassportsPage] = useState(0);
   const [changelogPage, setChangelogPage] = useState(0);
   const PAGE_SIZE = 6;
@@ -268,12 +271,19 @@ export default function PassportsTab({
                       </span>
                     )}
                   </td>
-                  <td className="px-5 py-4">
+                  <td className="px-5 py-4 flex items-center gap-2">
                     <button
                       onClick={() => setInspectPopup(true)}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-xs font-bold rounded-lg transition-colors"
                     >
                       <Eye size={12} /> İncele
+                    </button>
+                    <button
+                      onClick={() => setSelectedAiDppId(p.id)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-xs font-bold rounded-lg transition-all shadow-sm"
+                      title="AI Uyumluluk Analizi"
+                    >
+                      <Sparkles size={12} />
                     </button>
                   </td>
                 </tr>
@@ -548,6 +558,13 @@ export default function PassportsTab({
             </button>
           </div>
         </div>
+      )}
+      
+      {selectedAiDppId && (
+        <AiAnalysisModal 
+          dppId={selectedAiDppId} 
+          onClose={() => setSelectedAiDppId(null)} 
+        />
       )}
     </div>
   );

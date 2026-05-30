@@ -19,3 +19,4 @@ from app.models.lifecycle import LifecycleEvent  # noqa: F401
 from app.models.security import Stakeholder, DppAccessPolicy, ApiAccessLog  # noqa: F401
 from app.models.user import User, ApiKey, AuditLog  # noqa: F401
 from app.models.integration import RegistrySyncQueue, BackupSnapshot, DppChangelog  # noqa: F401
+from app.models.ai_analysis import DppAiAnalysis  # noqa: F401

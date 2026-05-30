@@ -20,6 +20,8 @@ class SupplyChainOrganizationCreate(SupplyChainOrganizationBase):
 
 class SupplyChainOrganization(SupplyChainOrganizationBase):
     id: UUID4
+    latest_trust_score: Optional[Decimal] = None
+    latest_risk_level: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -64,3 +66,27 @@ class LogisticsEmissionResponse(BaseModel):
     total_distance_km: Decimal
     total_co2_kg: Decimal
     stages: List[dict] # Summary of stages for context
+
+# Supplier Evaluation Schemas
+class SupplierEvaluationCreate(BaseModel):
+    dpp_id: Optional[UUID4] = None
+    delivery_score: int = Field(..., ge=1, le=5)
+    quality_score: int = Field(..., ge=1, le=5)
+    communication_score: int = Field(..., ge=1, le=5)
+    estimated_delivery_days: Optional[int] = None
+    actual_delivery_days: Optional[int] = None
+    damage_rate_pct: Optional[Decimal] = None
+    notes: Optional[str] = None
+
+class SupplierTrustScoreResponse(BaseModel):
+    organization_id: UUID4
+    organization_name: str
+    trust_score: int
+    risk_level: str
+    avg_delivery_score: float
+    avg_quality_score: float
+    avg_communication_score: float
+    avg_delay_days: float
+    avg_damage_rate: float
+    total_evaluations: int
+    ai_report: Optional[str] = None

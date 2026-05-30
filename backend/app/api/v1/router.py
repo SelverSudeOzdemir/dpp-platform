@@ -11,6 +11,7 @@ from app.modules.supply_chain.router import router as supply_chain_router
 from app.modules.lifecycle.router import router as lifecycle_router
 from app.modules.export.router import router as export_router
 from app.modules.integration.router import router as integration_router
+from app.modules.ai.router import router as ai_router
 
 router = APIRouter()
 
@@ -51,3 +52,7 @@ router.include_router(export_router)
 
 # Integrations — /integrations/ (SAP sync, Excel parse, document parse)
 router.include_router(integration_router)
+
+# AI Analysis — /ai/ (rule engine + Ollama LLM)
+router.include_router(ai_router)
+

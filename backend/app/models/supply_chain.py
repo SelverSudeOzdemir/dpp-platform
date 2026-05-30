@@ -97,3 +97,38 @@ class SupplyChainProcess(Base, UUIDMixin, CreatedAtMixin):
 
     # Relationships
     stage = relationship("SupplyChainStage", back_populates="processes")
+
+
+class SupplierEvaluation(Base, UUIDMixin, CreatedAtMixin):
+    __tablename__ = "supplier_evaluations"
+
+    organization_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("supply_chain_organizations.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    evaluator_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    dpp_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("digital_product_passports.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    
+    delivery_score = Column(SmallInteger, default=5)
+    quality_score = Column(SmallInteger, default=5)
+    communication_score = Column(SmallInteger, default=5)
+    
+    estimated_delivery_days = Column(SmallInteger)
+    actual_delivery_days = Column(SmallInteger)
+    damage_rate_pct = Column(Numeric(5, 2))
+    
+    notes = Column(Text)
+
+    # Relationships
+    organization = relationship("SupplyChainOrganization", backref="evaluations")
+    evaluator = relationship("User")
+    dpp = relationship("DigitalProductPassport")
