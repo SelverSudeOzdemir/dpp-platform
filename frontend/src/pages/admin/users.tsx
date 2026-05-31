@@ -14,8 +14,7 @@ type UserRow = {
   email: string;
   role: Role;
   status: UserStatus;
-  invited_at: string;
-  last_login?: string;
+  created_at: string;
 };
 
 const ROLE_OPTIONS: Role[] = ['ENGINEER', 'SUPPLIER', 'CUSTOMER', 'AUTHORITY', 'ADMIN'];
@@ -209,7 +208,7 @@ function UsersPage() {
         email: u.email,
         role: u.role,
         status: u.is_active ? 'ACTIVE' : 'INACTIVE',
-        invited_at: new Date().toISOString().split('T')[0],
+        created_at: u.created_at,
       }));
       setUsers(rows);
     } catch (err: any) {
@@ -246,7 +245,7 @@ function UsersPage() {
         email: newUser.email,
         role: newUser.role,
         status: newUser.is_active ? 'ACTIVE' : 'PENDING',
-        invited_at: new Date().toISOString().split('T')[0],
+        created_at: newUser.created_at || new Date().toISOString(),
       };
       
       setUsers(prev => [newRow, ...prev]);
@@ -386,7 +385,7 @@ function UsersPage() {
                 <th className="text-left px-6 py-4 text-[11px] font-semibold text-gray-400 uppercase tracking-widest bg-gray-50/50">Şirket</th>
                 <th className="text-left px-6 py-4 text-[11px] font-semibold text-gray-400 uppercase tracking-widest bg-gray-50/50">Rol</th>
                 <th className="text-left px-6 py-4 text-[11px] font-semibold text-gray-400 uppercase tracking-widest bg-gray-50/50">Durum</th>
-                <th className="text-left px-6 py-4 text-[11px] font-semibold text-gray-400 uppercase tracking-widest bg-gray-50/50">Son Giriş</th>
+                <th className="text-left px-6 py-4 text-[11px] font-semibold text-gray-400 uppercase tracking-widest bg-gray-50/50">Kayıt Tarihi</th>
                 <th className="px-4 py-4 bg-gray-50/50" />
               </tr>
             </thead>
@@ -433,7 +432,7 @@ function UsersPage() {
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-xs text-gray-400 font-medium tabular-nums">
-                      {u.last_login ? formatDate(u.last_login) : (
+                      {u.created_at ? formatDate(u.created_at) : (
                         <span className="text-gray-300">—</span>
                       )}
                     </span>

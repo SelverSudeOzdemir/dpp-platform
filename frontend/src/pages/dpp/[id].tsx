@@ -6,6 +6,7 @@ import Spinner from "../../components/ui/spinner";
 import Button from "../../components/ui/Button";
 import { useAuth } from "../../contexts/AuthContext";
 import { apiGetDppChangelog } from "../../lib/api";
+import QRCode from "react-qr-code";
 // YENİ İKONLAR EKLENDİ (Globe, Mail, Info) Yasal zorunluluk alanları için
 import {
   CheckCircle2,
@@ -1630,13 +1631,18 @@ export default function ProductPassportDetail() {
                 <QrCode size={14} />
                 Digital Identity
               </h3>
-              <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100">
-                <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://dpp.kocaer.com/verify/${product.id}`}
-                  alt="DPP QR Code"
-                  className="w-36 h-36"
+              <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-center items-center hover:shadow-md hover:border-blue-200 transition-all">
+                <QRCode
+                  value={`https://dpp.kocaer.com/verify/${product.batch_number || product.gs1_serial_number || product.public_identifier || product.id}`}
+                  size={150}
+                  style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                  viewBox={`0 0 150 150`}
+                  fgColor="#1e3a8a" // Koyu mavi renk
                 />
               </div>
+              <p className="mt-4 text-[13px] font-black text-gray-800 break-all bg-gray-50 px-3 py-1 rounded-lg border border-gray-200">
+                {product.batch_number || product.gs1_serial_number || product.public_identifier || product.id}
+              </p>
             </div>
           </div>
         </div>

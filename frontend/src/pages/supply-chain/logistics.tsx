@@ -300,6 +300,11 @@ export default function LogisticsEmissionRoutes() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
 
+  // Sayfalama state'leri
+  const [orgPage, setOrgPage] = useState(1);
+  const [routePage, setRoutePage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
+
   // ── Canlı backend verisi: tedarik zinciri organizasyonları ──────────────
   const [liveOrgs, setLiveOrgs] = useState<any[]>([]);
   const [liveLoading, setLiveLoading] = useState(true);
@@ -525,193 +530,224 @@ export default function LogisticsEmissionRoutes() {
             </div>
           </div>
 
-          {/* ── Canlı DPP Tedarik Ağı ───────────────────────────────── */}
-          <div className="bg-white rounded-2xl border border-blue-100 shadow-sm overflow-hidden mb-8">
-            {/* Header */}
-            <div className="px-6 py-4 border-b border-blue-50 bg-gradient-to-r from-blue-50/60 to-indigo-50/30 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-1.5 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg shadow-sm shadow-blue-200">
-                  <Activity size={14} className="text-white" />
+          {/* ── YAN YANA: Canlı DPP Tedarik Ağı + Rota Listesi ──── */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+
+            {/* ─── KART 1: Canlı DPP Tedarik Ağı ─── */}
+            <div className="bg-white rounded-2xl border border-blue-100 shadow-sm overflow-hidden flex flex-col">
+              {/* Header */}
+              <div className="px-5 py-3.5 border-b border-blue-50 bg-gradient-to-r from-blue-50/60 to-indigo-50/30 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg shadow-sm shadow-blue-200">
+                    <Activity size={13} className="text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-black text-gray-900">Canlı DPP Tedarik Ağı</h3>
+                    <p className="text-[9px] text-gray-400 font-medium">
+                      Gerçek tedarik zinciri organizasyonları
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-sm font-black text-gray-900">Canlı DPP Tedarik Ağı</h3>
-                  <p className="text-[10px] text-gray-400 font-medium">
-                    Backend'den çekilen gerçek tedarik zinciri organizasyonları
-                  </p>
+                <div className="flex items-center gap-1.5">
+                  {!liveLoading && !liveError && (
+                    <span className="text-[9px] font-black text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
+                      {liveOrgs.length} kayıt
+                    </span>
+                  )}
+                  <div className="flex items-center gap-1 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                    <span className="text-[9px] font-black text-green-700 uppercase tracking-wider">Canlı</span>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                {!liveLoading && !liveError && (
-                  <span className="text-[10px] font-black text-gray-400 bg-gray-100 px-2 py-1 rounded-full">
-                    {liveOrgs.length} kayıt
-                  </span>
+
+              {/* Body */}
+              <div className="flex-1 flex flex-col">
+                {liveLoading ? (
+                  <div className="px-5 py-8 flex items-center justify-center gap-2 text-xs text-blue-600 font-bold flex-1">
+                    <Loader2 size={14} className="animate-spin" />
+                    Veriler yükleniyor...
+                  </div>
+                ) : liveError ? (
+                  <div className="px-5 py-8 text-center flex-1">
+                    <p className="text-xs text-red-400 font-medium">Backend bağlantısı kurulamadı.</p>
+                  </div>
+                ) : liveOrgs.length === 0 ? (
+                  <div className="px-5 py-8 text-center flex-1">
+                    <Globe2 size={24} className="text-gray-200 mx-auto mb-2" />
+                    <p className="text-[10px] text-gray-400 font-medium">Organizasyon bulunamadı.</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="overflow-x-auto flex-1">
+                      <table className="w-full text-left">
+                        <thead>
+                          <tr className="bg-gray-50">
+                            <th className="px-4 py-2.5 text-[10px] font-black text-gray-500 uppercase tracking-wider">Organizasyon</th>
+                            <th className="px-3 py-2.5 text-[10px] font-black text-gray-500 uppercase tracking-wider">Rol</th>
+                            <th className="px-3 py-2.5 text-[10px] font-black text-gray-500 uppercase tracking-wider text-center">Doğrulama</th>
+                            <th className="px-3 py-2.5 text-[10px] font-black text-gray-500 uppercase tracking-wider text-center">Değerlendirme</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                          {liveOrgs.slice((orgPage - 1) * ITEMS_PER_PAGE, orgPage * ITEMS_PER_PAGE).map((org: any, i: number) => (
+                            <tr key={i} className="hover:bg-blue-50/30 transition-colors">
+                              <td className="px-4 py-2.5">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-6 h-6 rounded-md bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center shrink-0">
+                                    <Building2 size={10} className="text-blue-600" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="text-[11px] font-bold text-gray-900 truncate">{org.name || '—'}</p>
+                                    {(org.location_text || org.city) && (
+                                      <p className="text-[9px] text-gray-400 truncate">{org.location_text || org.city}</p>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-3 py-2.5">
+                                <span className="text-[9px] font-bold text-blue-700 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded-full">
+                                  {org.role || 'Tedarikçi'}
+                                </span>
+                              </td>
+                              <td className="px-3 py-2.5 text-center">
+                                {org.is_verified ? (
+                                  <span className="inline-flex items-center gap-0.5 text-[9px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full">
+                                    <CheckCircle2 size={9} /> Doğrulanmış
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-0.5 text-[9px] font-black text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
+                                    <Clock size={9} /> Doğrulanmamış
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-3 py-2.5">
+                                <div className="flex items-center justify-center gap-1 flex-wrap">
+                                  {org.latest_trust_score !== null && org.latest_trust_score !== undefined && (
+                                    <div className={`flex items-center gap-0.5 px-2 py-0.5 rounded-md border font-black text-[10px] ${
+                                      org.latest_risk_level === 'DÜŞÜK' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                      org.latest_risk_level === 'ORTA' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                      'bg-red-50 text-red-700 border-red-200'
+                                    }`}>
+                                      {org.latest_trust_score}<span className="text-[8px] font-bold opacity-60">/100</span>
+                                    </div>
+                                  )}
+                                  <button
+                                    onClick={() => setEvaluateOrg(org)}
+                                    className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-[9px] font-bold rounded-md transition-colors"
+                                    title="Anket Doldur"
+                                  >
+                                    <Edit3 size={10} />
+                                    Anket
+                                  </button>
+                                  <button
+                                    onClick={() => setScoreOrg(org)}
+                                    className="inline-flex items-center gap-1 px-2 py-1 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-[9px] font-bold rounded-md transition-all shadow-sm"
+                                    title="AI Skor"
+                                  >
+                                    <Sparkles size={10} />
+                                    AI Skor
+                                  </button>
+                                  <button
+                                    onClick={() => setHistoryOrg(org)}
+                                    className="inline-flex items-center gap-1 px-2 py-1 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 text-[9px] font-bold rounded-md transition-colors"
+                                    title="Geçmiş"
+                                  >
+                                    <History size={10} />
+                                    Geçmiş
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Sayfalama */}
+                    <div className="px-4 py-3 border-t border-gray-100 bg-gray-50/50 flex items-center justify-between shrink-0">
+                      <p className="text-[9px] text-gray-400 font-medium flex items-center gap-1">
+                        <Hash size={9} />
+                        {liveOrgs.filter((o: any) => o.is_verified).length} doğrulanmış · {liveOrgs.length} toplam
+                      </p>
+                      {liveOrgs.length > ITEMS_PER_PAGE && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => setOrgPage(p => Math.max(1, p - 1))}
+                            disabled={orgPage <= 1}
+                            className="p-1 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                          >
+                            <ChevronDown size={11} className="rotate-90" />
+                          </button>
+                          <span className="text-[9px] font-bold text-gray-600 px-1">
+                            {orgPage}/{Math.ceil(liveOrgs.length / ITEMS_PER_PAGE)}
+                          </span>
+                          <button
+                            onClick={() => setOrgPage(p => Math.min(Math.ceil(liveOrgs.length / ITEMS_PER_PAGE), p + 1))}
+                            disabled={orgPage >= Math.ceil(liveOrgs.length / ITEMS_PER_PAGE)}
+                            className="p-1 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                          >
+                            <ChevronDown size={11} className="-rotate-90" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </>
                 )}
-                <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 px-2.5 py-1 rounded-full">
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                  <span className="text-[10px] font-black text-green-700 uppercase tracking-wider">Canlı</span>
-                </div>
               </div>
             </div>
 
-            {/* Body */}
-            {liveLoading ? (
-              <div className="px-6 py-8 flex items-center justify-center gap-2 text-xs text-blue-600 font-bold">
-                <Loader2 size={15} className="animate-spin" />
-                Tedarik ağı verileri yükleniyor...
-              </div>
-            ) : liveError ? (
-              <div className="px-6 py-8 text-center">
-                <p className="text-xs text-red-400 font-medium">Backend bağlantısı kurulamadı — veriler gösterilemiyor.</p>
-              </div>
-            ) : liveOrgs.length === 0 ? (
-              <div className="px-6 py-8 text-center">
-                <Globe2 size={28} className="text-gray-200 mx-auto mb-2" />
-                <p className="text-xs text-gray-400 font-medium">Kayıtlı tedarik zinciri organizasyonu bulunamadı.</p>
-                <p className="text-[10px] text-gray-300 mt-1">DPP'lere tedarik zinciri aşaması eklendiğinde burada görünecek.</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto max-h-[420px] overflow-y-auto">
-                <table className="w-full text-left">
-                  <thead className="sticky top-0 z-10">
-                    <tr className="bg-gray-50">
-                      <th className="px-5 py-3 text-[11px] font-black text-gray-500 uppercase tracking-wider">Organizasyon</th>
-                      <th className="px-4 py-3 text-[11px] font-black text-gray-500 uppercase tracking-wider">Rol</th>
-                      <th className="px-4 py-3 text-[11px] font-black text-gray-500 uppercase tracking-wider">Konum</th>
-                      <th className="px-4 py-3 text-[11px] font-black text-gray-500 uppercase tracking-wider text-center">Ülke</th>
-                      <th className="px-4 py-3 text-[11px] font-black text-gray-500 uppercase tracking-wider text-center">Doğrulama</th>
-                      <th className="px-4 py-3 text-[11px] font-black text-gray-500 uppercase tracking-wider text-center">Değerlendirme</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50">
-                    {liveOrgs.map((org: any, i: number) => (
-                      <tr key={i} className="hover:bg-blue-50/30 transition-colors">
-                        <td className="px-5 py-3">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center shrink-0">
-                              <Building2 size={12} className="text-blue-600" />
-                            </div>
-                            <p className="text-xs font-bold text-gray-900">{org.name || '—'}</p>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full">
-                            {org.role || 'Tedarikçi'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                            <MapPin size={11} className="text-gray-300 shrink-0" />
-                            {org.location_text || org.city || '—'}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          {org.country_code ? (
-                            <span className="text-[11px] font-black text-gray-600 bg-gray-100 px-2 py-0.5 rounded font-mono">
-                              {org.country_code}
-                            </span>
-                          ) : (
-                            <span className="text-gray-300 text-xs">—</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          {org.is_verified ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                              <CheckCircle2 size={10} /> Doğrulanmış
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-black text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                              <Clock size={10} /> Doğrulanmamış
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-center gap-2 flex-wrap">
-                            {org.latest_trust_score !== null && org.latest_trust_score !== undefined && (
-                              <div className={`flex items-center gap-1 px-2.5 py-1 rounded-lg border font-black text-xs shadow-sm ${
-                                org.latest_risk_level === 'DÜŞÜK' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                                org.latest_risk_level === 'ORTA' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                                'bg-red-50 text-red-700 border-red-200'
-                              }`}>
-                                {org.latest_trust_score}<span className="text-[9px] font-bold opacity-60">/100</span>
-                              </div>
-                            )}
-                            <button
-                              onClick={() => setEvaluateOrg(org)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-[10px] font-bold rounded-lg transition-colors"
-                              title="Anket Doldur"
-                            >
-                              <Edit3 size={12} />
-                              Anket
-                            </button>
-                            <button
-                              onClick={() => setScoreOrg(org)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-[10px] font-bold rounded-lg transition-all shadow-sm"
-                              title="Güven Skoru ve AI Raporu"
-                            >
-                              <Sparkles size={12} />
-                              AI Skor
-                            </button>
-                            <button
-                              onClick={() => setHistoryOrg(org)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-600 text-[10px] font-bold rounded-lg transition-colors"
-                              title="Geçmiş AI Raporları"
-                            >
-                              <History size={12} />
-                              Geçmiş
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/50">
-                  <p className="text-[10px] text-gray-400 font-medium flex items-center gap-1.5">
-                    <Hash size={10} />
-                    {liveOrgs.filter((o: any) => o.is_verified).length} doğrulanmış ·{' '}
-                    {liveOrgs.filter((o: any) => !o.is_verified).length} doğrulanmamış ·{' '}
-                    Toplam {liveOrgs.length} organizasyon
-                  </p>
+            {/* ─── KART 2: Lojistik Rotaları (Tablo) ─── */}
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+              {/* Header */}
+              <div className="px-5 py-3.5 border-b border-gray-100 bg-gradient-to-r from-amber-50/60 to-orange-50/30 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg shadow-sm shadow-amber-200">
+                    <Truck size={13} className="text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-black text-gray-900">Lojistik Rotaları</h3>
+                    <p className="text-[9px] text-gray-400 font-medium">
+                      Rota bazlı emisyon ve taşıyıcı bilgileri
+                    </p>
+                  </div>
                 </div>
+                <span className="text-[9px] font-black text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
+                  {filtered.length} rota
+                </span>
               </div>
-            )}
-          </div>
 
-          {/* ── Filters ─────────────────────────────────────────────── */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4 mb-6">
-            <div className="flex flex-col md:flex-row md:items-center gap-3">
-              <div className="relative flex-1 max-w-xs">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Rota, şehir veya taşıyıcı ara..."
-                  className="w-full pl-9 pr-3 py-2.5 text-xs font-medium bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
-                />
-              </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                {/* Transport Filter */}
+              {/* Filtreler */}
+              <div className="px-4 py-2.5 border-b border-gray-50 flex items-center gap-2 flex-wrap shrink-0">
+                <div className="relative flex-1 max-w-[160px]">
+                  <Search size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => { setSearch(e.target.value); setRoutePage(1); }}
+                    placeholder="Ara..."
+                    className="w-full pl-7 pr-2 py-1.5 text-[10px] font-medium bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white"
+                  />
+                </div>
                 <div className="relative">
                   <select
                     value={transportFilter || ''}
-                    onChange={(e) => setTransportFilter(e.target.value || null)}
-                    className="appearance-none pl-3 pr-8 py-2.5 text-xs font-medium bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                    onChange={(e) => { setTransportFilter(e.target.value || null); setRoutePage(1); }}
+                    className="appearance-none pl-2 pr-6 py-1.5 text-[10px] font-medium bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
                   >
-                    <option value="">Tüm Taşıma Tipleri</option>
+                    <option value="">Tüm Tipler</option>
                     <option value="Karayolu">Karayolu</option>
                     <option value="Denizyolu">Denizyolu</option>
                     <option value="Demiryolu">Demiryolu</option>
                     <option value="Multimodal">Multimodal</option>
                   </select>
-                  <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <ChevronDown size={10} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                 </div>
-                {/* Status Filter */}
                 <div className="relative">
                   <select
                     value={statusFilter || ''}
-                    onChange={(e) => setStatusFilter(e.target.value || null)}
-                    className="appearance-none pl-3 pr-8 py-2.5 text-xs font-medium bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                    onChange={(e) => { setStatusFilter(e.target.value || null); setRoutePage(1); }}
+                    className="appearance-none pl-2 pr-6 py-1.5 text-[10px] font-medium bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
                   >
                     <option value="">Tüm Durumlar</option>
                     <option value="Doğrulanmış">Doğrulanmış</option>
@@ -719,71 +755,45 @@ export default function LogisticsEmissionRoutes() {
                     <option value="İncelemede">İncelemede</option>
                     <option value="Reddedilmiş">Reddedilmiş</option>
                   </select>
-                  <ChevronDown size={12} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <ChevronDown size={10} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                 </div>
-                {/* Status summary chips */}
-                <div className="hidden lg:flex items-center gap-2 ml-2 pl-2 border-l border-gray-200">
-                  <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-full">
-                    <CheckCircle2 size={10} /> {logisticsRoutes.filter(r => r.verificationStatus === 'Doğrulanmış').length}
+                <div className="hidden lg:flex items-center gap-1 ml-auto">
+                  <div className="flex items-center gap-0.5 text-[8px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
+                    <CheckCircle2 size={8} /> {logisticsRoutes.filter(r => r.verificationStatus === 'Doğrulanmış').length}
                   </div>
-                  <div className="flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded-full">
-                    <Clock size={10} /> {logisticsRoutes.filter(r => r.verificationStatus === 'Beklemede').length}
+                  <div className="flex items-center gap-0.5 text-[8px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-full">
+                    <Clock size={8} /> {logisticsRoutes.filter(r => r.verificationStatus === 'Beklemede').length}
                   </div>
-                  <div className="flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded-full">
-                    <Eye size={10} /> {logisticsRoutes.filter(r => r.verificationStatus === 'İncelemede').length}
-                  </div>
-                  <div className="flex items-center gap-1 text-[10px] font-bold text-red-700 bg-red-50 px-2 py-1 rounded-full">
-                    <XCircle size={10} /> {logisticsRoutes.filter(r => r.verificationStatus === 'Reddedilmiş').length}
+                  <div className="flex items-center gap-0.5 text-[8px] font-bold text-red-700 bg-red-50 px-1.5 py-0.5 rounded-full">
+                    <XCircle size={8} /> {logisticsRoutes.filter(r => r.verificationStatus === 'Reddedilmiş').length}
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* ── Route List ──────────────────────────────────────────── */}
-          {viewMode === 'cards' ? (
-            <div className="space-y-3">
-              {filtered.map((route) => (
-                <RouteCard
-                  key={route.id}
-                  route={route}
-                  expanded={expandedId === route.id}
-                  onToggle={() => setExpandedId(expandedId === route.id ? null : route.id)}
-                />
-              ))}
-              {filtered.length === 0 && (
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-12 text-center">
-                  <Truck size={32} className="text-gray-300 mx-auto mb-3" />
-                  <p className="text-sm text-gray-400 font-medium">Filtrelere uyan rota bulunamadı.</p>
-                </div>
-              )}
-            </div>
-          ) : (
-            /* Table View */
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
+              {/* Rota Listesi */}
+              <div className="flex-1 overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
                     <tr className="bg-gray-50/80">
-                      <th className="px-5 py-3 text-[11px] font-black text-gray-500 uppercase tracking-wider">Rota</th>
-                      <th className="px-4 py-3 text-[11px] font-black text-gray-500 uppercase tracking-wider">Taşıma</th>
-                      <th className="px-4 py-3 text-[11px] font-black text-gray-500 uppercase tracking-wider text-right">Mesafe</th>
-                      <th className="px-4 py-3 text-[11px] font-black text-gray-500 uppercase tracking-wider text-right">CO₂ (kg)</th>
-                      <th className="px-4 py-3 text-[11px] font-black text-gray-500 uppercase tracking-wider text-center">Güvenilirlik</th>
-                      <th className="px-4 py-3 text-[11px] font-black text-gray-500 uppercase tracking-wider text-center">Durum</th>
-                      <th className="px-4 py-3 text-[11px] font-black text-gray-500 uppercase tracking-wider text-center">Risk</th>
-                      <th className="px-4 py-3 text-[11px] font-black text-gray-500 uppercase tracking-wider">Taşıyıcı</th>
+                      <th className="px-4 py-2.5 text-[10px] font-black text-gray-500 uppercase tracking-wider">Rota</th>
+                      <th className="px-3 py-2.5 text-[10px] font-black text-gray-500 uppercase tracking-wider">Taşıma</th>
+                      <th className="px-3 py-2.5 text-[10px] font-black text-gray-500 uppercase tracking-wider text-right">Mesafe</th>
+                      <th className="px-3 py-2.5 text-[10px] font-black text-gray-500 uppercase tracking-wider text-right">CO₂</th>
+                      <th className="px-3 py-2.5 text-[10px] font-black text-gray-500 uppercase tracking-wider text-center">Güven</th>
+                      <th className="px-3 py-2.5 text-[10px] font-black text-gray-500 uppercase tracking-wider text-center">Durum</th>
+                      <th className="px-3 py-2.5 text-[10px] font-black text-gray-500 uppercase tracking-wider text-center">Risk</th>
+                      <th className="px-3 py-2.5 text-[10px] font-black text-gray-500 uppercase tracking-wider">Taşıyıcı</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {filtered.map((r) => (
+                    {filtered.slice((routePage - 1) * ITEMS_PER_PAGE, routePage * ITEMS_PER_PAGE).map((r) => (
                       <tr key={r.id} className="hover:bg-blue-50/30 transition-colors">
-                        <td className="px-5 py-3">
-                          <p className="text-xs font-bold text-gray-900">{r.routeName}</p>
-                          <p className="text-[10px] text-gray-400 mt-0.5">{r.originDetail} → {r.destinationDetail}</p>
+                        <td className="px-4 py-2.5">
+                          <p className="text-[11px] font-bold text-gray-900 truncate max-w-[140px]">{r.routeName}</p>
+                          <p className="text-[9px] text-gray-400 mt-0.5 truncate max-w-[140px]">{r.originDetail} → {r.destinationDetail}</p>
                         </td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full border ${transportBadgeColor(r.transportType)}`}>
+                        <td className="px-3 py-2.5">
+                          <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${transportBadgeColor(r.transportType)}`}>
                             {transportIcon(r.transportType)}
                             {r.transportType}
                           </span>
@@ -799,24 +809,45 @@ export default function LogisticsEmissionRoutes() {
                             {r.verificationStatus}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-center">
-                          <span className={`text-[10px] font-black px-2 py-1 rounded-full ${riskColor(r.riskLevel)}`}>{r.riskLevel}</span>
+                        <td className="px-3 py-2.5 text-center">
+                          <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${riskColor(r.riskLevel)}`}>{r.riskLevel}</span>
                         </td>
-                        <td className="px-4 py-3 text-xs text-gray-600 font-medium">{r.carrier}</td>
+                        <td className="px-3 py-2.5 text-[10px] text-gray-600 font-medium truncate max-w-[100px]">{r.carrier}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/50">
-                <p className="text-xs text-gray-400 font-medium">
-                  Toplam <span className="font-bold text-gray-600">{filtered.length}</span> rota —{' '}
-                  <span className="font-bold text-gray-600">{(totalCO2 / 1000).toFixed(1)}t</span> CO₂ —{' '}
-                  <span className="font-bold text-gray-600">{(totalDistance / 1000).toFixed(1)}k km</span>
+
+              {/* Sayfalama */}
+              <div className="px-4 py-3 border-t border-gray-100 bg-gray-50/50 flex items-center justify-between shrink-0">
+                <p className="text-[9px] text-gray-400 font-medium">
+                  {filtered.length} rota · {(totalCO2 / 1000).toFixed(1)}t CO₂
                 </p>
+                {filtered.length > ITEMS_PER_PAGE && (
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setRoutePage(p => Math.max(1, p - 1))}
+                      disabled={routePage <= 1}
+                      className="p-1 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <ChevronDown size={11} className="rotate-90" />
+                    </button>
+                    <span className="text-[9px] font-bold text-gray-600 px-1">
+                      {routePage}/{Math.ceil(filtered.length / ITEMS_PER_PAGE)}
+                    </span>
+                    <button
+                      onClick={() => setRoutePage(p => Math.min(Math.ceil(filtered.length / ITEMS_PER_PAGE), p + 1))}
+                      disabled={routePage >= Math.ceil(filtered.length / ITEMS_PER_PAGE)}
+                      className="p-1 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <ChevronDown size={11} className="-rotate-90" />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
-          )}
+          </div>
 
         </div>
       </div>
